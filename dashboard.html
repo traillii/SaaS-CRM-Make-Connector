@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard | CRM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-6 max-w-5xl mx-auto">
+<div id="app">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Client Dashboard</h1>
+    <button onclick="logout()" class="text-red-600">Logout</button>
+  </div>
+  <div id="userInfo" class="bg-slate-50 p-4 rounded mb-4"></div>
+  <div class="mb-4">
+    <h3 class="font-semibold">Add new client</h3>
+    <input id="clientName" placeholder="Client name" class="border p-2 rounded">
+    <button onclick="addClient()" class="bg-green-600 text-white px-3 py-2 rounded ml-2">Add Client</button>
+  </div>
+  <h3 class="font-semibold mt-6">Client List</h3>
+  <div id="clientList"></div>
+</div>
+<script>
+const MAKE_AUTH_URL = "https://hook.eu2.make.com/鉴权接口webhook";
+const MAKE_CLIENT_URL = "https://hook.eu2.make.com/客户CRUD接口webhook";
+const MAKE_API_SECRET = "你自己设置的长密钥";
+const token = localStorage.getItem("crm_token");
+
+// 页面加载自动鉴权
+(async function authCheck(){
+  if(!token){
+    location.href="login.html";
+    return;
+  }
+  const res = await fetch(MAKE_AUTH_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "X-API-Secret": MAKE_API_SECRET,
+      "Authorization": `Bearer ${token}`
+    }
+  })
+  const data = await res.json();
+  if(!data.ok){
+    localStorage.removeItem("crm_token");
+    location.href="login.html";
+    return;
+  }
+  // 渲染用户套餐、额度
+  document.getElementById("userInfo").innerHTML = `
+    <p>Plan: ${data.plan_name}</p>
+    <p>Active clients: ${data.active_count} / ${data.client_limit === 9999 ? "Unlimited" : data.client_limit}</p>
+  `
+  renderClients(data.clients);
+})();
+
+// 新增客户
+async function addClient(){
+  const name = document.getElementById("clientName").value.trim();
+  const res = await fetch(MAKE_CLIENT_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "X-API-Secret": MAKE_API_SECRET,
+      "Authorization": `Bearer ${token}`
+    },
+    body:JSON.stringify({action:"add",client_name:name})
+  })
+  const ret = await res.json();
+  alert(ret.msg);
+  location.reload();
+}
+
+// 渲染客户列表，作废按钮
+function renderClients(list){
+  let html = "";
+  list.forEach(item=>{
+    html += `<div class="border p-2 my-2 flex justify-between">
+      <span>${item.name} | Status: ${item.status}</span>
+      ${item.status==="Active" ? `<button onclick="voidClient('${item.id}')" class="text-orange-600">Mark Void</button>` : ""}
+    </div>`
+  })
+  document.getElementById("clientList").innerHTML = html;
+}
+// 标记作废（不删除）
+async function voidClient(clientId){
+  const res = await fetch(MAKE_CLIENT_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "X-API-Secret": MAKE_API_SECRET,
+      "Authorization": `Bearer ${token}`
+    },
+    body:JSON.stringify({action:"void",client_id:clientId})
+  })
+  await res.json();
+  location.reload();
+}
+function logout(){
+  localStorage.clear();
+  location.href="login.html";
+}
+</script>
+</body>
+</html>
