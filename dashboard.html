@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Register</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,68 +12,104 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { inter: ['Inter', 'sans-serif'] },
-          colors: { neutral: {50:'#f7f7f7',100:'#eaeaea',800:'#222',900:'#111'} }
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            neutral: {
+              50: '#f8f8f8',
+              100: '#f1f1f1',
+              200: '#e5e5e5',
+              800: '#262626',
+              900: '#171717',
+            }
+          }
         }
       }
     }
   </script>
-  <style>body{font-family:'Inter',sans-serif;}</style>
-</head>
-<body class="bg-neutral-50 min-h-screen">
-  <nav class="bg-white border-b border-neutral-100 px-6 py-4">
-    <div class="max-w-5xl mx-auto flex justify-between items-center">
-      <div class="font-medium text-neutral-900">SaaS Dashboard</div>
-      <a href="/register.html" class="text-sm text-neutral-500 hover:text-neutral-900">Logout</a>
-    </div>
-  </nav>
-  <main class="max-w-5xl mx-auto px-6 py-10">
-    <div id="loading">Loading your profile...</div>
-    <div id="userPanel" class="hidden">
-      <div class="bg-white rounded-xl p-8 shadow-sm border border-neutral-100 mb-6">
-        <h2 class="text-xl font-medium text-neutral-900 mb-4">Account Info</h2>
-        <div class="space-y-3 text-neutral-600">
-          <p>Email: <span id="userEmail" class="text-neutral-900"></span></p>
-          <p>User ID: <span id="userId"></span></p>
-          <p>Status: <span id="userStatus"></span></p>
-          <p>Trial ends: <span id="trialEnd"></span></p>
-        </div>
-      </div>
-      <div class="bg-white rounded-xl p-8 shadow-sm border border-neutral-100">
-        <h2 class="text-xl font-medium text-neutral-900 mb-4">Your Clients Quota</h2>
-        <p class="text-neutral-500">Client limit & subscription area (Stripe对接后扩展)</p>
-      </div>
-    </div>
-  </main>
-<script>
-    const VERIFY_WORKER = "https://us-xiaoyan.qq596337481.workers.dev/";
-    const urlParams = new URLSearchParams(window.location.search);
-    const uid = urlParams.get("uid");
-    if (!uid) {
-      location.href="/error.html";
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
     }
-    (async ()=>{
-      try{
-        const res = await fetch(`${VERIFY_WORKER}?uid=${encodeURIComponent(uid)}`);
-        const data = await res.json();
-        console.log("校验返回：", data); // F12控制台打印，用来调试
-        if(!data.ok){
-          console.log("校验失败：", data.msg);
-          location.href="/error.html";
-          return;
-        }
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("userPanel").classList.remove("hidden");
-        document.getElementById("userEmail").innerText = data.user.email;
-        document.getElementById("userId").innerText = data.user.user_id;
-        document.getElementById("userStatus").innerText = data.user.status;
-        document.getElementById("trialEnd").innerText = data.user.trial_end;
-      }catch(e){
-        console.error("请求异常：", e);
-        location.href="/error.html";
-      }
-    })()
-</script>
+  </style>
+</head>
+<body class="bg-neutral-50 min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md">
+    <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 p-8">
+      <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-neutral-900">Create your account</h1>
+        <p class="text-neutral-500 mt-2">Start your 30-day free trial</p>
+      </div>
 
+      <form id="registerForm">
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-neutral-800 mb-2">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            required
+            class="w-full border border-neutral-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent transition"
+            placeholder="you@example.com"
+          >
+        </div>
+
+        <button 
+          type="submit" 
+          id="submitBtn"
+          class="w-full bg-neutral-900 text-white py-3 rounded-lg font-medium hover:bg-neutral-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Register
+        </button>
+      </form>
+
+      <p id="msgBox" class="mt-4 text-sm text-center hidden"></p>
+    </div>
+  </div>
+
+  <script>
+    // ============ 这里替换成你的 Cloudflare Worker 地址 ============
+    const WORKER_URL = "us-xiaoyan.qq596337481.workers.dev";
+    // ==============================================================
+
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const msgBox = document.getElementById('msgBox');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting...";
+      msgBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email: email })
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          // ✅ 重点：和 Make 返回键名保持一致 User_ID（大写U）
+          location.href = `/dashboard.html?uid=${data.User_ID}`;
+        } else {
+          location.href = "/error.html";
+        }
+      } catch (err) {
+        msgBox.classList.remove('hidden');
+        msgBox.textContent = "Request failed, please try again.";
+        msgBox.classList.add('text-red-600');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Register";
+      }
+    })
+  </script>
 </body>
 </html>
