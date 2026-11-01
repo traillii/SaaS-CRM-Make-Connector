@@ -78,13 +78,10 @@
 
   <script>
     const WORKER_URL = "https://morning-lab-3b2d.qq596337481.workers.dev/";
-
-
     const form = document.getElementById("registerForm");
     const emailInput = document.getElementById("email");
     const submitBtn = document.getElementById("submitBtn");
     const btnText = document.getElementById("btnText");
-
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = emailInput.value.trim();
@@ -98,9 +95,8 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-
           },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({email:email})
         });
 
         let data;
