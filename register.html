@@ -91,35 +91,35 @@
       btnText.textContent = "Submitting...";
 
       try {
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ email })
-        });
+  const res = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email })
+  });
 
-        let data;
-        try {
-          data = await res.json();
-        } catch {
-          // Make返回非JSON文本时，判定异常跳转错误页
-          location.href = "/error.html";
-          return;
-        }
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    location.href = "/error.html";
+    return;
+  }
 
-        if (data.status === "error") {
-          location.href = "/error.html";
-        } else {
-          location.href = "/success.html";
-        }
-      } catch (err) {
-        console.error(err);
-        location.href = "/error.html";
-      } finally {
-        submitBtn.disabled = false;
-        btnText.textContent = "Register";
-      }
+  if (data.status === "success") {
+    // 直接携带 user_id 跳后台
+    location.href = `/dashboard.html?uid=${data.user_id}`;
+  } else {
+    location.href = "/error.html";
+  }
+} catch (err) {
+  console.error(err);
+  location.href = "/error.html";
+} finally {
+  submitBtn.disabled = false;
+  btnText.textContent = "Register";
+}
     });
   </script>
 </body>
