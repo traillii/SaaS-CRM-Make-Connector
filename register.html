@@ -1,130 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register | SaaS</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            inter: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            neutral: {
-              50: '#f7f7f7',
-              100: '#eaeaea',
-              800: '#222222',
-              900: '#111111',
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS for Nordic Freelancers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563eb',
+                        neutral: '#111827',
+                    },
+                }
             }
-          }
         }
-      }
-    }
-  </script>
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .content-auto {
-        content-visibility: auto;
-      }
-      .input-focus {
-        @apply ring-1 ring-neutral-900/20 focus:ring-neutral-900 focus:outline-none;
-      }
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-  </style>
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-balance {
+                text-wrap: balance;
+            }
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body class="bg-neutral-50 min-h-screen flex items-center justify-center px-4">
-  <div class="w-full max-w-md">
-    <div class="bg-white rounded-xl p-8 shadow-sm border border-neutral-100">
-      <div class="mb-8">
-        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-medium text-neutral-900 mb-2">Get Started</h1>
-        <p class="text-neutral-500">Enter your email to create your account.</p>
-      </div>
-
-      <form id="registerForm" class="space-y-5">
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">Email address</label>
-          <input
-            type="email"
-            id="email"
-            required
-            class="w-full px-4 py-3 rounded-lg border border-neutral-200 input-focus transition-all"
-            placeholder="you@example.com"
-          >
+<body class="bg-white text-neutral font-inter antialiased">
+    <!-- Navbar -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="#" class="text-xl font-semibold tracking-tight">SaaS CRM</a>
+            <nav class="hidden md:flex items-center gap-8 text-sm text-gray-600">
+                <a href="#features" class="hover:text-neutral transition">Features</a>
+                <a href="#pricing" class="hover:text-neutral transition">Pricing</a>
+                <a href="#faq" class="hover:text-neutral transition">FAQ</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="#signup" class="text-sm font-medium text-primary hover:underline">Sign up</a>
+            </div>
         </div>
+    </header>
 
-        <button
-          type="submit"
-          id="submitBtn"
-          class="w-full py-3 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span id="btnText">Register</span>
-        </button>
-      </form>
+    <!-- Hero -->
+    <section class="max-w-6xl mx-auto px-6 py-24 md:py-32">
+        <div class="max-w-3xl">
+            <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-bold leading-[1.05] tracking-tight text-balance">
+                Simple CRM & subscription tool for Nordic freelancers
+            </h1>
+            <p class="mt-6 text-lg text-gray-600 max-w-2xl">
+                Track clients, manage subscription limits, automate onboarding, sync all data to Notion.
+            </p>
+            <div class="mt-10">
+                <a href="#signup" class="inline-block bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition">
+                    Start your 30-day free trial
+                </a>
+            </div>
+        </div>
+    </section>
 
-      <p class="mt-6 text-xs text-neutral-400 text-center">
-        By registering, you agree to our <a href="/privacy.html" class="underline hover:text-neutral-600">Privacy Policy</a>.
-      </p>
-    </div>
-  </div>
+    <!-- Features -->
+    <section id="features" class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-100">
+        <div class="mb-12">
+            <h2 class="text-2xl font-semibold">Everything you need</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="p-6 rounded-xl bg-gray-50">
+                <h3 class="font-semibold text-lg">Client quota control</h3>
+                <p class="mt-2 text-gray-600 text-sm">Limit active clients per user, automatic check before new registration.</p>
+            </div>
+            <div class="p-6 rounded-xl bg-gray-50">
+                <h3 class="font-semibold text-lg">Stripe subscription sync</h3>
+                <p class="mt-2 text-gray-600 text-sm">Auto sync start / end date, status, and plan into Notion database.</p>
+            </div>
+            <div class="p-6 rounded-xl bg-gray-50">
+                <h3 class="font-semibold text-lg">Notion as backend</h3>
+                <p class="mt-2 text-gray-600 text-sm">All data stored in Notion, view & filter from your dashboard.</p>
+            </div>
+        </div>
+    </section>
 
-  <script>
-    const WORKER_URL = "https://morning-lab-3b2d.qq596337481.workers.dev/";
-    const API_KEY = "654321; // ⚠️ 这里一定要改！
+    <!-- Signup Form（重点：对接你的Make Webhook） -->
+    <section id="signup" class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-100">
+        <div class="max-w-md">
+            <h2 class="text-2xl font-semibold">Create your account</h2>
+            <p class="mt-2 text-gray-600">30 days free trial, no credit card required.</p>
 
-    const form = document.getElementById("registerForm");
-    const emailInput = document.getElementById("email");
-    const submitBtn = document.getElementById("submitBtn");
-    const btnText = document.getElementById("btnText");
+            <form id="signupForm" class="mt-8 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" name="email" required
+                        class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                        placeholder="your@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Full name</label>
+                    <input type="text" name="name" required
+                        class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                        placeholder="Your name">
+                </div>
+                <button type="submit" class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition">
+                    Create account
+                </button>
+                <div id="formMsg" class="text-sm hidden"></div>
+            </form>
+        </div>
+    </section>
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = emailInput.value.trim();
-      if (!email) return;
+    <!-- FAQ -->
+    <section id="faq" class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-100">
+        <h2 class="text-2xl font-semibold mb-10">Frequently asked questions</h2>
+        <div class="max-w-2xl space-y-6">
+            <div>
+                <h3 class="font-medium">Where is my data stored?</h3>
+                <p class="mt-1 text-gray-600 text-sm">All records are saved in your own Notion workspace.</p>
+            </div>
+            <div>
+                <h3 class="font-medium">Does it follow GDPR?</h3>
+                <p class="mt-1 text-gray-600 text-sm">Static frontend, no persistent storage on Cloudflare. You control your Notion & Stripe data.</p>
+            </div>
+        </div>
+    </section>
 
-      submitBtn.disabled = true;
-      btnText.textContent = "Submitting...";
+    <!-- Footer -->
+    <footer class="border-t border-gray-100">
+        <div class="max-w-6xl mx-auto px-6 py-12 text-sm text-gray-500">
+            <p>© 2026 SaaS CRM for Nordic Freelancers</p>
+        </div>
+    </footer>
 
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-make-apikey": API_KEY
-          },
-          body: JSON.stringify({ email })
-        });
+    <script>
+        // ========== 【这里替换成你自己的Make Webhook地址！】 ==========
+        const WEBHOOK_URL = "https://hook.eu1.make.com/a3rj9y99srr354937oi39k27tstzsvry";
 
-        let data;
-        try {
-          data = await res.json();
-        } catch {
-          // Make返回非JSON时兜底
-          location.href = "/error.html";
-          return;
-        }
+        const form = document.getElementById('signupForm');
+        const msgBox = document.getElementById('formMsg');
 
-        if (data.status === "error") {
-          location.href = "/error.html";
-        } else {
-          location.href = "/success.html";
-        }
-      } catch (err) {
-        console.error(err);
-        location.href = "/error.html";
-      } finally {
-        submitBtn.disabled = false;
-        btnText.textContent = "Register";
-      }
-    });
-  </script>
+        form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            msgBox.classList.add('hidden');
+            const fd = new FormData(form);
+            const payload = Object.fromEntries(fd.entries());
+
+            try {
+                const res = await fetch(WEBHOOK_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    msgBox.textContent = data.message || "Email already registered";
+                    msgBox.className = "text-sm text-red-600";
+                } else {
+                    msgBox.textContent = "Success! Your account has been created.";
+                    msgBox.className = "text-sm text-green-600";
+                    form.reset();
+                }
+                msgBox.classList.remove('hidden');
+            } catch(err){
+                msgBox.textContent = "Network error, please try again later.";
+                msgBox.className = "text-sm text-red-600";
+                msgBox.classList.remove('hidden');
+            }
+        })
+    </script>
 </body>
 </html>
