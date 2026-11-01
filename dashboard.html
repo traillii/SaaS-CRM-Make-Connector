@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register</title>
+  <title>Register Debug</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,18 +63,18 @@
         </button>
       </form>
 
-      <p id="msgBox" class="mt-4 text-sm text-center hidden"></p>
+      <pre id="debugBox" class="mt-4 p-3 bg-gray-100 text-xs overflow-auto max-h-60 hidden"></pre>
     </div>
   </div>
 
   <script>
-    // ============ 这里替换成你的 Cloudflare Worker 地址 ============
-    const WORKER_URL = "us-xiaoyan.qq596337481.workers.dev";
+    // ============ 替换成你的 Cloudflare Worker 地址 ============
+    const WORKER_URL = "https://us-xiaoyan.qq596337481.workers.dev";
     // ==============================================================
 
     const form = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
-    const msgBox = document.getElementById('msgBox');
+    const debugBox = document.getElementById('debugBox');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -82,7 +82,7 @@
 
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting...";
-      msgBox.classList.add('hidden');
+      debugBox.classList.add('hidden');
 
       try {
         const res = await fetch(WORKER_URL, {
@@ -94,17 +94,22 @@
         });
 
         const data = await res.json();
+        // 打印后端返回全部内容
+        debugBox.classList.remove('hidden');
+        debugBox.textContent = "后端返回：\n" + JSON.stringify(data, null, 2);
 
         if (data.status === "success") {
-          // ✅ 重点：和 Make 返回键名保持一致 User_ID（大写U）
-          location.href = `/dashboard.html?uid=${data.User_ID}`;
+          if(data.User_ID){
+            location.href = `/dashboard.html?uid=${data.User_ID}`;
+          }else{
+            debugBox.textContent += "\n❌ User_ID 不存在！";
+          }
         } else {
           location.href = "/error.html";
         }
       } catch (err) {
-        msgBox.classList.remove('hidden');
-        msgBox.textContent = "Request failed, please try again.";
-        msgBox.classList.add('text-red-600');
+        debugBox.classList.remove('hidden');
+        debugBox.textContent = "请求异常：" + err.message;
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "Register";
