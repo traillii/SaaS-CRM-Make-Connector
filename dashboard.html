@@ -1,105 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Dashboard | CRM</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="p-6 max-w-5xl mx-auto">
-<div id="app">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">Client Dashboard</h1>
-    <button onclick="logout()" class="text-red-600">Logout</button>
-  </div>
-  <div id="userInfo" class="bg-slate-50 p-4 rounded mb-4"></div>
-  <div class="mb-4">
-    <h3 class="font-semibold">Add new client</h3>
-    <input id="clientName" placeholder="Client name" class="border p-2 rounded">
-    <button onclick="addClient()" class="bg-green-600 text-white px-3 py-2 rounded ml-2">Add Client</button>
-  </div>
-  <h3 class="font-semibold mt-6">Client List</h3>
-  <div id="clientList"></div>
-</div>
-<script>
-const MAKE_AUTH_URL = "https://hook.eu2.make.com/鉴权接口webhook";
-const MAKE_CLIENT_URL = "https://hook.eu2.make.com/客户CRUD接口webhook";
-const MAKE_API_SECRET = "你自己设置的长密钥";
-const token = localStorage.getItem("crm_token");
-
-// 页面加载自动鉴权
-(async function authCheck(){
-  if(!token){
-    location.href="login.html";
-    return;
-  }
-  const res = await fetch(MAKE_AUTH_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "X-API-Secret": MAKE_API_SECRET,
-      "Authorization": `Bearer ${token}`
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          colors: { neutral: {50:'#f7f7f7',100:'#eaeaea',800:'#222',900:'#111'} }
+        }
+      }
     }
-  })
-  const data = await res.json();
-  if(!data.ok){
-    localStorage.removeItem("crm_token");
-    location.href="login.html";
-    return;
-  }
-  // 渲染用户套餐、额度
-  document.getElementById("userInfo").innerHTML = `
-    <p>Plan: ${data.plan_name}</p>
-    <p>Active clients: ${data.active_count} / ${data.client_limit === 9999 ? "Unlimited" : data.client_limit}</p>
-  `
-  renderClients(data.clients);
-})();
+  </script>
+  <style>body{font-family:'Inter',sans-serif;}</style>
+</head>
+<body class="bg-neutral-50 min-h-screen">
+  <nav class="bg-white border-b border-neutral-100 px-6 py-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <div class="font-medium text-neutral-900">SaaS Dashboard</div>
+      <a href="/register.html" class="text-sm text-neutral-500 hover:text-neutral-900">Logout</a>
+    </div>
+  </nav>
+  <main class="max-w-5xl mx-auto px-6 py-10">
+    <div id="loading">Loading your profile...</div>
+    <div id="userPanel" class="hidden">
+      <div class="bg-white rounded-xl p-8 shadow-sm border border-neutral-100 mb-6">
+        <h2 class="text-xl font-medium text-neutral-900 mb-4">Account Info</h2>
+        <div class="space-y-3 text-neutral-600">
+          <p>Email: <span id="userEmail" class="text-neutral-900"></span></p>
+          <p>User ID: <span id="userId"></span></p>
+          <p>Status: <span id="userStatus"></span></p>
+          <p>Trial ends: <span id="trialEnd"></span></p>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl p-8 shadow-sm border border-neutral-100">
+        <h2 class="text-xl font-medium text-neutral-900 mb-4">Your Clients Quota</h2>
+        <p class="text-neutral-500">Client limit & subscription area (Stripe对接后扩展)</p>
+      </div>
+    </div>
+  </main>
 
-// 新增客户
-async function addClient(){
-  const name = document.getElementById("clientName").value.trim();
-  const res = await fetch(MAKE_CLIENT_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "X-API-Secret": MAKE_API_SECRET,
-      "Authorization": `Bearer ${token}`
-    },
-    body:JSON.stringify({action:"add",client_name:name})
-  })
-  const ret = await res.json();
-  alert(ret.msg);
-  location.reload();
-}
-
-// 渲染客户列表，作废按钮
-function renderClients(list){
-  let html = "";
-  list.forEach(item=>{
-    html += `<div class="border p-2 my-2 flex justify-between">
-      <span>${item.name} | Status: ${item.status}</span>
-      ${item.status==="Active" ? `<button onclick="voidClient('${item.id}')" class="text-orange-600">Mark Void</button>` : ""}
-    </div>`
-  })
-  document.getElementById("clientList").innerHTML = html;
-}
-// 标记作废（不删除）
-async function voidClient(clientId){
-  const res = await fetch(MAKE_CLIENT_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "X-API-Secret": MAKE_API_SECRET,
-      "Authorization": `Bearer ${token}`
-    },
-    body:JSON.stringify({action:"void",client_id:clientId})
-  })
-  await res.json();
-  location.reload();
-}
-function logout(){
-  localStorage.clear();
-  location.href="login.html";
-}
-</script>
+  <script>
+    const VERIFY_WORKER = "https://这里替换成你的校验Worker地址.workers.dev/";
+    const urlParams = new URLSearchParams(window.location.search);
+    const uid = urlParams.get("uid");
+    if (!uid) {
+      location.href="/error.html";
+    }
+    (async ()=>{
+      try{
+        const res = await fetch(`${VERIFY_WORKER}?uid=${uid}`);
+        const data = await res.json();
+        if(!data.ok){
+          location.href="/error.html";
+          return;
+        }
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("userPanel").classList.remove("hidden");
+        document.getElementById("userEmail").innerText = data.user.email;
+        document.getElementById("userId").innerText = data.user.user_id;
+        document.getElementById("userStatus").innerText = data.user.status;
+        document.getElementById("trialEnd").innerText = data.user.trial_end;
+      }catch(e){
+        console.error(e);
+        location.href="/error.html";
+      }
+    })()
+  </script>
 </body>
 </html>
