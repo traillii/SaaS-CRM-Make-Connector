@@ -45,8 +45,7 @@
       </div>
     </div>
   </main>
-
-  <script>
+<script>
     const VERIFY_WORKER = "https://us-xiaoyan.qq596337481.workers.dev/";
     const urlParams = new URLSearchParams(window.location.search);
     const uid = urlParams.get("uid");
@@ -55,9 +54,11 @@
     }
     (async ()=>{
       try{
-        const res = await fetch(`${VERIFY_WORKER}?uid=${uid}`);
+        const res = await fetch(`${VERIFY_WORKER}?uid=${encodeURIComponent(uid)}`);
         const data = await res.json();
+        console.log("校验返回：", data); // F12控制台打印，用来调试
         if(!data.ok){
+          console.log("校验失败：", data.msg);
           location.href="/error.html";
           return;
         }
@@ -68,10 +69,11 @@
         document.getElementById("userStatus").innerText = data.user.status;
         document.getElementById("trialEnd").innerText = data.user.trial_end;
       }catch(e){
-        console.error(e);
+        console.error("请求异常：", e);
         location.href="/error.html";
       }
     })()
-  </script>
+</script>
+
 </body>
 </html>
