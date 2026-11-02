@@ -37,7 +37,7 @@
         <div class="bg-white rounded-xl shadow-sm p-8">
             <div class="mb-8">
                 <h2 class="text-2xl font-semibold text-neutral-900">登录</h2>
-                <p class="text-neutral-500 mt-1">输入你的注册邮箱进入后台</p>
+                <p class="text-neutral-500 mt-1">输入注册邮箱进入后台</p>
             </div>
             <form id="loginForm">
                 <div class="mb-5">
@@ -60,8 +60,8 @@
     </div>
 
     <script>
-        // ========= 这里改成你的 Worker B 地址 =========
-        const LOGIN_WORKER_URL = "https://us-xiaoyan.qq596337481.workers.dev";
+        // 改成你这个Worker B的地址
+        const LOGIN_WORKER_URL = "https://xxx.xxx.workers.dev";
 
         const form = document.getElementById('loginForm');
         const errMsg = document.getElementById('errMsg');
@@ -88,7 +88,6 @@
                     errMsg.classList.remove('hidden');
                     return;
                 }
-                // 登录成功，跳转dashboard，带上uid
                 location.href = `/dashboard?uid=${data.User_ID}`;
             } catch (err) {
                 errMsg.innerText = "网络异常，请稍后重试";
