@@ -100,7 +100,7 @@
 
         if (data.status === "success") {
           if(data.User_ID){
-            location.href = `/dashboard.html?User_ID=${data.User_ID}`;
+            location.href = `/dashboard.html?uid=${data.User_ID}`;
           }else{
             debugBox.textContent += "\n❌ User_ID 不存在！";
           }
