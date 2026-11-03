@@ -39,8 +39,16 @@
             <a href="/" class="text-slate-600 hover:text-primary transition">← Back to Home</a>
         </header>
 
+        <!-- 调试信息区域，重点！ -->
+        <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-6 text-sm">
+            <div><strong>URL uid：</strong><span id="showUid"></span></div>
+            <div><strong>请求状态：</strong><span id="reqStatus">等待请求</span></div>
+            <div><strong>后端返回原始数据：</strong><pre id="resData" class="mt-2 overflow-auto max-h-40"></pre></div>
+            <div><strong>错误信息：</strong><span id="errMsg"></span></div>
+        </div>
+
         <!-- 加载状态 -->
-        <div id="loading" class="py-20 text-center">
+        <div id="loading" class="py-10 text-center">
             <p class="text-slate-500">Verifying your account...</p>
         </div>
 
@@ -78,50 +86,63 @@
     </div>
 
     <script>
-        // 👉 这里替换成你的 Worker B（查询用户信息）地址
+        // 👉 替换成你的 Worker B 地址
         const WORKER_B = "https://us-xiaoyan.qq596337481.workers.dev";
 
-        // 获取url上的uid参数
         function getUrlParam(name) {
             const params = new URLSearchParams(location.search);
             return params.get(name);
         }
 
         const uid = getUrlParam("uid");
+        document.getElementById("showUid").innerText = uid || "无uid";
+
         const loadingEl = document.getElementById("loading");
         const contentEl = document.getElementById("dashboardContent");
+        const reqStatusEl = document.getElementById("reqStatus");
+        const resDataEl = document.getElementById("resData");
+        const errMsgEl = document.getElementById("errMsg");
 
         if (!uid) {
-            // 没有uid直接跳错误页
-            location.href = "/error.html";
+            reqStatusEl.innerText = "❌ 没有uid参数";
+            // 先注释掉跳转！！
+            // location.href = "/error.html";
+        } else {
+            reqStatusEl.innerText = "正在请求 Worker B...";
+            fetch(WORKER_B, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ uid: uid })
+            })
+            .then(async res => {
+                reqStatusEl.innerText = `HTTP状态码：${res.status}`;
+                const json = await res.json();
+                resDataEl.innerText = JSON.stringify(json, null, 2);
+                return json;
+            })
+            .then(data => {
+                console.log("后端返回：", data);
+                if (data.success === true) {
+                    document.getElementById("userEmail").innerText = data.email;
+                    document.getElementById("userId").innerText = data.uid;
+                    loadingEl.classList.add("hidden");
+                    contentEl.classList.remove("hidden");
+                    reqStatusEl.innerText = "✅ 校验成功";
+                } else {
+                    reqStatusEl.innerText = "❌ success=false";
+                    // 注释自动跳转，方便看结果
+                    // location.href = "/error.html";
+                }
+            })
+            .catch(err => {
+                errMsgEl.innerText = err.toString();
+                reqStatusEl.innerText = "❌ fetch捕获异常（跨域/worker报错）";
+                console.error(err);
+                // location.href = "/error.html";
+            })
         }
-
-        // 请求Worker B校验&读取用户信息
-        fetch(WORKER_B, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ uid: uid })
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log("user data:", data);
-            if (data.success) {
-                // 填充用户信息
-                document.getElementById("userEmail").innerText = data.email;
-                document.getElementById("userId").innerText = data.uid;
-
-                loadingEl.classList.add("hidden");
-                contentEl.classList.remove("hidden");
-            } else {
-                location.href = "/error.html";
-            }
-        })
-        .catch(err => {
-            console.error("dashboard fetch error:", err);
-            location.href = "/error.html";
-        })
     </script>
 </body>
 </html>
