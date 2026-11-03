@@ -1,126 +1,141 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard - Portal</title>
-    <!-- 引入 Tailwind CSS 构建现代化纯净 UI -->
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#334155',
+                        neutral: '#f8fafc',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .tab-active {
+                @apply bg-primary text-white;
+            }
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans antialiased">
-
-    <!-- 顶部导航栏 -->
-    <header class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Dashboard</span>
-                <span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium">Customer Portal</span>
+<body class="bg-neutral text-primary min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- 顶部导航栏 -->
+        <header class="flex justify-between items-center mb-8 border-b border-slate-200 pb-6">
+            <div>
+                <h1 class="text-2xl font-semibold">Dashboard</h1>
+                <p class="text-slate-500 mt-1">Your Nordic CRM Portal</p>
             </div>
-            <a href="/" class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">Back to Home</a>
+            <div class="flex items-center gap-6">
+                <div class="text-sm text-slate-600">
+                    <span id="userEmailDisplay">-</span>
+                </div>
+                <a href="/" class="text-slate-600 hover:text-primary transition">← Back to Home</a>
+            </div>
+        </header>
+
+        <!-- 加载状态 -->
+        <div id="loading" class="py-32 text-center">
+            <p class="text-slate-500">Verifying your account...</p>
         </div>
-    </header>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
-        <!-- 状态1：加载中（原生骨架屏效果） -->
-        <div id="loading" class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-sm text-gray-500 font-medium">Verifying your account secure link...</p>
-        </div>
+        <!-- 主面板（默认隐藏） -->
+        <div id="dashboardContent" class="hidden">
+            <!-- Tab 导航 -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="tab-btn tab-active px-4 py-2 rounded-lg border border-slate-200 transition" data-target="tab-clients">Clients</button>
+                <button class="tab-btn px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition" data-target="tab-projects">Projects</button>
+                <button class="tab-btn px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition" data-target="tab-invoices">Invoices</button>
+                <button class="tab-btn px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition" data-target="tab-expenses">Expenses & Assets</button>
+                <button class="tab-btn px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition" data-target="tab-tax">Tax Ledger</button>
+            </div>
 
-        <!-- 状态2：校验成功后展示的真实面板（默认隐藏，加载成功后淡入显现） -->
-        <div id="dashboardContent" class="hidden fade-in space-y-6">
-            <div class="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
-                <p class="text-sm text-gray-500 mb-6">Your identity has been verified successfully via secure token.</p>
-                
-                <hr class="border-gray-100 my-6" />
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div class="space-y-1">
-                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Registered Email</span>
-                        <p id="userEmail" class="text-base font-medium text-gray-800 break-all">-</p>
-                    </div>
-                    <div class="space-y-1">
-                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">User Unique ID</span>
-                        <p id="userId" class="text-base font-mono text-gray-800 break-all">-</p>
-                    </div>
+            <!-- Tab 内容区 -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="tab-content" id="tab-clients">
+                    <iframe class="w-full h-[75vh]" src="https://app.notion.com/p/f6937806b6354814acaa3634f7a7d828?v=abaa515874614fcc939c5fac60b111c5&source=copy_link" frameborder="0"></iframe>
+                </div>
+                <div class="tab-content hidden" id="tab-projects">
+                    <iframe class="w-full h-[75vh]" src="NOTION_EMBED_PROJECTS" frameborder="0"></iframe>
+                </div>
+                <div class="tab-content hidden" id="tab-invoices">
+                    <iframe class="w-full h-[75vh]" src="NOTION_EMBED_INVOICES" frameborder="0"></iframe>
+                </div>
+                <div class="tab-content hidden" id="tab-expenses">
+                    <iframe class="w-full h-[75vh]" src="NOTION_EMBED_EXPENSES" frameborder="0"></iframe>
+                </div>
+                <div class="tab-content hidden" id="tab-tax">
+                    <iframe class="w-full h-[75vh]" src="NOTION_EMBED_TAX" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
-
-    </main>
+    </div>
 
     <script>
-        // 生产环境配置：指向你的 Worker B 地址
-        const WORKER_B = "https://us-xiaoyan.qq596337481.workers.dev";
+        // 👉 这里替换成你的 Worker B 地址
+        const WORKER_B = "YOUR_WORKER_B_URL";
 
-        // 强健的多规则参数提取器（完美兼容问号传参和 Cloudflare 路径重写）
         function getUrlParam(name) {
-            const params = new URLSearchParams(window.location.search);
-            let value = params.get(name);
-            
-            if (!value) {
-                const path = window.location.pathname;
-                const targetStr = name + "=";
-                if (path.includes(targetStr)) {
-                    const parts = path.split(targetStr);
-                    if (parts.length > 1) {
-                        value = parts[1];
-                    }
-                }
-            }
-            return value;
+            const params = new URLSearchParams(location.search);
+            return params.get(name);
         }
 
-        // 核心运行器
-        document.addEventListener("DOMContentLoaded", () => {
-            const uid = getUrlParam("uid");
-            const loadingEl = document.getElementById("loading");
-            const contentEl = document.getElementById("dashboardContent");
+        const uid = getUrlParam("uid");
+        const loadingEl = document.getElementById("loading");
+        const contentEl = document.getElementById("dashboardContent");
 
-            // 如果无参数，直接拦截并重定向到错误页
-            if (!uid) {
+        if (!uid) {
+            location.href = "/error.html";
+        }
+
+        fetch(WORKER_B, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ uid: uid })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("user data:", data);
+            if (data.success) {
+                document.getElementById("userEmailDisplay").innerText = data.email;
+                loadingEl.classList.add("hidden");
+                contentEl.classList.remove("hidden");
+            } else {
                 location.href = "/error.html";
-                return;
             }
+        })
+        .catch(err => {
+            console.error("dashboard fetch error:", err);
+            location.href = "/error.html";
+        })
 
-            // 发起安全验证请求
-            fetch(WORKER_B, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ uid: uid })
-            })
-            .then(res => {
-                if (!res.ok) throw new Error("Network status error");
-                return res.json();
-            })
-            .then(data => {
-                // 严格的业务成功状态过滤
-                if (data && data.success === true) {
-                    // 数据渲染
-                    document.getElementById("userEmail").innerText = data.email || "N/A";
-                    document.getElementById("userId").innerText = data.uid || "N/A";
-                    
-                    // 状态优雅切换
-                    loadingEl.classList.add("hidden");
-                    contentEl.classList.remove("hidden");
-                } else {
-                    // 验证失败（后端返回 success=false），跳转错误页
-                    location.href = "/error.html";
-                }
-            })
-            .catch(err => {
-                console.error("Portal Exception:", err);
-                location.href = "/error.html";
-            });
-        });
+        // Tab切换逻辑
+        const tabBtns = document.querySelectorAll(".tab-btn");
+        const tabContents = document.querySelectorAll(".tab-content");
+        tabBtns.forEach(btn=>{
+            btn.onclick = () => {
+                const targetId = btn.getAttribute("data-target");
+                tabBtns.forEach(b=>b.classList.remove("tab-active"));
+                tabContents.forEach(c=>c.classList.add("hidden"));
+                btn.classList.add("tab-active");
+                document.getElementById(targetId).classList.remove("hidden");
+            }
+        })
     </script>
 </body>
 </html>
