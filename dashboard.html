@@ -116,26 +116,41 @@
                 },
                 body: JSON.stringify({ uid: uid })
             })
-            .then(async res => {
-                reqStatusEl.innerText = `HTTP状态码：${res.status}`;
-                const json = await res.json();
-                resDataEl.innerText = JSON.stringify(json, null, 2);
-                return json;
-            })
-            .then(data => {
-                console.log("后端返回：", data);
-                if (data.success === true) {
-                    document.getElementById("userEmail").innerText = data.email;
-                    document.getElementById("userId").innerText = data.uid;
-                    loadingEl.classList.add("hidden");
-                    contentEl.classList.remove("hidden");
-                    reqStatusEl.innerText = "✅ 校验成功";
-                } else {
-                    reqStatusEl.innerText = "❌ success=false";
-                    // 注释自动跳转，方便看结果
-                    // location.href = "/error.html";
-                }
-            })
+           // ... 前面代码保持不变 ...
+fetch(WORKER_B, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ uid: uid })
+})
+.then(res => {
+    reqStatusEl.innerText = `HTTP状态码: ${res.status}`;
+    return res.json(); // ✅ 正确：直接将 Promise 传递给下一个 .then
+})
+.then(data => {
+    console.log("后端返回的真实数据：", data);
+    // 将后端返回的原始 JSON 渲染到黄色的调试框里
+    resDataEl.innerText = JSON.stringify(data, null, 2); 
+
+    // 判断后端返回的 success 状态
+    if (data.success === true) {
+        document.getElementById("userEmail").innerText = data.email;
+        document.getElementById("userId").innerText = data.uid;
+        
+        loadingEl.classList.add("hidden");
+        contentEl.classList.remove("hidden");
+        reqStatusEl.innerText = " ✅ 校验成功";
+    } else {
+        reqStatusEl.innerText = " ❌ success=false";
+        // 如果后端确实返回了错误信息（比如真的找不到），这里也会显示在黄色框里
+    }
+})
+.catch(err => {
+    console.error("网络或解析错误:", err);
+    reqStatusEl.innerText = " ❌ 请求发生异常";
+});
+
             .catch(err => {
                 errMsgEl.innerText = err.toString();
                 reqStatusEl.innerText = "❌ fetch捕获异常（跨域/worker报错）";
