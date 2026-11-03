@@ -1,174 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#334155',
-                        neutral: '#f8fafc',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-        }
+    <title>Customer Dashboard - Portal</title>
+    <!-- 引入 Tailwind CSS 构建现代化纯净 UI -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-neutral text-primary min-h-screen">
-    <div class="max-w-6xl mx-auto px-4 py-10">
-        <!-- 顶部导航栏 -->
-        <header class="flex justify-between items-center mb-10 border-b border-slate-200 pb-6">
-            <div>
-                <h1 class="text-2xl font-semibold">Dashboard</h1>
-                <p class="text-slate-500 mt-1">Customer Portal</p>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Dashboard</span>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium">Customer Portal</span>
             </div>
-            <a href="/" class="text-slate-600 hover:text-primary transition">← Back to Home</a>
-        </header>
+            <a href="/" class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">Back to Home</a>
+        </div>
+    </header>
 
-        <!-- 调试信息区域，重点！ -->
-        <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-6 text-sm">
-            <div><strong>URL uid：</strong><span id="showUid"></span></div>
-            <div><strong>请求状态：</strong><span id="reqStatus">等待请求</span></div>
-            <div><strong>后端返回原始数据：</strong><pre id="resData" class="mt-2 overflow-auto max-h-40"></pre></div>
-            <div><strong>错误信息：</strong><span id="errMsg"></span></div>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- 状态1：加载中（原生骨架屏效果） -->
+        <div id="loading" class="flex flex-col items-center justify-center py-20 text-center">
+            <div class="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-sm text-gray-500 font-medium">Verifying your account secure link...</p>
         </div>
 
-        <!-- 加载状态 -->
-        <div id="loading" class="py-10 text-center">
-            <p class="text-slate-500">Verifying your account...</p>
-        </div>
+        <!-- 状态2：校验成功后展示的真实面板（默认隐藏，加载成功后淡入显现） -->
+        <div id="dashboardContent" class="hidden fade-in space-y-6">
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
+                <p class="text-sm text-gray-500 mb-6">Your identity has been verified successfully via secure token.</p>
+                
+                <hr class="border-gray-100 my-6" />
 
-        <!-- 主面板（默认隐藏） -->
-        <div id="dashboardContent" class="hidden">
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                <h2 class="text-xl font-medium mb-4">Welcome</h2>
-                <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-sm text-slate-500">Email</label>
-                        <p id="userEmail" class="text-lg mt-1">-</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="space-y-1">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Registered Email</span>
+                        <p id="userEmail" class="text-base font-medium text-gray-800 break-all">-</p>
                     </div>
-                    <div>
-                        <label class="text-sm text-slate-500">User ID</label>
-                        <p id="userId" class="text-lg mt-1">-</p>
+                    <div class="space-y-1">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">User Unique ID</span>
+                        <p id="userId" class="text-base font-mono text-gray-800 break-all">-</p>
                     </div>
                 </div>
             </div>
-
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="font-medium mb-2">Subscription</h3>
-                    <p class="text-slate-500 text-sm">Plan status will show here after Stripe integration</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="font-medium mb-2">Settings</h3>
-                    <p class="text-slate-500 text-sm">Update your contact information</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="font-medium mb-2">Support</h3>
-                    <p class="text-slate-500 text-sm">Get help & documentation</p>
-                </div>
-            </div>
         </div>
-    </div>
+
+    </main>
 
     <script>
-    // 1. 替换成你的 Worker B 地址
-    const WORKER_B = "https://us-xiaoyan.qq596337481.workers.dev";
+        // 生产环境配置：指向你的 Worker B 地址
+        const WORKER_B = "https://workers.dev";
 
-    // 2. 完美获取参数函数
-    function getUrlParam(name) {
-        const params = new URLSearchParams(window.location.search);
-        let value = params.get(name);
-        
-        if (!value) {
-            const path = window.location.pathname;
-            const targetStr = name + "=";
-            if (path.includes(targetStr)) {
-                const parts = path.split(targetStr);
-                if (parts.length > 1) {
-                    value = parts[1];
+        // 强健的多规则参数提取器（完美兼容问号传参和 Cloudflare 路径重写）
+        function getUrlParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            let value = params.get(name);
+            
+            if (!value) {
+                const path = window.location.pathname;
+                const targetStr = name + "=";
+                if (path.includes(targetStr)) {
+                    const parts = path.split(targetStr);
+                    if (parts.length > 1) {
+                        value = parts[1];
+                    }
                 }
             }
+            return value;
         }
-        return value;
-    }
 
-    // 3. 获取 DOM 元素
-    const uid = getUrlParam("uid");
-    
-    // 安全获取各个显示状态的元素
-    const showUidEl = document.getElementById("showUid");
-    if (showUidEl) {
-        showUidEl.innerText = uid || "无uid参数";
-    }
+        // 核心运行器
+        document.addEventListener("DOMContentLoaded", () => {
+            const uid = getUrlParam("uid");
+            const loadingEl = document.getElementById("loading");
+            const contentEl = document.getElementById("dashboardContent");
 
-    const loadingEl = document.getElementById("loading");
-    const contentEl = document.getElementById("dashboardContent");
-    const reqStatusEl = document.getElementById("reqStatus");
-    const resDataEl = document.getElementById("resData");
-    const errMsgEl = document.getElementById("errMsg");
-
-    // 4. 核心请求与状态判定逻辑
-    if (!uid) {
-        if (reqStatusEl) reqStatusEl.innerText = "❌ 没有uid参数";
-        // location.href = "/error.html";
-    } else {
-        if (reqStatusEl) reqStatusEl.innerText = "正在请求 Worker B...";
-        
-        fetch(WORKER_B, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ uid: uid })
-        })
-        .then(res => {
-            if (reqStatusEl) reqStatusEl.innerText = `HTTP状态码: ${res.status}`;
-            return res.json();
-        })
-        .then(data => {
-            console.log("后端返回的真实数据：", data);
-            
-            if (resDataEl) {
-                resDataEl.innerText = JSON.stringify(data, null, 2);
+            // 如果无参数，直接拦截并重定向到错误页
+            if (!uid) {
+                location.href = "/error.html";
+                return;
             }
 
-            // 判断后端返回的验证状态
-            if (data && data.success === true) {
-                const userEmailEl = document.getElementById("userEmail");
-                const userIdEl = document.getElementById("userId");
-                
-                if (userEmailEl) userEmailEl.innerText = data.email || "-";
-                if (userIdEl) userIdEl.innerText = data.uid || "-";
-                
-                if (loadingEl) loadingEl.classList.add("hidden");
-                if (contentEl) contentEl.classList.remove("hidden");
-                if (reqStatusEl) reqStatusEl.innerText = " ✅ 校验成功";
-            } else {
-                if (reqStatusEl) reqStatusEl.innerText = " ❌ 验证失败：后端返回success=false";
-            }
-        })
-        .catch(err => {
-            console.error("网络请求或解析发生异常:", err);
-            if (reqStatusEl) reqStatusEl.innerText = " ❌ 请求发生严重异常";
-            if (errMsgEl) errMsgEl.innerText = err.message || "未知异常";
+            // 发起安全验证请求
+            fetch(WORKER_B, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ uid: uid })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Network status error");
+                return res.json();
+            })
+            .then(data => {
+                // 严格的业务成功状态过滤
+                if (data && data.success === true) {
+                    // 数据渲染
+                    document.getElementById("userEmail").innerText = data.email || "N/A";
+                    document.getElementById("userId").innerText = data.uid || "N/A";
+                    
+                    // 状态优雅切换
+                    loadingEl.classList.add("hidden");
+                    contentEl.classList.remove("hidden");
+                } else {
+                    // 验证失败（后端返回 success=false），跳转错误页
+                    location.href = "/error.html";
+                }
+            })
+            .catch(err => {
+                console.error("Portal Exception:", err);
+                location.href = "/error.html";
+            });
         });
-    }
-</script>
-
+    </script>
 </body>
 </html>
