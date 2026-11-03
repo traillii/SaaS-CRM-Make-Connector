@@ -96,37 +96,38 @@
       submitBtn.disabled = true;
       btnText.textContent = "Submitting...";
 
-      try {
-  const res = await fetch(WORKER_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ email })
-  });
+    // 替换开始
+    try {
+        // 1. 解析后端返回的 JSON
+        const data = await res.json();
+        console.log("注册接口返回数据：", data);
 
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    location.href = "/error.html";
-    return;
-  }
+        // 2. 检查后端返回的状态状态
+        if (data && data.status === "success") {
+            // 严格检查 data.User_ID 是否存在，防止拼接出 undefined
+            if (data.User_ID) {
+                location.href = `/dashboard.html?uid=${data.User_ID}`;
+            } else {
+                console.error("后端返回成功，但未包含 User_ID 字段！", data);
+                location.href = "/error.html";
+            }
+        } else {
+            console.error("后端返回状态不是 success：", data);
+            location.href = "/error.html";
+        }
 
-  if (data.status === "success") {
-    // 直接携带 user_id 跳后台
-    location.href = `/dashboard.html?uid=${data.User_ID}`;
-  } else {
-    location.href = "/error.html";
-  }
-} catch (err) {
-  console.error(err);
-  location.href = "/error.html";
-} finally {
-  submitBtn.disabled = false;
-  btnText.textContent = "Register";
-}
-    });
+    } catch (err) {
+        // 捕获网络错误或 JSON 解析失败的严重异常
+        console.error("解析或跳转过程中发生严重错误:", err);
+        location.href = "/error.html";
+        
+    } finally {
+        // 无论成功还是失败，最后都恢复按钮状态
+        if (typeof submitBtn !== "undefined") submitBtn.disabled = false;
+        if (typeof btnText !== "undefined") btnText.textContent = "Register";
+    }
+}); // 对应最外层的事件监听结束
+
   </script>
 </body>
 </html>
