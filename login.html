@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | SaaS</title>
+    <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        neutral: {
-                            50: '#f7f7f5',
-                            100: '#ecece8',
-                            800: '#292926',
-                            900: '#181816',
-                        }
+                        primary: '#334155',
+                        neutral: '#f8fafc',
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -32,47 +28,61 @@
         }
     </style>
 </head>
-<body class="bg-neutral-50 min-h-screen flex items-center justify-center px-4">
+<body class="bg-neutral text-primary min-h-screen flex items-center justify-center px-4">
     <div class="w-full max-w-md">
+        <div class="mb-8 text-center">
+            <a href="/" class="text-slate-500 hover:text-primary">← Back to Home</a>
+            <h1 class="text-[clamp(1.8rem,4vw,2.4rem)] font-semibold mt-4">Sign in</h1>
+            <p class="text-slate-500 mt-2">Enter your email to access your dashboard</p>
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm p-8">
-            <div class="mb-8">
-                <h2 class="text-2xl font-semibold text-neutral-900">登录</h2>
-                <p class="text-neutral-500 mt-1">输入注册邮箱进入后台</p>
-            </div>
             <form id="loginForm">
-                <div class="mb-5">
-                    <label class="block text-sm text-neutral-700 mb-2">邮箱</label>
-                    <input type="email" id="email" required
-                           class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent"
-                           placeholder="you@example.com">
+                <div class="mb-6">
+                    <label class="block text-sm text-slate-600 mb-2">Email address</label>
+                    <input 
+                        type="email" 
+                        id="emailInput"
+                        required
+                        class="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 transition"
+                        placeholder="you@example.com"
+                    >
                 </div>
-                <div id="errMsg" class="text-red-500 text-sm mb-4 hidden"></div>
-                <button type="submit" id="submitBtn"
-                        class="w-full py-3 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition">
-                    登录
+
+                <button 
+                    type="submit"
+                    id="submitBtn"
+                    class="w-full bg-primary text-white py-3 rounded-lg hover:bg-slate-700 transition"
+                >
+                    Continue
                 </button>
             </form>
-            <div class="mt-6 text-center text-sm text-neutral-500">
-                还没有账号？
-                <a href="/" class="text-neutral-900 underline">去注册</a>
-            </div>
+
+            <div id="msgBox" class="mt-4 text-center hidden"></div>
         </div>
+        <p class="text-center text-slate-500 text-sm mt-6">
+            Don’t have an account?
+            <a href="/register.html" class="text-primary underline">Register</a>
+        </p>
     </div>
 
     <script>
-        // 改成你这个Worker B的地址
-        const LOGIN_WORKER_URL = "https://xxx.xxx.workers.dev";
+        // 👉 修改为你的【登录查询Worker地址】（接收email去查用户）
+        const LOGIN_WORKER_URL = "https://denglu.qq596337481.workers.dev";
 
-        const form = document.getElementById('loginForm');
-        const errMsg = document.getElementById('errMsg');
-        const submitBtn = document.getElementById('submitBtn');
+        const form = document.getElementById("loginForm");
+        const emailInput = document.getElementById("emailInput");
+        const submitBtn = document.getElementById("submitBtn");
+        const msgBox = document.getElementById("msgBox");
 
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
-            errMsg.classList.add('hidden');
+            const email = emailInput.value.trim();
+            if (!email) return;
+
             submitBtn.disabled = true;
-            submitBtn.innerText = "登录中...";
-            const email = document.getElementById('email').value.trim();
+            submitBtn.innerText = "Checking...";
+            msgBox.classList.add("hidden");
 
             try {
                 const res = await fetch(LOGIN_WORKER_URL, {
@@ -80,21 +90,25 @@
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ email })
-                })
+                    body: JSON.stringify({ email: email })
+                });
                 const data = await res.json();
-                if (!data.ok) {
-                    errMsg.innerText = data.msg;
-                    errMsg.classList.remove('hidden');
-                    return;
+                if (data.success) {
+                    // 查询成功，携带uid跳转到dashboard
+                    location.href = `/dashboard?uid=${data.uid}`;
+                } else {
+                    msgBox.textContent = data.msg || "No account found with this email.";
+                    msgBox.classList.remove("hidden");
+                    msgBox.classList.add("text-red-500");
                 }
-                location.href = `/dashboard?uid=${data.User_ID}`;
             } catch (err) {
-                errMsg.innerText = "网络异常，请稍后重试";
-                errMsg.classList.remove('hidden');
+                msgBox.textContent = "Connection error, please try again later.";
+                msgBox.classList.remove("hidden");
+                msgBox.classList.add("text-red-500");
+                console.error(err);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerText = "登录";
+                submitBtn.innerText = "Continue";
             }
         })
     </script>
