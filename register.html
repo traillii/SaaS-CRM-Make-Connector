@@ -97,27 +97,39 @@
       btnText.textContent = "Submitting...";
 
     // 替换开始
+        // 替换开始（从第100行开始替换）
         try {
-        const data = await res.json();
-        
-        // 🚨 加上下面这两行惊天雷调试代码：
-        alert("后端返回的真实内容是: " + JSON.stringify(data));
-        console.log("注册接口返回数据：", data);
+            // 1. 【补齐的核心】向你的 Worker 发送真正的注册请求
+            const res = await fetch(WORKER_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ 
+                    email: email 
+                })
+            });
 
-        // 临时把下面的跳转逻辑注释掉，防止页面瞬间刷走看不清弹窗
-        /*
-        if (data && data.status === "success") {
-            if (data.User_ID) {
-                location.href = `/dashboard.html?uid=${data.User_ID}`;
+            // 2. 解析后端返回的 JSON 数据
+            const data = await res.json();
+            console.log("注册接口返回数据：", data);
+
+            // 3. 执行严密的校验与跳转
+            if (data && data.status === "success") {
+                if (data.User_ID) {
+                    // 顺应 Cloudflare Pages 去除 .html 的美化路由规则，直接跳转到 /dashboard
+                    location.href = `/dashboard?uid=${data.User_ID}`;
+                } else {
+                    console.error("后端返回成功，但未包含 User_ID 字段！", data);
+                    location.href = "/error.html";
+                }
             } else {
+                console.error("后端返回状态不是 success：", data);
                 location.href = "/error.html";
             }
-        } else {
-            location.href = "/error.html";
-        }
-        */
 
-    } catch (err) {
+        } catch (err) {
+
         console.error("解析或跳转过程中发生严重错误:", err);
         // location.href = "/error.html"; // 🚨 临时注释
     } finally {
