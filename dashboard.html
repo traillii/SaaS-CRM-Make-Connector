@@ -46,12 +46,10 @@
                 <a href="/" class="text-slate-600 hover:text-primary transition">← Back to Home</a>
             </div>
         </header>
-
         <!-- 加载状态 -->
         <div id="loading" class="py-32 text-center">
             <p class="text-slate-500">Verifying your account...</p>
         </div>
-
         <!-- 主面板（默认隐藏） -->
         <div id="dashboardContent" class="hidden">
             <!-- Tab 导航 -->
@@ -62,12 +60,53 @@
                 <button class="tab-btn px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition" data-target="tab-expenses">Expenses & Assets</button>
                 <button class="tab-btn px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition" data-target="tab-tax">Tax Ledger</button>
             </div>
-
             <!-- Tab 内容区 -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden p-6">
+                <!-- ========= Clients Tab：表格+新增表单 ========= -->
                 <div class="tab-content" id="tab-clients">
-                    <iframe class="w-full h-[75vh]" src="" frameborder="0"></iframe>
+                    <div class="mb-6 border-b pb-4">
+                        <h3 class="text-lg font-medium mb-4">Add New Client</h3>
+                        <form id="addClientForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">Client Name *</label>
+                                <input type="text" id="inp_clientName" class="w-full border rounded-lg px-3 py-2" placeholder="Client name">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">Contact Email</label>
+                                <input type="email" id="inp_contactEmail" class="w-full border rounded-lg px-3 py-2" placeholder="email@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">Phone</label>
+                                <input type="text" id="inp_phone" class="w-full border rounded-lg px-3 py-2" placeholder="Phone">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">Notes</label>
+                                <input type="text" id="inp_notes" class="w-full border rounded-lg px-3 py-2" placeholder="Notes">
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg">Add Client</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <h3 class="text-lg font-medium mb-3">Your Client List</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-100">
+                                <tr>
+                                    <th class="text-left p-3">Client Name</th>
+                                    <th class="text-left p-3">Contact Email</th>
+                                    <th class="text-left p-3">Phone</th>
+                                    <th class="text-left p-3">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientTableBody">
+                                <tr><td colspan="4" class="p-4 text-slate-400">Loading your clients...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
                 <div class="tab-content hidden" id="tab-projects">
                     <iframe class="w-full h-[75vh]" src="NOTION_EMBED_PROJECTS" frameborder="0"></iframe>
                 </div>
@@ -83,24 +122,27 @@
             </div>
         </div>
     </div>
-
     <script>
-        // 👉 这里替换成你的 Worker B 地址
+        // 👉 Worker B地址
         const WORKER_B = "https://us-xiaoyan.qq596337481.workers.dev";
+        let currentUid = null;
 
         function getUrlParam(name) {
             const params = new URLSearchParams(location.search);
             return params.get(name);
         }
-
         const uid = getUrlParam("uid");
         const loadingEl = document.getElementById("loading");
         const contentEl = document.getElementById("dashboardContent");
+        const clientTableBody = document.getElementById("clientTableBody");
+        const addClientForm = document.getElementById("addClientForm");
 
         if (!uid) {
             location.href = "/error.html";
         }
+        currentUid = uid;
 
+        // 校验账号
         fetch(WORKER_B, {
             method: "POST",
             headers: {
@@ -115,6 +157,8 @@
                 document.getElementById("userEmailDisplay").innerText = data.email;
                 loadingEl.classList.add("hidden");
                 contentEl.classList.remove("hidden");
+                // 校验成功，加载自己的客户列表
+                loadClientList();
             } else {
                 location.href = "/error.html";
             }
@@ -123,6 +167,69 @@
             console.error("dashboard fetch error:", err);
             location.href = "/error.html";
         })
+
+        // 加载当前用户的客户列表
+        async function loadClientList(){
+            const res = await fetch(WORKER_B,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({uid:currentUid, action:"listClients"})
+            })
+            const ret = await res.json();
+            if(!ret.success){
+                clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-red-500">Load error</td></tr>`;
+                return;
+            }
+            const list = ret.list;
+            if(list.length ===0){
+                clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-slate-400">No clients yet, add your first client above.</td></tr>`;
+                return;
+            }
+            let html = "";
+            list.forEach(item=>{
+                html += `<tr class="border-b">
+                    <td class="p-3">${escapeHtml(item.clientName)}</td>
+                    <td class="p-3">${escapeHtml(item.contactEmail)}</td>
+                    <td class="p-3">${escapeHtml(item.phone)}</td>
+                    <td class="p-3">${escapeHtml(item.notes)}</td>
+                </tr>`
+            })
+            clientTableBody.innerHTML = html;
+        }
+
+        // 新增客户表单提交
+        addClientForm.addEventListener("submit",async function(e){
+            e.preventDefault();
+            const payload = {
+                clientName: document.getElementById("inp_clientName").value.trim(),
+                contactEmail: document.getElementById("inp_contactEmail").value.trim(),
+                phone: document.getElementById("inp_phone").value.trim(),
+                notes: document.getElementById("inp_notes").value.trim()
+            }
+            const res = await fetch(WORKER_B,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                    uid:currentUid,
+                    action:"addClient",
+                    payload:payload
+                })
+            })
+            const ret = await res.json();
+            if(ret.success){
+                addClientForm.reset();
+                loadClientList();
+            }else{
+                alert("Add failed: "+JSON.stringify(ret));
+            }
+        })
+
+        function escapeHtml(str){
+            if(!str) return "";
+            return str.replace(/[&<>"']/g, function(m){
+                return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];
+            })
+        }
 
         // Tab切换逻辑
         const tabBtns = document.querySelectorAll(".tab-btn");
