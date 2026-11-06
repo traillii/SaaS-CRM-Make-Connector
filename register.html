@@ -30,7 +30,7 @@ form.addEventListener("submit", async function(e){
       alert("注册成功！7秒后跳转到仪表盘");
       // 7秒后跳转dashboard，带上uid参数
       setTimeout(()=>{
-        window.location.href = `/dashboard?uid=${data.uid}`;
+        window.location.href = `/dashboard?uid=${ret.uid}`;
       },7000);
     }else{
       // 判断是否为邮箱已注册错误
