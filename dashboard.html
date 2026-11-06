@@ -123,7 +123,7 @@
         </div>
     </div>
     <script>
-        // 👉 Worker B地址
+             // 👉 Worker B地址
         const WORKER_B = "https://us-xiaoyan.qq596337481.workers.dev";
         let currentUid = null;
 
@@ -137,7 +137,9 @@
         const clientTableBody = document.getElementById("clientTableBody");
         const addClientForm = document.getElementById("addClientForm");
 
-
+        if (!uid) {
+            location.href = "/error.html";
+        }
         currentUid = uid;
 
         // 校验账号
@@ -163,62 +165,75 @@
         })
         .catch(err => {
             console.error("dashboard fetch error:", err);
+            // 【修改这里】账号校验失败才跳转；loadClientList的错误不会走这里
             location.href = "/error.html";
         })
 
         // 加载当前用户的客户列表
         async function loadClientList(){
-            const res = await fetch(WORKER_B,{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({uid:currentUid, action:"listClients"})
-            })
-            const ret = await res.json();
-            if(!ret.success){
-                clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-red-500">Load error</td></tr>`;
-                return;
+            try{
+                const res = await fetch(WORKER_B,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({uid:currentUid, action:"listClients"})
+                })
+                const ret = await res.json();
+                console.log("loadClients返回：", ret);
+                if(!ret.success){
+                    clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-red-500">Load error: ${JSON.stringify(ret)}</td></tr>`;
+                    return;
+                }
+                const list = ret.list;
+                if(list.length ===0){
+                    clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-slate-400">No clients yet, add your first client above.</td></tr>`;
+                    return;
+                }
+                let html = "";
+                list.forEach(item=>{
+                    html += `<tr class="border-b">
+                        <td class="p-3">${escapeHtml(item.clientName)}</td>
+                        <td class="p-3">${escapeHtml(item.contactEmail)}</td>
+                        <td class="p-3">${escapeHtml(item.phone)}</td>
+                        <td class="p-3">${escapeHtml(item.notes)}</td>
+                    </tr>`
+                })
+                clientTableBody.innerHTML = html;
+            }catch(err){
+                console.error("loadClientList异常", err);
+                clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-red-500">请求客户列表失败：${err.message}</td></tr>`;
+                // ⭐重点：这里不再跳转error，停留在页面展示错误！
             }
-            const list = ret.list;
-            if(list.length ===0){
-                clientTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-slate-400">No clients yet, add your first client above.</td></tr>`;
-                return;
-            }
-            let html = "";
-            list.forEach(item=>{
-                html += `<tr class="border-b">
-                    <td class="p-3">${escapeHtml(item.clientName)}</td>
-                    <td class="p-3">${escapeHtml(item.contactEmail)}</td>
-                    <td class="p-3">${escapeHtml(item.phone)}</td>
-                    <td class="p-3">${escapeHtml(item.notes)}</td>
-                </tr>`
-            })
-            clientTableBody.innerHTML = html;
         }
 
         // 新增客户表单提交
         addClientForm.addEventListener("submit",async function(e){
             e.preventDefault();
-            const payload = {
-                clientName: document.getElementById("inp_clientName").value.trim(),
-                contactEmail: document.getElementById("inp_contactEmail").value.trim(),
-                phone: document.getElementById("inp_phone").value.trim(),
-                notes: document.getElementById("inp_notes").value.trim()
-            }
-            const res = await fetch(WORKER_B,{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
-                    uid:currentUid,
-                    action:"addClient",
-                    payload:payload
+            try{
+                const payload = {
+                    clientName: document.getElementById("inp_clientName").value.trim(),
+                    contactEmail: document.getElementById("inp_contactEmail").value.trim(),
+                    phone: document.getElementById("inp_phone").value.trim(),
+                    notes: document.getElementById("inp_notes").value.trim()
+                }
+                const res = await fetch(WORKER_B,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({
+                        uid:currentUid,
+                        action:"addClient",
+                        payload:payload
+                    })
                 })
-            })
-            const ret = await res.json();
-            if(ret.success){
-                addClientForm.reset();
-                loadClientList();
-            }else{
-                alert("Add failed: "+JSON.stringify(ret));
+                const ret = await res.json();
+                if(ret.success){
+                    addClientForm.reset();
+                    loadClientList();
+                }else{
+                    alert("Add failed: "+JSON.stringify(ret));
+                }
+            }catch(err){
+                console.error("add client catch",err);
+                alert("新增客户异常："+err.message);
             }
         })
 
@@ -241,6 +256,7 @@
                 document.getElementById(targetId).classList.remove("hidden");
             }
         })
+
     </script>
 </body>
 </html>
