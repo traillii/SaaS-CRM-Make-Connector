@@ -18,7 +18,6 @@ form.addEventListener("submit", async function(e){
   console.log("数据：", {name, email});
 
   try{
-    // -------- 新增：先提交注册接口，后端Worker内部做邮箱查重校验 --------
     const res = await fetch(WORKER_URL, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -28,8 +27,11 @@ form.addEventListener("submit", async function(e){
     console.log("Worker返回：", ret);
 
     if(ret.success){
-      alert("成功！uid="+ret.uid);
-      // window.location.href = `/dashboard?uid=${ret.uid}`;
+      alert("注册成功！7秒后跳转到仪表盘");
+      // 7秒后跳转dashboard，带上uid参数
+      setTimeout(()=>{
+        window.location.href = `/dashboard?uid=${data.uid}`;
+      },7000);
     }else{
       // 判断是否为邮箱已注册错误
       if(ret.error && ret.error.code === "EMAIL_EXIST"){
@@ -37,7 +39,6 @@ form.addEventListener("submit", async function(e){
       }else{
         alert("失败："+JSON.stringify(ret));
       }
-      // window.location.href = "/error.html";
     }
   }catch(err){
     console.error("❌ fetch报错",err);
