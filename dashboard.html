@@ -138,38 +138,42 @@
         }
 
         // 加载客户列表
-        async function loadClientList() {
-            try {
-                const res = await fetch(WORKER_B_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({ uid, action:"listClients" })
-                });
-                const data = await res.json();
-                if (!data.success || data.list.length === 0) {
-                    clientListBox.innerHTML = `<div class="p-10 text-center text-slate-400">No clients yet, add your first client above.</div>`;
-                    return;
-                }
-                let html = `<table class="w-full"><thead class="bg-slate-50"><tr class="text-left text-sm text-slate-500">
+async function loadClientList() {
+    try {
+        const res = await fetch(WORKER_B_URL, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ uid, action:"listClients" })
+        });
+        const data = await res.json();
+        // 兜底：list不存在赋值空数组
+        const list = data.list || [];
+        if (!data.success || list.length === 0) {
+            clientListBox.innerHTML = `<div class="p-10 text-center text-slate-400">No clients yet, add your first client above.</div>`;
+            return;
+        }
+        let html = `<table class="w-full"><thead class="bg-slate-50"><tr class="text-left text-sm text-slate-500">
                     <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Phone</th>
                     <th class="px-4 py-3">Notes</th>
                 </tr></thead><tbody>`;
-                data.list.forEach(item=>{
-                    html += `<tr class="border-t">
+        list.forEach(item=>{
+            html += `<tr class="border-t">
                         <td class="px-4 py-3">${item.clientName}</td>
                         <td class="px-4 py-3">${item.contactEmail}</td>
                         <td class="px-4 py-3">${item.phone}</td>
                         <td class="px-4 py-3">${item.notes}</td>
                     </tr>`;
-                })
-                html += "</tbody></table>";
-                clientListBox.innerHTML = html;
-            } catch (err) {
-                console.error(err);
-            }
-        }
+        })
+        html += "</tbody></table>";
+        clientListBox.innerHTML = html;
+    } catch (err) {
+        console.error(err);
+        clientListBox.innerHTML = `<div class="p-10 text-center text-red-400">Load client error</div>`;
+    }
+}
+
 
         // 新增客户
         addForm.addEventListener("submit", async (e)=>{
