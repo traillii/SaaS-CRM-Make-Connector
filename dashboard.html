@@ -39,34 +39,31 @@
                 ← Back to Home
             </a>
         </header>
-
         <div id="loadingBox" class="py-20 text-center text-slate-500">
             Verifying your account...
         </div>
-
         <div id="mainBox" class="hidden">
             <div class="mb-6">
                 <p class="text-slate-600">Welcome, <span id="userEmail" class="font-medium"></span></p>
             </div>
-
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">Your Clients</h2>
                 <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
                     + Add Client
                 </button>
             </div>
-
             <div id="clientListBox" class="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div class="p-10 text-center text-slate-400">
                     No clients yet, add your first client above.
                 </div>
             </div>
 
-            <!-- 新增客户弹窗 -->
+            <!-- 新增/编辑共用弹窗 -->
             <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                 <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-                    <h3 class="text-lg font-semibold mb-4">Add New Client</h3>
+                    <h3 id="modalTitle" class="text-lg font-semibold mb-4">Add New Client</h3>
                     <form id="addForm">
+                        <input type="hidden" id="editPageId" name="editPageId" value="">
                         <div class="mb-3">
                             <label class="block text-sm text-slate-600 mb-1">Client Name *</label>
                             <input required name="clientName" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
@@ -92,11 +89,8 @@
             </div>
         </div>
     </div>
-
     <script>
-        // ========== 这里改成你的 WorkerB 地址 ==========
         const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
-
         const loadingBox = document.getElementById("loadingBox");
         const mainBox = document.getElementById("mainBox");
         const userEmailEl = document.getElementById("userEmail");
@@ -105,16 +99,15 @@
         const openAddBtn = document.getElementById("openAddBtn");
         const closeModalBtn = document.getElementById("closeModalBtn");
         const addForm = document.getElementById("addForm");
+        const modalTitle = document.getElementById("modalTitle");
+        const editPageIdInput = document.getElementById("editPageId");
 
-        // 获取url上的uid
         const params = new URLSearchParams(location.search);
         const uid = params.get("uid");
-
         if (!uid) {
             location.href = "/error.html";
         }
 
-        // 校验用户身份
         async function verifyUser() {
             try {
                 const res = await fetch(WORKER_B_URL, {
@@ -137,48 +130,68 @@
             }
         }
 
-        // 加载客户列表
-async function loadClientList() {
-    try {
-        const res = await fetch(WORKER_B_URL, {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ uid, action:"listClients" })
-        });
-        const data = await res.json();
-        // 兜底：list不存在赋值空数组
-        const list = data.list || [];
-        if (!data.success || list.length === 0) {
-            clientListBox.innerHTML = `<div class="p-10 text-center text-slate-400">No clients yet, add your first client above.</div>`;
-            return;
-        }
-        let html = `<table class="w-full"><thead class="bg-slate-50"><tr class="text-left text-sm text-slate-500">
+        async function loadClientList() {
+            try {
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({ uid, action:"listClients" })
+                });
+                const data = await res.json();
+                const list = data.list || [];
+                if (!data.success || list.length === 0) {
+                    clientListBox.innerHTML = `<div class="p-10 text-center text-slate-400">No clients yet, add your first client above.</div>`;
+                    return;
+                }
+                let html = `<table class="w-full"><thead class="bg-slate-50"><tr class="text-left text-sm text-slate-500">
                     <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Phone</th>
                     <th class="px-4 py-3">Notes</th>
+                    <th class="px-4 py-3">Created</th>
+                    <th class="px-4 py-3">Operate</th>
                 </tr></thead><tbody>`;
-        list.forEach(item=>{
-            html += `<tr class="border-t">
+                list.forEach(item=>{
+                    html += `<tr class="border-t">
                         <td class="px-4 py-3">${item.clientName}</td>
                         <td class="px-4 py-3">${item.contactEmail}</td>
                         <td class="px-4 py-3">${item.phone}</td>
                         <td class="px-4 py-3">${item.notes}</td>
+                        <td class="px-4 py-3 text-sm">${item.createdTime || ""}</td>
+                        <td class="px-4 py-3">
+                            <button data-pageid="${item.pageId}" data-name="${item.clientName}" data-email="${item.contactEmail}" data-phone="${item.phone}" data-notes="${item.notes}" class="editBtn text-blue-600 hover:underline">Edit</button>
+                        </td>
                     </tr>`;
-        })
-        html += "</tbody></table>";
-        clientListBox.innerHTML = html;
-    } catch (err) {
-        console.error(err);
-        clientListBox.innerHTML = `<div class="p-10 text-center text-red-400">Load client error</div>`;
-    }
-}
+                })
+                html += "</tbody></table>";
+                clientListBox.innerHTML = html;
 
+                // 绑定编辑按钮事件
+                document.querySelectorAll(".editBtn").forEach(btn=>{
+                    btn.onclick = function(){
+                        const pid = this.dataset.pageid;
+                        addForm.reset();
+                        editPageIdInput.value = pid;
+                        modalTitle.innerText = "Edit Client";
+                        addForm.clientName.value = this.dataset.name;
+                        addForm.contactEmail.value = this.dataset.email;
+                        addForm.phone.value = this.dataset.phone;
+                        addForm.notes.value = this.dataset.notes;
+                        addModal.classList.remove("hidden");
+                    }
+                })
 
-        // 新增客户
+            } catch (err) {
+                console.error(err);
+                clientListBox.innerHTML = `<div class="p-10 text-center text-red-400">Load client error</div>`;
+            }
+        }
+
+        // 表单提交：新增 or 编辑
         addForm.addEventListener("submit", async (e)=>{
             e.preventDefault();
             const formData = new FormData(addForm);
+            const editPageId = editPageIdInput.value.trim();
             const payload = {
                 clientName: formData.get("clientName"),
                 contactEmail: formData.get("contactEmail"),
@@ -186,15 +199,31 @@ async function loadClientList() {
                 notes: formData.get("notes")
             };
             try {
-                const res = await fetch(WORKER_B_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({ uid, action:"addClient", payload })
-                });
-                const data = await res.json();
+                let res,data;
+                if(editPageId){
+                    // 编辑模式
+                    payload.pageId = editPageId;
+                    res = await fetch(WORKER_B_URL, {
+                        method: "POST",
+                        headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({ uid, action:"editClient", payload })
+                    });
+                    data = await res.json();
+                }else{
+                    // 新增模式
+                    res = await fetch(WORKER_B_URL, {
+                        method: "POST",
+                        headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({ uid, action:"addClient", payload })
+                    });
+                    data = await res.json();
+                }
+
                 if (data.success) {
                     addModal.classList.add("hidden");
                     addForm.reset();
+                    editPageIdInput.value = "";
+                    modalTitle.innerText = "Add New Client";
                     loadClientList();
                 } else {
                     alert(data.error || "Save failed");
@@ -205,8 +234,19 @@ async function loadClientList() {
             }
         })
 
-        openAddBtn.onclick = ()=> addModal.classList.remove("hidden");
-        closeModalBtn.onclick = ()=> addModal.classList.add("hidden");
+        // 打开新增弹窗
+        openAddBtn.onclick = ()=>{
+            addForm.reset();
+            editPageIdInput.value = "";
+            modalTitle.innerText = "Add New Client";
+            addModal.classList.remove("hidden");
+        };
+        closeModalBtn.onclick = ()=> {
+            addModal.classList.add("hidden");
+            addForm.reset();
+            editPageIdInput.value = "";
+            modalTitle.innerText = "Add New Client";
+        };
 
         verifyUser();
     </script>
