@@ -3,112 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login | Nordic CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#334155',
-                        neutral: '#f8fafc',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
+                        primary: '#2563eb',
+                    }
                 }
             }
         }
     </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-        }
-    </style>
 </head>
-<body class="bg-neutral text-primary min-h-screen flex items-center justify-center px-4">
-    <div class="w-full max-w-md">
-        <div class="mb-8 text-center">
-            <a href="/" class="text-slate-500 hover:text-primary">← Back to Home</a>
-            <h1 class="text-[clamp(1.8rem,4vw,2.4rem)] font-semibold mt-4">Sign in</h1>
-            <p class="text-slate-500 mt-2">Enter your email to access your dashboard</p>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center px-4">
+    <div class="bg-white w-full max-w-md p-8 rounded-xl shadow">
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Login</h1>
+        <p class="text-slate-500 mb-6">Enter your registered email to sign in</p>
+        <form id="loginForm">
+            <div class="mb-4">
+                <label class="block text-sm text-slate-600 mb-1">Email</label>
+                <input required type="email" name="email" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-primary/50">
+            </div>
+            <div id="msgBox" class="mb-4 text-red-500 text-sm hidden"></div>
+            <button type="submit" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90">Sign In</button>
+        </form>
+        <div class="mt-4 text-center">
+            <a href="/index.html" class="text-primary hover:underline">← Back to Sign Up</a>
         </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-8">
-            <form id="loginForm">
-                <div class="mb-6">
-                    <label class="block text-sm text-slate-600 mb-2">Email address</label>
-                    <input 
-                        type="email" 
-                        id="emailInput"
-                        required
-                        class="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300 transition"
-                        placeholder="you@example.com"
-                    >
-                </div>
-
-                <button 
-                    type="submit"
-                    id="submitBtn"
-                    class="w-full bg-primary text-white py-3 rounded-lg hover:bg-slate-700 transition"
-                >
-                    Continue
-                </button>
-            </form>
-
-            <div id="msgBox" class="mt-4 text-center hidden"></div>
-        </div>
-        <p class="text-center text-slate-500 text-sm mt-6">
-            Don’t have an account?
-            <a href="/register.html" class="text-primary underline">Register</a>
-        </p>
     </div>
 
     <script>
-        // 👉 修改为你的【登录查询Worker地址】（接收email去查用户）
-        const LOGIN_WORKER_URL = "https://denglu.qq596337481.workers.dev";
-
-        const form = document.getElementById("loginForm");
-        const emailInput = document.getElementById("emailInput");
-        const submitBtn = document.getElementById("submitBtn");
+        const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
+        const loginForm = document.getElementById("loginForm");
         const msgBox = document.getElementById("msgBox");
 
-        form.addEventListener("submit", async (e) => {
+        function showMsg(text){
+            msgBox.innerText = text;
+            msgBox.classList.remove("hidden");
+        }
+
+        loginForm.addEventListener("submit",async (e)=>{
             e.preventDefault();
-            const email = emailInput.value.trim();
-            if (!email) return;
-
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Checking...";
             msgBox.classList.add("hidden");
-
-            try {
-                const res = await fetch(LOGIN_WORKER_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ email: email })
+            const fd = new FormData(loginForm);
+            const email = fd.get("email");
+            try{
+                const res = await fetch(WORKER_B_URL,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({
+                        action:"loginByEmail",
+                        email: email
+                    })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    // 查询成功，携带uid跳转到dashboard
-                    location.href = `/dashboard?uid=${data.uid}`;
-                } else {
-                    msgBox.textContent = data.msg || "No account found with this email.";
-                    msgBox.classList.remove("hidden");
-                    msgBox.classList.add("text-red-500");
+                if(!data.success){
+                    showMsg(data.error || "Login failed");
+                    return;
                 }
-            } catch (err) {
-                msgBox.textContent = "Connection error, please try again later.";
-                msgBox.classList.remove("hidden");
-                msgBox.classList.add("text-red-500");
+                // 登录成功跳转到dashboard
+                location.href = `/dashboard.html?uid=${data.uid}`;
+            }catch(err){
                 console.error(err);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Continue";
+                showMsg("Network error");
             }
         })
     </script>
