@@ -108,27 +108,33 @@
             location.href = "/error.html";
         }
 
-        async function verifyUser() {
-            try {
-                const res = await fetch(WORKER_B_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({ uid })
-                });
-                const data = await res.json();
-                if (!data.success) {
-                    location.href = "/error.html";
-                    return;
-                }
-                userEmailEl.innerText = data.email;
-                loadingBox.classList.add("hidden");
-                mainBox.classList.remove("hidden");
-                loadClientList();
-            } catch (err) {
-                console.error(err);
-                location.href = "/error.html";
-            }
+async function verifyUser() {
+    try {
+        const res = await fetch(WORKER_B_URL, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ uid })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            location.href = "/error.html";
+            return;
         }
+        userEmailEl.innerText = data.email;
+        const tipEl = document.createElement("div");
+        tipEl.className = "mt-2 text-sm";
+        tipEl.innerHTML = `<span class="text-blue-600">📦 当前套餐：${data.planName}（最多 ${data.maxClients} 客户）</span>`;
+        userEmailEl.parentElement.appendChild(tipEl);
+
+        loadingBox.classList.add("hidden");
+        mainBox.classList.remove("hidden");
+        loadClientList();
+    } catch (err) {
+        console.error(err);
+        location.href = "/error.html";
+    }
+}
+
 
         async function loadClientList() {
             try {
