@@ -37,8 +37,7 @@
             </div>
             <a href="/index.html" class="text-slate-500 hover:text-slate-800 flex items-center gap-1">
                 ← Back to Home
-            </a>
-            <a id="accountLink" href="#" class="px-3 py-2 hover:text-gray-600">账户管理</a>
+            </a>        
 
         </header>
         <div id="loadingBox" class="py-20 text-center text-slate-500">
@@ -48,6 +47,7 @@
             <div class="mb-6">
                 <p class="text-slate-600">Welcome, <span id="userEmail" class="font-medium"></span></p>
             </div>
+                <a id="accountLink" href="#" class="px-3 py-2 hover:text-gray-600">账户管理</a>
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">Your Clients</h2>
                 <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
@@ -92,8 +92,7 @@
         </div>
     </div>
     <script>
-        document.getElementById("accountLink").href = `account.html?uid=${uid}`;
-
+     
         const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
         const loadingBox = document.getElementById("loadingBox");
         const mainBox = document.getElementById("mainBox");
@@ -111,6 +110,7 @@
         if (!uid) {
             location.href = "/error.html";
         }
+   document.getElementById("accountLink").href = `account.html?uid=${uid}`;
 
 async function verifyUser() {
     try {
