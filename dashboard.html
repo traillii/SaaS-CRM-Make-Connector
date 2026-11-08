@@ -49,15 +49,34 @@
                 <a id="accountLink" href="#" class="px-3 py-2 hover:text-gray-600">账户管理</a>
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">Your Clients</h2>
-                <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
-                    + Add Client
-                </button>
+                <div class="flex gap-2">
+                    <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
+                        + Add Client
+                    </button>
+                    <button id="openBatchBtn" class="bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-600">
+                        Batch Import
+                    </button>
+                </div>
+
             </div>
             <div id="clientListBox" class="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div class="p-10 text-center text-slate-400">
                     No clients yet, add your first client above.
                 </div>
             </div>
+            <!-- 批量导入弹窗 -->
+            <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4">Batch Import Clients</h3>
+                    <p class="text-sm text-slate-500 mb-2">格式：Name,Email,Phone,Notes，每行一条</p>
+                    <textarea id="batchTextarea" rows="8" class="w-full border rounded-lg p-3"></textarea>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button id="closeBatchBtn" type="button" class="px-4 py-2 border rounded-lg">Cancel</button>
+                        <button id="submitBatchBtn" class="px-4 py-2 bg-primary text-white rounded-lg">Import</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 新增/编辑共用弹窗 -->
             <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                 <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
@@ -104,6 +123,12 @@
         const editPageIdInput = document.getElementById("editPageId");
         const params = new URLSearchParams(location.search);
         const uid = params.get("uid");
+        const openBatchBtn = document.getElementById("openBatchBtn");
+        const batchModal = document.getElementById("batchModal");
+        const closeBatchBtn = document.getElementById("closeBatchBtn");
+        const submitBatchBtn = document.getElementById("submitBatchBtn");
+        const batchTextarea = document.getElementById("batchTextarea");
+
 
         // 全局缓存套餐key
         let currentPlanKey = "";
@@ -124,6 +149,13 @@ async function verifyUser() {
         if (!data.success) {
             location.href = "/error.html";
             return;
+            // 控制批量导入按钮，Trial隐藏
+            if(currentPlanKey === "Trial"){
+                openBatchBtn.style.display = "none";
+            }else{
+                openBatchBtn.style.display = "inline-block";
+            }
+
         }
         // 缓存套餐标识
         currentPlanKey = data.planKey;
@@ -293,6 +325,47 @@ async function verifyUser() {
             modalTitle.innerText = "Add New Client";
         };
         verifyUser();
+        // 批量导入弹窗事件
+        openBatchBtn.onclick = ()=>{
+            batchTextarea.value = "";
+            batchModal.classList.remove("hidden");
+        };
+        closeBatchBtn.onclick = ()=>{
+            batchModal.classList.add("hidden");
+        };
+        
+        submitBatchBtn.onclick = async ()=>{
+            const raw = batchTextarea.value.trim();
+            if(!raw){
+                alert("请粘贴导入数据");
+                return;
+            }
+            // 按行分割，过滤空行
+            const lines = raw.split("\n").map(l=>l.trim()).filter(l=>!!l);
+            try{
+                const res = await fetch(WORKER_B_URL,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({
+                        uid,
+                        action:"batchAddClient",
+                        payload:{ lines }
+                    })
+                });
+                const data = await res.json();
+                if(!data.success){
+                    alert(data.error);
+                    return;
+                }
+                alert(data.message);
+                batchModal.classList.add("hidden");
+                loadClientList();
+            }catch(e){
+                console.error(e);
+                alert("批量导入请求失败");
+            }
+        };
+
     </script>
 </body>
 </html>
