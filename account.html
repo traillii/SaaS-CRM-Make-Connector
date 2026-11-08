@@ -39,7 +39,7 @@
         const workerB = "https://us-xiaoyan.qq596337481.workers.dev/";
         const urlParams = new URLSearchParams(location.search);
         const uid = urlParams.get("uid");
-
+document.getElementById("backBtn").href = `dashboard?uid=${uid}`;
         if (!uid) {
             location.href = "login.html";
         }
