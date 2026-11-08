@@ -38,7 +38,6 @@
             <a href="/index.html" class="text-slate-500 hover:text-slate-800 flex items-center gap-1">
                 ← Back to Home
             </a>        
-
         </header>
         <div id="loadingBox" class="py-20 text-center text-slate-500">
             Verifying your account...
@@ -59,7 +58,6 @@
                     No clients yet, add your first client above.
                 </div>
             </div>
-
             <!-- 新增/编辑共用弹窗 -->
             <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                 <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
@@ -104,9 +102,12 @@
         const addForm = document.getElementById("addForm");
         const modalTitle = document.getElementById("modalTitle");
         const editPageIdInput = document.getElementById("editPageId");
-
         const params = new URLSearchParams(location.search);
         const uid = params.get("uid");
+
+        // 全局缓存套餐key
+        let currentPlanKey = "";
+
         if (!uid) {
             location.href = "/error.html";
         }
@@ -124,12 +125,14 @@ async function verifyUser() {
             location.href = "/error.html";
             return;
         }
+        // 缓存套餐标识
+        currentPlanKey = data.planKey;
+
         userEmailEl.innerText = data.email;
         const tipEl = document.createElement("div");
         tipEl.className = "mt-2 text-sm";
         tipEl.innerHTML = `<span class="text-blue-600">📦 当前套餐：${data.planName}（最多 ${data.maxClients} 客户）</span>`;
         userEmailEl.parentElement.appendChild(tipEl);
-
         loadingBox.classList.add("hidden");
         mainBox.classList.remove("hidden");
         loadClientList();
@@ -138,8 +141,6 @@ async function verifyUser() {
         location.href = "/error.html";
     }
 }
-
-
         async function loadClientList() {
             try {
                 const res = await fetch(WORKER_B_URL, {
@@ -161,6 +162,7 @@ async function verifyUser() {
                     <th class="px-4 py-3">Created</th>
                     <th class="px-4 py-3">Operate</th>
                 </tr></thead><tbody>`;
+                const isTrial = currentPlanKey === "Trial";
                 list.forEach(item=>{
                     html += `<tr class="border-t">
                         <td class="px-4 py-3">${item.clientName}</td>
@@ -169,7 +171,8 @@ async function verifyUser() {
                         <td class="px-4 py-3">${item.notes}</td>
                         <td class="px-4 py-3 text-sm">${item.createdTime || ""}</td>
                         <td class="px-4 py-3">
-                            <button data-pageid="${item.pageId}" data-name="${item.clientName}" data-email="${item.contactEmail}" data-phone="${item.phone}" data-notes="${item.notes}" class="editBtn text-blue-600 hover:underline">Edit</button>
+                            <button data-pageid="${item.pageId}" data-name="${item.clientName}" data-email="${item.contactEmail}" data-phone="${item.phone}" data-notes="${item.notes}" class="editBtn text-blue-600 hover:underline mr-3">Edit</button>
+                            ${!isTrial ? `<button data-pageid="${item.pageId}" class="delBtn text-red-600 hover:underline">Delete</button>` : ""}
                         </td>
                     </tr>`;
                 })
@@ -189,11 +192,45 @@ async function verifyUser() {
                         addForm.notes.value = this.dataset.notes;
                         addModal.classList.remove("hidden");
                     }
-                })
+                });
+
+                // 绑定删除按钮事件
+                document.querySelectorAll(".delBtn").forEach(btn=>{
+                    btn.onclick = function(){
+                        const pageId = this.dataset.pageid;
+                        delClient(pageId);
+                    }
+                });
 
             } catch (err) {
                 console.error(err);
                 clientListBox.innerHTML = `<div class="p-10 text-center text-red-400">Load client error</div>`;
+            }
+        }
+
+        // 删除客户函数
+        async function delClient(pageId) {
+            if (!confirm("Are you sure you want to delete this client?")) return;
+            try {
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({
+                        uid,
+                        action: "deleteClient",
+                        payload: { pageId }
+                    })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.error);
+                    return;
+                }
+                alert("Deleted successfully");
+                loadClientList();
+            } catch(err) {
+                console.error(err);
+                alert("Delete request failed");
             }
         }
 
@@ -228,7 +265,6 @@ async function verifyUser() {
                     });
                     data = await res.json();
                 }
-
                 if (data.success) {
                     addModal.classList.add("hidden");
                     addForm.reset();
@@ -243,7 +279,6 @@ async function verifyUser() {
                 alert("Network error");
             }
         })
-
         // 打开新增弹窗
         openAddBtn.onclick = ()=>{
             addForm.reset();
@@ -257,7 +292,6 @@ async function verifyUser() {
             editPageIdInput.value = "";
             modalTitle.innerText = "Add New Client";
         };
-
         verifyUser();
     </script>
 </body>
