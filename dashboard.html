@@ -466,201 +466,211 @@
             }
         };
 
-        // ====================== 【项目模块JS开始】 ======================
-        const tabClient = document.getElementById("tabClient");
-        const tabProject = document.getElementById("tabProject");
-        const panelClient = document.getElementById("panelClient");
-        const panelProject = document.getElementById("panelProject");
-        let projectClientList = [];
+       // ====================== 【项目模块JS开始】 ======================
+const tabClient = document.getElementById("tabClient");
+const tabProject = document.getElementById("tabProject");
+const panelClient = document.getElementById("panelClient");
+const panelProject = document.getElementById("panelProject");
+let projectClientList = [];
 
-        // Tab切换
-        tabClient.onclick = () => {
-            tabClient.classList.add("border-b-2", "border-blue-500", "text-blue-600");
-            tabClient.classList.remove("border-transparent", "text-gray-500");
-            tabProject.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
-            tabProject.classList.add("border-transparent", "text-gray-500");
-            panelClient.classList.remove("hidden");
-            panelProject.classList.add("hidden");
-        };
-        tabProject.onclick = async () => {
-            tabProject.classList.add("border-b-2", "border-blue-500", "text-blue-600");
-            tabProject.classList.remove("border-transparent", "text-gray-500");
-            tabClient.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
-            tabClient.classList.add("border-transparent", "text-gray-500");
-            panelClient.classList.add("hidden");
-            panelProject.classList.remove("hidden");
-            await loadProjectClientOptions();
-            loadProjects();
-        };
+// Tab切换
+tabClient.onclick = () => {
+    tabClient.classList.add("border-b-2", "border-blue-500", "text-blue-600");
+    tabClient.classList.remove("border-transparent", "text-gray-500");
+    tabProject.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
+    tabProject.classList.add("border-transparent", "text-gray-500");
+    panelClient.classList.remove("hidden");
+    panelProject.classList.add("hidden");
+};
+tabProject.onclick = async () => {
+    tabProject.classList.add("border-b-2", "border-blue-500", "text-blue-600");
+    tabProject.classList.remove("border-transparent", "text-gray-500");
+    tabClient.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
+    tabClient.classList.add("border-transparent", "text-gray-500");
+    panelClient.classList.add("hidden");
+    panelProject.classList.remove("hidden");
+    await loadProjectClientOptions();
+    loadProjects();
+};
 
-        // 加载客户下拉（项目新增弹窗）
-        async function loadProjectClientOptions(){
-            const res = await fetch(WORKER_B_URL, {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({ uid, action:"listClients" })
-            })
-            const json = await res.json();
-            const sel = document.getElementById("selProjectClient");
-            sel.innerHTML = `<option value="">-- 不关联客户 --</option>`;
-            if(json.success){
-                projectClientList = json.list;
-                json.list.forEach(c=>{
-                    const opt = document.createElement("option");
-                    opt.value = c.pageId;
-                    opt.innerText = c.clientName;
-                    sel.appendChild(opt);
-                })
-            }
-        }
+// 加载客户下拉（新增项目弹窗）
+async function loadProjectClientOptions(){
+    const res = await fetch(WORKER_B_URL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ uid, action:"listClients" })
+    })
+    const json = await res.json();
+    const sel = document.getElementById("selProjectClient");
+    sel.innerHTML = `<option value="">-- 不关联客户 --</option>`;
+    if(json.success){
+        projectClientList = json.list;
+        json.list.forEach(c=>{
+            const opt = document.createElement("option");
+            opt.value = c.pageId;
+            opt.innerText = c.clientName;
+            sel.appendChild(opt);
+        })
+    }
+}
 
-        // 加载项目列表
-        async function loadProjects(){
-            const tbody = document.getElementById("projectTableBody");
-            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">加载中...</td></tr>`;
-            const res = await fetch(WORKER_B_URL, {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({action:"getProjects", uid})
-            })
-            const json = await res.json();
-            if(!json.success){
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">${json.error||json.msg}</td></tr>`;
-                return;
-            }
-            const projects = json.projects;
-            if(projects.length === 0){
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">暂无项目，点击新增</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = "";
-            projects.forEach(p=>{
-                const showDelBtn = true; // 所有账号都可以删除项目
-                const findClient = projectClientList.find(c=>c.pageId === p.clientPageId);
-                const clientName = findClient ? findClient.clientName : "-";
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td class="border p-2">${p.projectName}</td>
-                    <td class="border p-2">${clientName}</td>
-                    <td class="border p-2">${p.billingType}</td>
-                    <td class="border p-2 text-right">${p.rateAmount}</td>
-                    <td class="border p-2 text-right">${p.totalHours}</td>
-                    <td class="border p-2 text-right">${p.projectValue}</td>
-                    <td class="border p-2 text-center">
-                        <a class="text-blue-500 cursor-pointer mr-3" onclick="openEditProject('${item.id}','${item.projectName}','${item.clientPageId}','${item.billingType}',${item.rateAmount},${item.totalHours})">编辑</a>
-                        <a class="text-red-500 cursor-pointer" onclick="delProject('${item.id}')">删除</a>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            })
-            //绑定删除
-            document.querySelectorAll(".delProBtn").forEach(btn=>{
-                btn.onclick = async ()=>{
-                    if(!confirm("确定删除这个项目？")) return;
-                    const pid = btn.dataset.id;
-                    const delRes = await fetch(WORKER_B_URL, {
-                        method:"POST",
-                        headers:{"Content-Type":"application/json"},
-                        body: JSON.stringify({action:"deleteProject", uid, projectId: pid})
-                    })
-                    const delJson = await delRes.json();
-                    alert(delJson.error||delJson.msg);
-                    loadProjects();
-                }
-            })
-        }
+// 给编辑弹窗填充客户下拉
+function fillEditClientSelect(){
+    const sel = document.getElementById("editProjectClient");
+    sel.innerHTML = "";
+    projectClientList.forEach(c=>{
+        const opt = document.createElement("option");
+        opt.value = c.pageId;
+        opt.innerText = c.clientName;
+        sel.appendChild(opt);
+    })
+}
 
-        //新增项目弹窗
-        const modalAddProject = document.getElementById("modalAddProject");
-        document.getElementById("btnAddProject").onclick = ()=>{
-            modalAddProject.classList.remove("hidden");
-            modalAddProject.classList.add("flex");
-        }
-        document.getElementById("closeProjectModal").onclick = ()=>{
-            modalAddProject.classList.add("hidden");
-            modalAddProject.classList.remove("flex");
-        }
-        document.getElementById("submitAddProject").onclick = async ()=>{
-            const projectName = document.getElementById("inpProjectName").value.trim();
-            const clientPageId = document.getElementById("selProjectClient").value;
-            const billingType = document.getElementById("selBillingType").value;
-            const rateAmount = Number(document.getElementById("inpRateAmount").value);
-            const totalHours = Number(document.getElementById("inpTotalHours").value);
+// 加载项目列表
+async function loadProjects(){
+    const tbody = document.getElementById("projectTableBody");
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">加载中...</td></tr>`;
+    const res = await fetch(WORKER_B_URL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({action:"getProjects", uid})
+    })
+    const json = await res.json();
+    if(!json.success){
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">${json.error||json.msg}</td></tr>`;
+        return;
+    }
+    const projects = json.projects;
+    if(projects.length === 0){
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">暂无项目，点击新增</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = "";
+    projects.forEach(p=>{
+        const findClient = projectClientList.find(c=>c.pageId === p.clientPageId);
+        const clientName = findClient ? findClient.clientName : "-";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td class="border p-2">${p.projectName}</td>
+            <td class="border p-2">${clientName}</td>
+            <td class="border p-2">${p.billingType}</td>
+            <td class="border p-2 text-right">${p.rateAmount}</td>
+            <td class="border p-2 text-right">${p.totalHours}</td>
+            <td class="border p-2 text-right">${p.projectValue}</td>
+            <td class="border p-2 text-center">
+                <a class="text-blue-500 cursor-pointer mr-3" onclick="openEditProject('${p.id}','${p.projectName}','${p.clientPageId}','${p.billingType}',${p.rateAmount},${p.totalHours})">编辑</a>
+                <a class="text-red-500 cursor-pointer" onclick="delProject('${p.id}')">删除</a>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    })
+}
 
-            if(!projectName){
-                alert("请填写项目名称");
-                return;
-            }
-            const payload = {
-                action:"addProject",
-                uid,
-                projectName,
-                clientPageId,
-                billingType,
-                rateAmount,
-                totalHours
-            }
-            const res = await fetch(WORKER_B_URL, {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify(payload)
-            })
-            const json = await res.json();
-            alert(json.error||json.msg);
-            if(json.success){
-                modalAddProject.classList.add("hidden");
-                modalAddProject.classList.remove("flex");
-                loadProjects();
-            }
-        };
-        // ====================== 【项目模块JS结束】 ======================
-        // 打开编辑弹窗，回填数据
+// 删除项目函数
+async function delProject(projectId){
+    if(!confirm("确定删除这个项目？")) return;
+    const delRes = await fetch(WORKER_B_URL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({action:"deleteProject", uid, projectId: projectId})
+    })
+    const delJson = await delRes.json();
+    alert(delJson.error||delJson.msg);
+    loadProjects();
+}
+
+//新增项目弹窗
+const modalAddProject = document.getElementById("modalAddProject");
+document.getElementById("btnAddProject").onclick = ()=>{
+    modalAddProject.classList.remove("hidden");
+    modalAddProject.classList.add("flex");
+}
+document.getElementById("closeProjectModal").onclick = ()=>{
+    modalAddProject.classList.add("hidden");
+    modalAddProject.classList.remove("flex");
+}
+document.getElementById("submitAddProject").onclick = async ()=>{
+    const projectName = document.getElementById("inpProjectName").value.trim();
+    const clientPageId = document.getElementById("selProjectClient").value;
+    const billingType = document.getElementById("selBillingType").value;
+    const rateAmount = Number(document.getElementById("inpRateAmount").value);
+    const totalHours = Number(document.getElementById("inpTotalHours").value);
+    if(!projectName){
+        alert("请填写项目名称");
+        return;
+    }
+    const payload = {
+        action:"addProject",
+        uid,
+        projectName,
+        clientPageId,
+        billingType,
+        rateAmount,
+        totalHours
+    }
+    const res = await fetch(WORKER_B_URL, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+    })
+    const json = await res.json();
+    alert(json.error||json.msg);
+    if(json.success){
+        modalAddProject.classList.add("hidden");
+        modalAddProject.classList.remove("flex");
+        loadProjects();
+    }
+};
+
+// 打开编辑弹窗，回填数据
 function openEditProject(pid, pname, cid, bill, rate, hours) {
-  document.getElementById('editProjectId').value = pid;
-  document.getElementById('editProjectName').value = pname;
-  document.getElementById('editProjectClient').value = cid;
-  document.getElementById('editBillingType').value = bill;
-  document.getElementById('editRateAmount').value = rate;
-  document.getElementById('editTotalHours').value = hours;
-  document.getElementById('editProjectModal').classList.remove('hidden');
-  document.getElementById('editProjectModal').classList.add('flex');
+    fillEditClientSelect(); // 先填充客户下拉列表
+    document.getElementById('editProjectId').value = pid;
+    document.getElementById('editProjectName').value = pname;
+    document.getElementById('editProjectClient').value = cid;
+    document.getElementById('editBillingType').value = bill;
+    document.getElementById('editRateAmount').value = rate;
+    document.getElementById('editTotalHours').value = hours;
+    document.getElementById('editProjectModal').classList.remove('hidden');
+    document.getElementById('editProjectModal').classList.add('flex');
 }
 function closeEditProject() {
-  document.getElementById('editProjectModal').classList.add('hidden');
-  document.getElementById('editProjectModal').classList.remove('flex');
+    document.getElementById('editProjectModal').classList.add('hidden');
+    document.getElementById('editProjectModal').classList.remove('flex');
 }
 // 提交编辑
 async function saveEditProject() {
-  const pid = document.getElementById('editProjectId').value;
-  const pname = document.getElementById('editProjectName').value.trim();
-  const cid = document.getElementById('editProjectClient').value;
-  const bill = document.getElementById('editBillingType').value;
-  const rate = document.getElementById('editRateAmount').value;
-  const hours = document.getElementById('editTotalHours').value;
+    const pid = document.getElementById('editProjectId').value;
+    const pname = document.getElementById('editProjectName').value.trim();
+    const cid = document.getElementById('editProjectClient').value;
+    const bill = document.getElementById('editBillingType').value;
+    const rate = document.getElementById('editRateAmount').value;
+    const hours = document.getElementById('editTotalHours').value;
 
-  const res = await fetch(workerUrl, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      action:"editProject",
-      uid: userUid,
-      projectId: pid,
-      projectName: pname,
-      clientPageId: cid,
-      billingType: bill,
-      rateAmount: rate,
-      totalHours: hours
-    })
-  });
-  const json = await res.json();
-  if(json.success){
-    alert(json.msg);
-    closeEditProject();
-    loadProjects();
-  }else{
-    alert(json.error);
-  }
+    const res = await fetch(WORKER_B_URL, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            action:"editProject",
+            uid: uid,
+            projectId: pid,
+            projectName: pname,
+            clientPageId: cid,
+            billingType: bill,
+            rateAmount: rate,
+            totalHours: hours
+        })
+    });
+    const json = await res.json();
+    if(json.success){
+        alert(json.msg);
+        closeEditProject();
+        loadProjects();
+    }else{
+        alert(json.error);
+    }
 }
+// ====================== 【项目模块JS结束】 ======================
 
     </script>
 </body>
