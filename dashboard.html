@@ -498,7 +498,7 @@
             }
             tbody.innerHTML = "";
             projects.forEach(p=>{
-                const showDelBtn = currentPlanKey !== "Trial";
+                const showDelBtn = true; // 所有账号都可以删除项目
                 const findClient = projectClientList.find(c=>c.pageId === p.clientPageId);
                 const clientName = findClient ? findClient.clientName : "-";
                 const tr = document.createElement("tr");
