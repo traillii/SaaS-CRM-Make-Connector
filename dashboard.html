@@ -52,6 +52,8 @@
             <div class="flex border-b mb-6 mt-4">
                 <button id="tabClient" class="px-4 py-2 border-b-2 border-blue-500 text-blue-600 font-medium">客户管理</button>
                 <button id="tabProject" class="px-4 py-2 border-b-2 border-transparent text-gray-500 font-medium">项目管理</button>
+                <!--新增发票tab-->
+                <button id="tabInvoice" class="px-4 py-2 border-b-2 border-transparent text-gray-500 font-medium">发票管理</button>
             </div>
 
             <!-- 客户面板 -->
@@ -139,6 +141,11 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- 发票面板 iframe嵌入独立页面 -->
+                <div id="panelInvoice" class="hidden mt-4">
+                    <iframe id="invoiceIframe" style="width:100%;min-height:750px;border:none;"></iframe>
+                </div>
+
                 <!-- 新增项目弹窗 -->
                 <div id="modalAddProject" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
                     <div class="bg-white p-6 rounded-lg w-full max-w-md">
@@ -473,25 +480,54 @@ const panelClient = document.getElementById("panelClient");
 const panelProject = document.getElementById("panelProject");
 let projectClientList = [];
 
-// Tab切换
+// Tab切换js
+const tabInvoice = document.getElementById("tabInvoice");
+const panelInvoice = document.getElementById("panelInvoice");
+const invoiceIframe = document.getElementById("invoiceIframe");
+
+//tabClient.onclick原有不变
 tabClient.onclick = () => {
     tabClient.classList.add("border-b-2", "border-blue-500", "text-blue-600");
     tabClient.classList.remove("border-transparent", "text-gray-500");
     tabProject.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
     tabProject.classList.add("border-transparent", "text-gray-500");
+    tabInvoice.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
+    tabInvoice.classList.add("border-transparent", "text-gray-500");
     panelClient.classList.remove("hidden");
     panelProject.classList.add("hidden");
+    panelInvoice.classList.add("hidden");
 };
+
 tabProject.onclick = async () => {
     tabProject.classList.add("border-b-2", "border-blue-500", "text-blue-600");
     tabProject.classList.remove("border-transparent", "text-gray-500");
     tabClient.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
     tabClient.classList.add("border-transparent", "text-gray-500");
+    tabInvoice.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
+    tabInvoice.classList.add("border-transparent", "text-gray-500");
     panelClient.classList.add("hidden");
     panelProject.classList.remove("hidden");
+    panelInvoice.classList.add("hidden");
     await loadProjectClientOptions();
     loadProjects();
 };
+
+//新增发票tab点击事件
+tabInvoice.onclick = ()=>{
+    tabInvoice.classList.add("border-b-2", "border-blue-500", "text-blue-600");
+    tabInvoice.classList.remove("border-transparent", "text-gray-500");
+    tabClient.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
+    tabClient.classList.add("border-transparent", "text-gray-500");
+    tabProject.classList.remove("border-b-2", "border-blue-500", "text-blue-600");
+    tabProject.classList.add("border-transparent", "text-gray-500");
+
+    panelClient.classList.add("hidden");
+    panelProject.classList.add("hidden");
+    panelInvoice.classList.remove("hidden");
+    // 传入uid给iframe页面
+    invoiceIframe.src = `/invoices.html?uid=${uid}`;
+}
+
 
 // 加载客户下拉（新增项目弹窗）
 async function loadProjectClientOptions(){
