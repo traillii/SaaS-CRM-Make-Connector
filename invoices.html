@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发票管理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:99;align-items:center;justify-content:center;}
+.modal.active{display:flex;}
+</style>
+</head>
+<body class="bg-gray-50 p-4">
+<div class="max-w-7xl mx-auto">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold">发票列表</h2>
+    <button id="btnAddInv" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">新增发票</button>
+  </div>
+  <div class="overflow-x-auto bg-white rounded-lg shadow">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="text-left p-3">发票编号</th>
+          <th class="text-left p-3">项目</th>
+          <th class="text-left p-3">客户国家</th>
+          <th class="text-left p-3">不含税金额</th>
+          <th class="text-left p-3">税率</th>
+          <th class="text-left p-3">应付总额</th>
+          <th class="text-left p-3">付款状态</th>
+          <th class="text-left p-3">到期日</th>
+          <th class="text-left p-3">操作</th>
+        </tr>
+      </thead>
+      <tbody id="invTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal" id="invModal">
+  <div class="bg-white rounded-xl w-full max-w-lg p-6 mx-4">
+    <h3 class="text-lg font-semibold mb-4" id="modalTitle">新增发票</h3>
+    <input type="hidden" id="editPageId">
+    <div class="grid gap-3">
+      <div>
+        <label class="block text-sm text-gray-600">发票编号</label>
+        <input class="w-full border rounded p-2" id="invId" placeholder="INV-2026-001">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">项目PageID</label>
+        <input class="w-full border rounded p-2" id="invProjId" placeholder="项目Notion pageId">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">客户PageID</label>
+        <input class="w-full border rounded p-2" id="invClientId" placeholder="客户Notion pageId">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">客户国家</label>
+        <input class="w-full border rounded p-2" id="invCountry" placeholder="Sweden">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">不含税金额 €</label>
+        <input class="w-full border rounded p-2" type="number" step="0.01" id="invNet">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">VAT税率 %</label>
+        <input class="w-full border rounded p-2" type="number" step="0.01" id="invVatRate">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">到期日</label>
+        <input class="w-full border rounded p-2" type="date" id="invDue">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600">付款状态</label>
+        <select class="w-full border rounded p-2" id="invStatus">
+          <option value="Draft">Draft 草稿</option>
+          <option value="Sent">Sent 已发送</option>
+          <option value="Paid">Paid 已付款</option>
+          <option value="Overdue">Overdue 逾期</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button id="btnCloseModal" class="px-4 py-2 border rounded-lg">取消</button>
+      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-lg">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev/"; // 改成你的WorkerB地址
+let uid = "";
+
+// 读取url参数uid
+function getUrlParam(name){
+  const params = new URLSearchParams(location.search);
+  return params.get(name);
+}
+
+// 初始化
+(async function init(){
+  uid = getUrlParam("uid");
+  if(!uid){
+    alert("uid缺失，请从面板进入");
+    return;
+  }
+  await loadInvoiceList();
+})();
+
+// 加载发票列表
+async function loadInvoiceList(){
+  const res = await fetch(WORKER_B_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"listInvoices",uid})
+  })
+  const ret = await res.json();
+  const tbody = document.getElementById("invTableBody");
+  tbody.innerHTML = "";
+  if(!ret.success){
+    alert("加载失败："+ret.error);
+    return;
+  }
+  ret.invoices.forEach(inv=>{
+    let statusColor = "bg-gray-100 text-gray-700";
+    if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
+    if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
+    if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
+    const tr = document.createElement("tr");
+    tr.className = "border-b";
+    tr.innerHTML = `
+      <td class="p-3">${inv.invoiceId}</td>
+      <td class="p-3 text-xs text-gray-500">${inv.projectPageId.slice(0,12)}...</td>
+      <td class="p-3">${inv.clientCountry}</td>
+      <td class="p-3">€${inv.netAmount}</td>
+      <td class="p-3">${inv.vatRate}%</td>
+      <td class="p-3 font-medium">€${inv.grossTotal}</td>
+      <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
+      <td class="p-3">${inv.dueDate}</td>
+      <td class="p-3">
+        <button class="editBtn text-blue-600 hover:underline" data-id="${inv.id}" data-inv='${JSON.stringify(inv)}'>编辑</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  })
+
+  // 绑定编辑按钮
+  document.querySelectorAll(".editBtn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const invData = JSON.parse(btn.dataset.inv);
+      openEditModal(invData, btn.dataset.id);
+    }
+  })
+}
+
+const modal = document.getElementById("invModal");
+const modalTitle = document.getElementById("modalTitle");
+const btnAddInv = document.getElementById("btnAddInv");
+const btnCloseModal = document.getElementById("btnCloseModal");
+const btnSaveInv = document.getElementById("btnSaveInv");
+
+// 打开新增弹窗
+btnAddInv.onclick = ()=>{
+  modalTitle.innerText = "新增发票";
+  document.getElementById("editPageId").value = "";
+  //清空表单
+  document.getElementById("invId").value = "";
+  document.getElementById("invProjId").value = "";
+  document.getElementById("invClientId").value = "";
+  document.getElementById("invCountry").value = "";
+  document.getElementById("invNet").value = "";
+  document.getElementById("invVatRate").value = "";
+  document.getElementById("invDue").value = "";
+  document.getElementById("invStatus").value = "Draft";
+  modal.classList.add("active");
+}
+
+//打开编辑弹窗
+function openEditModal(inv,pageId){
+  modalTitle.innerText = "编辑发票";
+  document.getElementById("editPageId").value = pageId;
+  document.getElementById("invId").value = inv.invoiceId;
+  document.getElementById("invProjId").value = inv.projectPageId;
+  document.getElementById("invClientId").value = inv.clientPageId;
+  document.getElementById("invCountry").value = inv.clientCountry;
+  document.getElementById("invNet").value = inv.netAmount;
+  document.getElementById("invVatRate").value = inv.vatRate;
+  document.getElementById("invDue").value = inv.dueDate;
+  document.getElementById("invStatus").value = inv.paymentStatus;
+  modal.classList.add("active");
+}
+
+btnCloseModal.onclick = ()=> modal.classList.remove("active");
+
+//保存
+btnSaveInv.onclick = async ()=>{
+  const editPageId = document.getElementById("editPageId").value.trim();
+  const payload = {
+    uid,
+    invoiceId: document.getElementById("invId").value.trim(),
+    projectPageId: document.getElementById("invProjId").value.trim(),
+    clientPageId: document.getElementById("invClientId").value.trim(),
+    clientCountry: document.getElementById("invCountry").value.trim(),
+    netAmount: Number(document.getElementById("invNet").value),
+    vatRate: Number(document.getElementById("invVatRate").value),
+    dueDate: document.getElementById("invDue").value,
+    paymentStatus: document.getElementById("invStatus").value
+  }
+
+  let actionName;
+  if(editPageId){
+    actionName = "editInvoice";
+    payload.invoicePageId = editPageId;
+  }else{
+    actionName = "addInvoice";
+  }
+
+  const res = await fetch(WORKER_B_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:actionName,...payload})
+  })
+  const ret = await res.json();
+  if(ret.success){
+    alert("保存成功");
+    modal.classList.remove("active");
+    loadInvoiceList();
+  }else{
+    alert(ret.error);
+  }
+}
+</script>
+</body>
+</html>
