@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>账号注册</title>
+</head>
 <body>
 <form id="registerForm">
   <input type="text" id="nameInput" placeholder="name">
@@ -15,8 +19,18 @@ form.addEventListener("submit", async function(e){
   console.log("✅ submit事件执行了！");
   const name = document.getElementById("nameInput").value.trim();
   const email = document.getElementById("emailInput").value.trim();
-  console.log("数据：", {name, email});
 
+  // 【新增】前端非空校验
+  if(!name){
+    alert("请填写姓名");
+    return;
+  }
+  if(!email){
+    alert("请填写邮箱");
+    return;
+  }
+
+  console.log("数据：", {name, email});
   try{
     const res = await fetch(WORKER_URL, {
       method:"POST",
@@ -28,16 +42,16 @@ form.addEventListener("submit", async function(e){
 
     if(ret.success){
       alert("注册成功！7秒后跳转到仪表盘");
-      // 7秒后跳转dashboard，带上uid参数
       setTimeout(()=>{
         window.location.href = `/dashboard?uid=${ret.uid}`;
       },7000);
     }else{
-      // 判断是否为邮箱已注册错误
-      if(ret.error && ret.error.code === "EMAIL_EXIST"){
+      // Worker返回error是字符串，直接对比字符串内容
+      const errMsg = ret.error || "未知错误";
+      if(errMsg === "EMAIL_EXIST"){
         alert("该邮箱已经注册");
       }else{
-        alert("失败："+JSON.stringify(ret));
+        alert("失败：" + errMsg);
       }
     }
   }catch(err){
