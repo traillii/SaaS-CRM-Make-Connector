@@ -20,7 +20,6 @@ form.addEventListener("submit", async function(e){
   const name = document.getElementById("nameInput").value.trim();
   const email = document.getElementById("emailInput").value.trim();
 
-  // 【新增】前端非空校验
   if(!name){
     alert("请填写姓名");
     return;
@@ -46,11 +45,12 @@ form.addEventListener("submit", async function(e){
         window.location.href = `/dashboard?uid=${ret.uid}`;
       },7000);
     }else{
-      // Worker返回error是字符串，直接对比字符串内容
-      const errMsg = ret.error || "未知错误";
-      if(errMsg === "EMAIL_EXIST"){
-        alert("该邮箱已经注册");
+      // 适配WorkerA error对象 {code,message}
+      const errObj = ret.error;
+      if(typeof errObj === "object" && errObj.code === "EMAIL_EXIST"){
+        alert(errObj.message);
       }else{
+        const errMsg = typeof errObj === "string" ? errObj : JSON.stringify(errObj);
         alert("失败：" + errMsg);
       }
     }
