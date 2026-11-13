@@ -12,12 +12,10 @@
 </head>
 <body class="bg-gray-50 p-4 min-h-[700px] overflow-auto">
 <div class="max-w-7xl mx-auto min-h-[650px]">
-
 <div class="flex justify-between items-center gap-4 mb-4">
   <h2 class="text-xl font-semibold flex-shrink-0">发票列表</h2>
   <button id="btnAddInv" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex-shrink-0">新增发票</button>
 </div>
-
   <div class="overflow-x-auto bg-white rounded-lg shadow">
     <table class="w-full text-sm">
       <thead class="bg-gray-100">
@@ -33,11 +31,12 @@
           <th class="text-left p-3">操作</th>
         </tr>
       </thead>
-      <tbody id="invTableBody"></tbody>
+      <tbody id="invTableBody">
+        <tr><td colspan="9" class="p-4 text-center text-gray-400">加载中…</td></tr>
+      </tbody>
     </table>
   </div>
 </div>
-
 <!-- 新增/编辑弹窗 -->
 <div class="modal" id="invModal">
   <div class="bg-white rounded-xl w-full max-w-lg p-6 mx-4">
@@ -88,71 +87,85 @@
     </div>
   </div>
 </div>
-
 <script>
-const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev/"; // 改成你的WorkerB地址
+const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev/";
 let uid = "";
+let invoiceListCache = []; // 内存缓存全部发票，修复data‑json引号bug
 
-// 读取url参数uid
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
   return params.get(name);
 }
 
-// 初始化
 (async function init(){
   uid = getUrlParam("uid");
   if(!uid){
     alert("uid缺失，请从面板进入");
     return;
   }
-  await loadInvoiceList();
+  try{
+    await loadInvoiceList();
+  }catch(e){
+    alert("初始化加载异常："+e.message);
+  }
 })();
 
-// 加载发票列表
 async function loadInvoiceList(){
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"listInvoices",uid})
-  })
-  const ret = await res.json();
   const tbody = document.getElementById("invTableBody");
-  tbody.innerHTML = "";
-  if(!ret.success){
-    alert("加载失败："+ret.error);
-    return;
-  }
-  ret.invoices.forEach(inv=>{
-    let statusColor = "bg-gray-100 text-gray-700";
-    if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
-    if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
-    if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
-    const tr = document.createElement("tr");
-    tr.className = "border-b";
-    tr.innerHTML = `
-      <td class="p-3">${inv.invoiceId}</td>
-      <td class="p-3 text-xs text-gray-500">${inv.projectPageId.slice(0,12)}...</td>
-      <td class="p-3">${inv.clientCountry}</td>
-      <td class="p-3">€${inv.netAmount}</td>
-      <td class="p-3">${inv.vatRate}%</td>
-      <td class="p-3 font-medium">€${inv.grossTotal}</td>
-      <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
-      <td class="p-3">${inv.dueDate}</td>
-      <td class="p-3">
-        <button class="editBtn text-blue-600 hover:underline" data-id="${inv.id}" data-inv='${JSON.stringify(inv)}'>编辑</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  })
-
-  // 绑定编辑按钮
-  document.querySelectorAll(".editBtn").forEach(btn=>{
-    btn.onclick = ()=>{
-      const invData = JSON.parse(btn.dataset.inv);
-      openEditModal(invData, btn.dataset.id);
+  tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-400">加载中…</td></tr>`;
+  try{
+    const res = await fetch(WORKER_B_URL,{
+      method:"POST",
+      headers:{"Content‑Type":"application/json"},
+      body:JSON.stringify({action:"listInvoices",uid})
+    })
+    const ret = await res.json();
+    tbody.innerHTML = "";
+    if(!ret.success){
+      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red‑500">${ret.error||"加载失败"}</td></tr>`;
+      return;
     }
-  })
+    invoiceListCache = ret.invoices || [];
+    if(invoiceListCache.length === 0){
+      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray‑400">暂无发票，点击新增发票</td></tr>`;
+      return;
+    }
+    invoiceListCache.forEach(inv=>{
+      let statusColor = "bg-gray‑100 text‑gray‑700";
+      if(inv.paymentStatus === "Sent") statusColor = "bg‑yellow‑100 text‑yellow‑700";
+      if(inv.paymentStatus === "Paid") statusColor = "bg‑green‑100 text‑green‑700";
+      if(inv.paymentStatus === "Overdue") statusColor = "bg‑red‑100 text‑red‑700";
+
+      const projShow = inv.projectPageId ? inv.projectPageId.slice(0,12)+"…" : "-";
+      const tr = document.createElement("tr");
+      tr.className = "border‑b";
+      tr.innerHTML = `
+        <td class="p‑3">${inv.invoiceId}</td>
+        <td class="p‑3 text‑xs text‑gray‑500">${projShow}</td>
+        <td class="p‑3">${inv.clientCountry||""}</td>
+        <td class="p‑3">€${inv.netAmount}</td>
+        <td class="p‑3">${inv.vatRate}%</td>
+        <td class="p‑3 font‑medium">€${inv.grossTotal}</td>
+        <td class="p‑3"><span class="px‑2 py‑1 rounded text‑xs ${statusColor}">${inv.paymentStatus}</span></td>
+        <td class="p‑3">${inv.dueDate||""}</td>
+        <td class="p‑3">
+          <button class="editBtn text‑blue‑600 hover:underline" data‑id="${inv.id}">编辑</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    })
+    // 只存id，从内存缓存取完整对象
+    document.querySelectorAll(".editBtn").forEach(btn=>{
+      btn.onclick = ()=>{
+        const pid = btn.dataset.id;
+        const invData = invoiceListCache.find(x=>x.id === pid);
+        if(!invData) return;
+        openEditModal(invData, pid);
+      }
+    })
+  }catch(err){
+    tbody.innerHTML = `<tr><td colspan="9" class="p‑4 text‑center text‑red‑500">网络异常：${err.message}</td></tr>`;
+  }
 }
 
 const modal = document.getElementById("invModal");
@@ -161,11 +174,9 @@ const btnAddInv = document.getElementById("btnAddInv");
 const btnCloseModal = document.getElementById("btnCloseModal");
 const btnSaveInv = document.getElementById("btnSaveInv");
 
-// 打开新增弹窗
 btnAddInv.onclick = ()=>{
   modalTitle.innerText = "新增发票";
   document.getElementById("editPageId").value = "";
-  //清空表单
   document.getElementById("invId").value = "";
   document.getElementById("invProjId").value = "";
   document.getElementById("invClientId").value = "";
@@ -177,7 +188,6 @@ btnAddInv.onclick = ()=>{
   modal.classList.add("active");
 }
 
-//打开编辑弹窗
 function openEditModal(inv,pageId){
   modalTitle.innerText = "编辑发票";
   document.getElementById("editPageId").value = pageId;
@@ -194,7 +204,6 @@ function openEditModal(inv,pageId){
 
 btnCloseModal.onclick = ()=> modal.classList.remove("active");
 
-//保存
 btnSaveInv.onclick = async ()=>{
   const editPageId = document.getElementById("editPageId").value.trim();
   const payload = {
@@ -208,27 +217,23 @@ btnSaveInv.onclick = async ()=>{
     dueDate: document.getElementById("invDue").value,
     paymentStatus: document.getElementById("invStatus").value
   }
-
-  let actionName;
-  if(editPageId){
-    actionName = "editInvoice";
-    payload.invoicePageId = editPageId;
-  }else{
-    actionName = "addInvoice";
-  }
-
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:actionName,...payload})
-  })
-  const ret = await res.json();
-  if(ret.success){
-    alert("保存成功");
-    modal.classList.remove("active");
-    loadInvoiceList();
-  }else{
-    alert(ret.error);
+  let actionName = editPageId ? "editInvoice" : "addInvoice";
+  try{
+    const res = await fetch(WORKER_B_URL,{
+      method:"POST",
+      headers:{"Content‑Type":"application/json"},
+      body:JSON.stringify({action:actionName,...payload})
+    })
+    const ret = await res.json();
+    if(ret.success){
+      alert("保存成功");
+      modal.classList.remove("active");
+      await loadInvoiceList();
+    }else{
+      alert(ret.error);
+    }
+  }catch(e){
+    alert("请求异常："+e.message);
   }
 }
 </script>
