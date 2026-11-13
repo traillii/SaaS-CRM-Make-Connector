@@ -116,45 +116,44 @@ async function loadInvoiceList(){
   try{
     const res = await fetch(WORKER_B_URL,{
       method:"POST",
-      headers:{"Content‑Type":"application/json"},
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action:"listInvoices",uid})
     })
     const ret = await res.json();
     tbody.innerHTML = "";
     if(!ret.success){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red‑500">${ret.error||"加载失败"}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">${ret.error||"加载失败"}</td></tr>`;
       return;
     }
     invoiceListCache = ret.invoices || [];
     if(invoiceListCache.length === 0){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray‑400">暂无发票，点击新增发票</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-400">暂无发票，点击新增发票</td></tr>`;
       return;
     }
     invoiceListCache.forEach(inv=>{
-      let statusColor = "bg-gray‑100 text‑gray‑700";
-      if(inv.paymentStatus === "Sent") statusColor = "bg‑yellow‑100 text‑yellow‑700";
-      if(inv.paymentStatus === "Paid") statusColor = "bg‑green‑100 text‑green‑700";
-      if(inv.paymentStatus === "Overdue") statusColor = "bg‑red‑100 text‑red‑700";
+      let statusColor = "bg-gray-100 text-gray-700";
+      if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
+      if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
+      if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
 
       const projShow = inv.projectPageId ? inv.projectPageId.slice(0,12)+"…" : "-";
       const tr = document.createElement("tr");
-      tr.className = "border‑b";
+      tr.className = "border-b";
       tr.innerHTML = `
-        <td class="p‑3">${inv.invoiceId}</td>
-        <td class="p‑3 text‑xs text‑gray‑500">${projShow}</td>
-        <td class="p‑3">${inv.clientCountry||""}</td>
-        <td class="p‑3">€${inv.netAmount}</td>
-        <td class="p‑3">${inv.vatRate}%</td>
-        <td class="p‑3 font‑medium">€${inv.grossTotal}</td>
-        <td class="p‑3"><span class="px‑2 py‑1 rounded text‑xs ${statusColor}">${inv.paymentStatus}</span></td>
-        <td class="p‑3">${inv.dueDate||""}</td>
-        <td class="p‑3">
-          <button class="editBtn text‑blue‑600 hover:underline" data‑id="${inv.id}">编辑</button>
+        <td class="p-3">${inv.invoiceId}</td>
+        <td class="p-3 text-xs text-gray-500">${projShow}</td>
+        <td class="p-3">${inv.clientCountry||""}</td>
+        <td class="p-3">€${inv.netAmount}</td>
+        <td class="p-3">${inv.vatRate}%</td>
+        <td class="p-3 font-medium">€${inv.grossTotal}</td>
+        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
+        <td class="p-3">${inv.dueDate||""}</td>
+        <td class="p-3">
+          <button class="editBtn text-blue-600 hover:underline" data-id="${inv.id}">编辑</button>
         </td>
       `;
       tbody.appendChild(tr);
     })
-    // 只存id，从内存缓存取完整对象
     document.querySelectorAll(".editBtn").forEach(btn=>{
       btn.onclick = ()=>{
         const pid = btn.dataset.id;
@@ -164,9 +163,10 @@ async function loadInvoiceList(){
       }
     })
   }catch(err){
-    tbody.innerHTML = `<tr><td colspan="9" class="p‑4 text‑center text‑red‑500">网络异常：${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">网络异常：${err.message}</td></tr>`;
   }
 }
+
 
 const modal = document.getElementById("invModal");
 const modalTitle = document.getElementById("modalTitle");
