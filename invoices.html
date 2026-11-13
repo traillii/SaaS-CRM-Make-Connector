@@ -221,7 +221,7 @@ btnSaveInv.onclick = async ()=>{
   try{
     const res = await fetch(WORKER_B_URL,{
       method:"POST",
-      headers:{"Content‑Type":"application/json"},
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action:actionName,...payload})
     })
     const ret = await res.json();
