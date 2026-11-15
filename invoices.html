@@ -302,11 +302,22 @@ async function openEditModal(inv,pageId){
 
   editCacheClientId = inv.clientPageId;
   editCacheProjectId = inv.projectPageId;
+
   invClientSel.innerHTML = `<option value="">--加载中…--</option>`;
   invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
+
   await loadClientOptions();
+  // 等待客户变更、项目加载完成之后，再回填项目
+  invClientSel.value = editCacheClientId;
+  await loadProjectByClient(editCacheClientId);
+
+  // 项目选项渲染完之后再选中
+  invProjectSel.value = editCacheProjectId;
+  await fillProjectInfo(editCacheProjectId);
+
   modal.classList.add("active");
 }
+
 
 function closeModal(){
   modal.classList.remove("active");
