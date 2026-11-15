@@ -267,7 +267,7 @@ btnCloseModal.onclick = ()=> {
 
 btnSaveInv.onclick = async ()=>{
   const editPageId = document.getElementById("editPageId").value.trim();
-  const projectPageId = invProjectSel.value;
+  const projectPageId = document.getElementById("invProjectSel").value;
   if(!projectPageId){
     alert("请选择项目");
     return;
@@ -279,6 +279,7 @@ btnSaveInv.onclick = async ()=>{
     alert("发票编号、税率、到期日不能为空");
     return;
   }
+
 
   const payload = {
     uid,
