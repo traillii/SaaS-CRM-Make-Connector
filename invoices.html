@@ -48,19 +48,13 @@
         <input class="w-full border rounded p-2" id="invId" placeholder="INV-2026-001">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">选择客户 <span class="text-red-500">*</span></label>
-        <select class="w-full border rounded p-2" id="invClientSel">
-          <option value="">--请选择客户--</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-600">选择项目（跟随客户过滤） <span class="text-red-500">*</span></label>
+        <label class="block text-sm text-gray-600">选择项目 <span class="text-red-500">*</span></label>
         <select class="w-full border rounded p-2" id="invProjectSel">
-          <option value="">--请先选择客户--</option>
+          <option value="">--请先选择项目--</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm text-gray-600">客户国家</label>
+        <label class="block text-sm text-gray-600">客户国家（从项目自动带出）</label>
         <input class="w-full border rounded p-2" id="invCountry" placeholder="Sweden">
       </div>
       <div>
@@ -95,11 +89,10 @@
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let invoiceListCache = [];
-let editCacheClientId = "";
 let editCacheProjectId = "";
 
-const invClientSel = document.getElementById("invClientSel");
 const invProjectSel = document.getElementById("invProjectSel");
+const invCountryInput = document.getElementById("invCountry");
 const invNetInput = document.getElementById("invNet");
 
 function getUrlParam(name){
@@ -120,48 +113,15 @@ function getUrlParam(name){
   }
 })();
 
-//加载客户下拉
-async function loadClientOptions(){
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid,action:"getMyClients"})
-  });
-  const json = await res.json();
-  invClientSel.innerHTML = `<option value="">--请选择客户--</option>`;
-  if(json.success){
-    json.list.forEach(c=>{
-      const opt = document.createElement("option");
-      opt.value = c.id;
-      opt.innerText = c.name;
-      invClientSel.appendChild(opt);
-    })
-  }
-  if(editCacheClientId){
-    invClientSel.value = editCacheClientId;
-    await reloadProjectOptions(editCacheClientId);
-    if(editCacheProjectId){
-      invProjectSel.value = editCacheProjectId;
-      await fillNetAmount(editCacheProjectId);
-    }
-  }
-}
-
-//根据客户ID加载项目下拉
-async function reloadProjectOptions(clientPageId){
-  invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
-  invNetInput.value = "";
-  if(!clientPageId){
-    invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
-    return;
-  }
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid,action:"getProjectsByClient",clientPageId})
-  });
-  const json = await res.json();
+//加载用户项目列表，用于弹窗下拉
+async function loadProjectOptions(){
   invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
+  const res = await fetch(WORKER_B_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid,action:"getProjects"})
+  });
+  const json = await res.json();
   if(json.success){
     json.projects.forEach(p=>{
       const opt = document.createElement("option");
@@ -170,11 +130,17 @@ async function reloadProjectOptions(clientPageId){
       invProjectSel.appendChild(opt);
     })
   }
+  //编辑回填
+  if(editCacheProjectId){
+    invProjectSel.value = editCacheProjectId;
+    await fillProjectInfo(editCacheProjectId);
+  }
 }
 
-// 根据项目ID读取项目税前金额，回填到不含税金额
-async function fillNetAmount(projectId){
-  if(!projectId) {
+//根据项目id，回填国家、不含税金额
+async function fillProjectInfo(projectId){
+  if(!projectId){
+    invCountryInput.value = "";
     invNetInput.value = "";
     return;
   }
@@ -185,19 +151,17 @@ async function fillNetAmount(projectId){
   });
   const ret = await res.json();
   if(ret.success){
-    invNetInput.value = ret.netAmount;
+    invCountryInput.value = ret.clientCountry || "";
+    invNetInput.value = ret.netAmount || 0;
   }else{
+    invCountryInput.value = "";
     invNetInput.value = "";
   }
 }
 
-//切换客户联动项目
-invClientSel.onchange = async function(){
-  await reloadProjectOptions(this.value);
-};
-//切换项目自动回填税前金额
+//切换项目自动回填信息
 invProjectSel.onchange = async function(){
-  await fillNetAmount(this.value);
+  await fillProjectInfo(this.value);
 };
 
 async function loadInvoiceList(){
@@ -225,16 +189,16 @@ async function loadInvoiceList(){
       if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
       if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
       if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
-      const projShow = inv.projectPageId ? inv.projectPageId.slice(0,12)+"…" : "-";
+      const grossTotal = Number(inv.netAmount)*(1+Number(inv.vatRate)/100);
       const tr = document.createElement("tr");
       tr.className = "border-b";
       tr.innerHTML = `
         <td class="p-3">${inv.invoiceId}</td>
-        <td class="p-3 text-xs text-gray-500">${projShow}</td>
+        <td class="p-3 text-xs">${inv.projectName||inv.projectPageId}</td>
         <td class="p-3">${inv.clientCountry||""}</td>
-        <td class="p-3">€${inv.netAmount}</td>
-        <td class="p-3">${inv.vatRate}%</td>
-        <td class="p-3 font-medium">€${inv.grossTotal}</td>
+        <td class="p-3">€${Number(inv.netAmount).toFixed(2)}</td>
+        <td class="p-3">${Number(inv.vatRate).toFixed(2)}%</td>
+        <td class="p-3 font-medium">€${grossTotal.toFixed(2)}</td>
         <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
         <td class="p-3">${inv.dueDate||""}</td>
         <td class="p-3">
@@ -267,18 +231,15 @@ btnAddInv.onclick = async ()=>{
   modalTitle.innerText = "新增发票";
   document.getElementById("editPageId").value = "";
   document.getElementById("invId").value = "";
-  editCacheClientId = "";
   editCacheProjectId = "";
-  document.getElementById("invCountry").value = "";
+  invCountryInput.value = "";
   invNetInput.value = "";
   document.getElementById("invVatRate").value = "";
   document.getElementById("invDue").value = "";
   document.getElementById("invStatus").value = "Draft";
 
-  invClientSel.innerHTML = `<option value="">--请选择客户--</option>`;
-  invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
-
-  await loadClientOptions();
+  invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
+  await loadProjectOptions();
   modal.classList.add("active");
 }
 
@@ -293,31 +254,20 @@ async function openEditModal(inv,pageId){
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;
 
-  editCacheClientId = inv.clientPageId;
   editCacheProjectId = inv.projectPageId;
-
-  invClientSel.innerHTML = `<option value="">--请选择客户--</option>`;
   invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
-
-  await loadClientOptions();
+  await loadProjectOptions();
   modal.classList.add("active");
 }
 
 btnCloseModal.onclick = ()=> {
   modal.classList.remove("active");
-  editCacheClientId = "";
   editCacheProjectId = "";
 };
 
 btnSaveInv.onclick = async ()=>{
   const editPageId = document.getElementById("editPageId").value.trim();
-  const clientPageId = invClientSel.value;
   const projectPageId = invProjectSel.value;
-
-  if(!clientPageId){
-    alert("请选择客户");
-    return;
-  }
   if(!projectPageId){
     alert("请选择项目");
     return;
@@ -334,13 +284,12 @@ btnSaveInv.onclick = async ()=>{
     uid,
     invoiceId: invIdVal,
     projectPageId: projectPageId,
-    clientPageId: clientPageId,
-    clientCountry: document.getElementById("invCountry").value.trim(),
+    clientCountry: invCountryInput.value.trim(),
     vatRate: invVatVal,
     dueDate: invDueVal,
     paymentStatus: document.getElementById("invStatus").value
   }
-  let actionName = editPageId ? "editInvoice" : "addInvoice";
+  const actionName = editPageId ? "editInvoice" : "addInvoice";
   try{
     const res = await fetch(WORKER_B_URL,{
       method:"POST",
@@ -351,7 +300,6 @@ btnSaveInv.onclick = async ()=>{
     if(ret.success){
       alert("保存成功");
       modal.classList.remove("active");
-      editCacheClientId = "";
       editCacheProjectId = "";
       await loadInvoiceList();
     }else{
