@@ -166,9 +166,10 @@ async function loadClientOptions(){
   }
   if(editCacheClientId){
     invClientSel.value = editCacheClientId;
-    invClientSel.dispatchEvent(new Event('change'))
+    // ❗删除这一行：invClientSel.dispatchEvent(new Event('change'))
   }
 }
+
 
 // 根据客户ID，只加载该客户关联的项目
 async function loadProjectByClient(clientId){
@@ -188,11 +189,10 @@ async function loadProjectByClient(clientId){
       invProjectSel.appendChild(opt);
     })
   }
-  if(editCacheProjectId){
-    invProjectSel.value = editCacheProjectId;
-    await fillProjectInfo(editCacheProjectId);
-  }
+  // 删除内部这里的if(editCacheProjectId){...}，不要再内部赋值！！
+  return json.projects; // 返回项目列表
 }
+
 
 async function fillProjectInfo(projectId){
   if(!projectId){
@@ -307,16 +307,22 @@ async function openEditModal(inv,pageId){
   invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
 
   await loadClientOptions();
-  // 等待客户变更、项目加载完成之后，再回填项目
+  // 设置客户，不触发onchange事件，避免重复请求
   invClientSel.value = editCacheClientId;
-  await loadProjectByClient(editCacheClientId);
+  // 手动加载该客户项目
+  const projRet = await loadProjectByClient(editCacheClientId);
 
-  // 项目选项渲染完之后再选中
-  invProjectSel.value = editCacheProjectId;
+  // ✅手动循环options，找到匹配projectId设置selected，规避直接value赋值失效BUG
+  for(let opt of invProjectSel.options){
+      if(opt.value === editCacheProjectId){
+          opt.selected = true;
+          break;
+      }
+  }
   await fillProjectInfo(editCacheProjectId);
-
   modal.classList.add("active");
 }
+
 
 
 
@@ -346,16 +352,17 @@ async function saveInvoice(){
     return;
   }
 
-  const payload = {
-    uid,
-    invoiceId: invIdVal,
-    clientPageId: clientId,
-    projectPageId: projectPageId,
-    clientCountry: invCountryInput.value.trim(),
-    vatRate: invVatVal,
-    dueDate: invDueVal,
-    paymentStatus: document.getElementById("invStatus").value
-  }
+const payload = {
+  uid,
+  invoiceId: invIdVal,
+  // clientPageId: clientId, // 删除！后端不处理该字段
+  projectPageId: projectPageId,
+  clientCountry: invCountryInput.value.trim(),
+  vatRate: invVatVal,
+  dueDate: invDueVal,
+  paymentStatus: document.getElementById("invStatus").value
+}
+
   const actionName = editPageId ? "editInvoice" : "addInvoice";
   try{
     const res = await fetch(WORKER_B_URL,{
