@@ -64,8 +64,8 @@
         <input class="w-full border rounded p-2" id="invCountry" placeholder="Sweden">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">不含税金额 € <span class="text-red-500">*</span></label>
-        <input class="w-full border rounded p-2" type="number" step="0.01" id="invNet">
+        <label class="block text-sm text-gray-600">不含税金额 €（自动读取项目，不可修改）</label>
+        <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invNet" readonly>
       </div>
       <div>
         <label class="block text-sm text-gray-600">VAT税率 % <span class="text-red-500">*</span></label>
@@ -95,12 +95,12 @@
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let invoiceListCache = [];
-//编辑回显缓存
 let editCacheClientId = "";
 let editCacheProjectId = "";
 
 const invClientSel = document.getElementById("invClientSel");
 const invProjectSel = document.getElementById("invProjectSel");
+const invNetInput = document.getElementById("invNet");
 
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
@@ -137,12 +137,12 @@ async function loadClientOptions(){
       invClientSel.appendChild(opt);
     })
   }
-  //如果是编辑模式，回填客户
   if(editCacheClientId){
     invClientSel.value = editCacheClientId;
     await reloadProjectOptions(editCacheClientId);
     if(editCacheProjectId){
       invProjectSel.value = editCacheProjectId;
+      await fillNetAmount(editCacheProjectId);
     }
   }
 }
@@ -150,6 +150,7 @@ async function loadClientOptions(){
 //根据客户ID加载项目下拉
 async function reloadProjectOptions(clientPageId){
   invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
+  invNetInput.value = "";
   if(!clientPageId){
     invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
     return;
@@ -171,9 +172,32 @@ async function reloadProjectOptions(clientPageId){
   }
 }
 
+// 根据项目ID读取项目税前金额，回填到不含税金额
+async function fillNetAmount(projectId){
+  if(!projectId) {
+    invNetInput.value = "";
+    return;
+  }
+  const res = await fetch(WORKER_B_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid,action:"getProjectDetail",projectId})
+  });
+  const ret = await res.json();
+  if(ret.success){
+    invNetInput.value = ret.netAmount;
+  }else{
+    invNetInput.value = "";
+  }
+}
+
 //切换客户联动项目
 invClientSel.onchange = async function(){
   await reloadProjectOptions(this.value);
+};
+//切换项目自动回填税前金额
+invProjectSel.onchange = async function(){
+  await fillNetAmount(this.value);
 };
 
 async function loadInvoiceList(){
@@ -246,7 +270,7 @@ btnAddInv.onclick = async ()=>{
   editCacheClientId = "";
   editCacheProjectId = "";
   document.getElementById("invCountry").value = "";
-  document.getElementById("invNet").value = "";
+  invNetInput.value = "";
   document.getElementById("invVatRate").value = "";
   document.getElementById("invDue").value = "";
   document.getElementById("invStatus").value = "Draft";
@@ -264,7 +288,7 @@ async function openEditModal(inv,pageId){
   document.getElementById("editPageId").value = pageId;
   document.getElementById("invId").value = inv.invoiceId;
   document.getElementById("invCountry").value = inv.clientCountry;
-  document.getElementById("invNet").value = inv.netAmount;
+  invNetInput.value = inv.netAmount;
   document.getElementById("invVatRate").value = inv.vatRate;
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;
@@ -290,7 +314,6 @@ btnSaveInv.onclick = async ()=>{
   const clientPageId = invClientSel.value;
   const projectPageId = invProjectSel.value;
 
-  //前端强制校验必填
   if(!clientPageId){
     alert("请选择客户");
     return;
@@ -300,11 +323,10 @@ btnSaveInv.onclick = async ()=>{
     return;
   }
   const invIdVal = document.getElementById("invId").value.trim();
-  const invNetVal = Number(document.getElementById("invNet").value);
   const invVatVal = Number(document.getElementById("invVatRate").value);
   const invDueVal = document.getElementById("invDue").value;
-  if(!invIdVal || !invDueVal || isNaN(invNetVal)||isNaN(invVatVal)){
-    alert("发票编号、金额、税率、到期日不能为空");
+  if(!invIdVal || !invDueVal || isNaN(invVatVal)){
+    alert("发票编号、税率、到期日不能为空");
     return;
   }
 
@@ -314,7 +336,6 @@ btnSaveInv.onclick = async ()=>{
     projectPageId: projectPageId,
     clientPageId: clientPageId,
     clientCountry: document.getElementById("invCountry").value.trim(),
-    netAmount: invNetVal,
     vatRate: invVatVal,
     dueDate: invDueVal,
     paymentStatus: document.getElementById("invStatus").value
