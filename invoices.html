@@ -91,16 +91,39 @@ let uid = "";
 let invoiceListCache = [];
 let editCacheProjectId = "";
 
-const invProjectSel = document.getElementById("invProjectSel");
-const invCountryInput = document.getElementById("invCountry");
-const invNetInput = document.getElementById("invNet");
+// 变量先声明，DOMContentLoaded后再赋值DOM对象
+let invProjectSel,invCountryInput,invNetInput;
+let modal,modalTitle,btnAddInv,btnCloseModal,btnSaveInv;
 
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
   return params.get(name);
 }
 
-(async function init(){
+// 等待全部DOM解析完成再执行
+document.addEventListener("DOMContentLoaded",async function(){
+  // ✅DOM全部渲染完毕，再获取元素，不会得到null
+  invProjectSel = document.getElementById("invProjectSel");
+  invCountryInput = document.getElementById("invCountry");
+  invNetInput = document.getElementById("invNet");
+
+  modal = document.getElementById("invModal");
+  modalTitle = document.getElementById("modalTitle");
+  btnAddInv = document.getElementById("btnAddInv");
+  btnCloseModal = document.getElementById("btnCloseModal");
+  btnSaveInv = document.getElementById("btnSaveInv");
+
+  // 绑定下拉change事件
+  invProjectSel.onchange = async function(){
+    await fillProjectInfo(this.value);
+  };
+
+  // 按钮事件绑定
+  btnAddInv.onclick = openAddModal;
+  btnCloseModal.onclick = closeModal;
+  btnSaveInv.onclick = saveInvoice;
+
+  // 初始化
   uid = getUrlParam("uid");
   if(!uid){
     alert("uid缺失，请从面板进入");
@@ -111,9 +134,9 @@ function getUrlParam(name){
   }catch(e){
     alert("初始化加载异常："+e.message);
   }
-})();
+});
 
-//加载用户项目列表，用于弹窗下拉
+
 async function loadProjectOptions(){
   invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
   const res = await fetch(WORKER_B_URL,{
@@ -158,11 +181,6 @@ async function fillProjectInfo(projectId){
     invNetInput.value = "";
   }
 }
-
-//切换项目自动回填信息
-invProjectSel.onchange = async function(){
-  await fillProjectInfo(this.value);
-};
 
 async function loadInvoiceList(){
   const tbody = document.getElementById("invTableBody");
@@ -220,14 +238,8 @@ async function loadInvoiceList(){
   }
 }
 
-const modal = document.getElementById("invModal");
-const modalTitle = document.getElementById("modalTitle");
-const btnAddInv = document.getElementById("btnAddInv");
-const btnCloseModal = document.getElementById("btnCloseModal");
-const btnSaveInv = document.getElementById("btnSaveInv");
-
-//新增发票弹窗
-btnAddInv.onclick = async ()=>{
+//打开新增弹窗
+async function openAddModal(){
   modalTitle.innerText = "新增发票";
   document.getElementById("editPageId").value = "";
   document.getElementById("invId").value = "";
@@ -243,7 +255,7 @@ btnAddInv.onclick = async ()=>{
   modal.classList.add("active");
 }
 
-//编辑发票弹窗
+//打开编辑弹窗
 async function openEditModal(inv,pageId){
   modalTitle.innerText = "编辑发票";
   document.getElementById("editPageId").value = pageId;
@@ -260,14 +272,14 @@ async function openEditModal(inv,pageId){
   modal.classList.add("active");
 }
 
-btnCloseModal.onclick = ()=> {
+function closeModal(){
   modal.classList.remove("active");
   editCacheProjectId = "";
-};
+}
 
-btnSaveInv.onclick = async ()=>{
+async function saveInvoice(){
   const editPageId = document.getElementById("editPageId").value.trim();
-  const projectPageId = document.getElementById("invProjectSel").value;
+  const projectPageId = invProjectSel.value;
   if(!projectPageId){
     alert("请选择项目");
     return;
@@ -279,7 +291,6 @@ btnSaveInv.onclick = async ()=>{
     alert("发票编号、税率、到期日不能为空");
     return;
   }
-
 
   const payload = {
     uid,
@@ -300,8 +311,7 @@ btnSaveInv.onclick = async ()=>{
     const ret = await res.json();
     if(ret.success){
       alert("保存成功");
-      modal.classList.remove("active");
-      editCacheProjectId = "";
+      closeModal();
       await loadInvoiceList();
     }else{
       alert(ret.error);
