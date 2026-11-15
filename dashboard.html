@@ -527,7 +527,7 @@ async function loadProjectClientOptions(){
     })
     const json = await res.json();
     const sel = document.getElementById("selProjectClient");
-    sel.innerHTML = `<option value="">-- 不关联客户 --</option>`;
+    sel.innerHTML = ``;
     if(json.success){
         projectClientList = json.list;
         json.list.forEach(c=>{
