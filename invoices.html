@@ -22,6 +22,7 @@
         <tr>
           <th class="text-left p-3">发票编号</th>
           <th class="text-left p-3">客户</th>
+                    <th class="text-left p-3">客户国家</th>
           <th class="text-left p-3">项目</th>
           <th class="text-left p-3">不含税金额</th>
           <th class="text-left p-3">税率</th>
@@ -59,7 +60,10 @@
           <option value="">--请先选择客户--</option>
         </select>
       </div>
-
+      <div>
+        <label class="block text-sm text-gray-600">客户国家（从项目自动带出）</label>
+        <input class="w-full border rounded p-2" id="invCountry" placeholder="Sweden">
+      </div>
       <div>
         <label class="block text-sm text-gray-600">不含税金额 €（自动读取项目，不可修改）</label>
         <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invNet" readonly>
