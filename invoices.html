@@ -44,31 +44,35 @@
     <input type="hidden" id="editPageId">
     <div class="grid gap-3">
       <div>
-        <label class="block text-sm text-gray-600">发票编号</label>
+        <label class="block text-sm text-gray-600">发票编号 <span class="text-red-500">*</span></label>
         <input class="w-full border rounded p-2" id="invId" placeholder="INV-2026-001">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">项目PageID</label>
-        <input class="w-full border rounded p-2" id="invProjId" placeholder="项目Notion pageId">
+        <label class="block text-sm text-gray-600">选择客户 <span class="text-red-500">*</span></label>
+        <select class="w-full border rounded p-2" id="invClientSel">
+          <option value="">--请选择客户--</option>
+        </select>
       </div>
       <div>
-        <label class="block text-sm text-gray-600">客户PageID</label>
-        <input class="w-full border rounded p-2" id="invClientId" placeholder="客户Notion pageId">
+        <label class="block text-sm text-gray-600">选择项目（跟随客户过滤） <span class="text-red-500">*</span></label>
+        <select class="w-full border rounded p-2" id="invProjectSel">
+          <option value="">--请先选择客户--</option>
+        </select>
       </div>
       <div>
         <label class="block text-sm text-gray-600">客户国家</label>
         <input class="w-full border rounded p-2" id="invCountry" placeholder="Sweden">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">不含税金额 €</label>
+        <label class="block text-sm text-gray-600">不含税金额 € <span class="text-red-500">*</span></label>
         <input class="w-full border rounded p-2" type="number" step="0.01" id="invNet">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">VAT税率 %</label>
+        <label class="block text-sm text-gray-600">VAT税率 % <span class="text-red-500">*</span></label>
         <input class="w-full border rounded p-2" type="number" step="0.01" id="invVatRate">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">到期日</label>
+        <label class="block text-sm text-gray-600">到期日 <span class="text-red-500">*</span></label>
         <input class="w-full border rounded p-2" type="date" id="invDue">
       </div>
       <div>
@@ -88,9 +92,15 @@
   </div>
 </div>
 <script>
-const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev/";
+const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
-let invoiceListCache = []; // 内存缓存全部发票，修复data‑json引号bug
+let invoiceListCache = [];
+//编辑回显缓存
+let editCacheClientId = "";
+let editCacheProjectId = "";
+
+const invClientSel = document.getElementById("invClientSel");
+const invProjectSel = document.getElementById("invProjectSel");
 
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
@@ -109,6 +119,62 @@ function getUrlParam(name){
     alert("初始化加载异常："+e.message);
   }
 })();
+
+//加载客户下拉
+async function loadClientOptions(){
+  const res = await fetch(WORKER_B_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid,action:"getMyClients"})
+  });
+  const json = await res.json();
+  invClientSel.innerHTML = `<option value="">--请选择客户--</option>`;
+  if(json.success){
+    json.list.forEach(c=>{
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.innerText = c.name;
+      invClientSel.appendChild(opt);
+    })
+  }
+  //如果是编辑模式，回填客户
+  if(editCacheClientId){
+    invClientSel.value = editCacheClientId;
+    await reloadProjectOptions(editCacheClientId);
+    if(editCacheProjectId){
+      invProjectSel.value = editCacheProjectId;
+    }
+  }
+}
+
+//根据客户ID加载项目下拉
+async function reloadProjectOptions(clientPageId){
+  invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
+  if(!clientPageId){
+    invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
+    return;
+  }
+  const res = await fetch(WORKER_B_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid,action:"getProjectsByClient",clientPageId})
+  });
+  const json = await res.json();
+  invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
+  if(json.success){
+    json.projects.forEach(p=>{
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.innerText = p.projectName;
+      invProjectSel.appendChild(opt);
+    })
+  }
+}
+
+//切换客户联动项目
+invClientSel.onchange = async function(){
+  await reloadProjectOptions(this.value);
+};
 
 async function loadInvoiceList(){
   const tbody = document.getElementById("invTableBody");
@@ -135,7 +201,6 @@ async function loadInvoiceList(){
       if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
       if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
       if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
-
       const projShow = inv.projectPageId ? inv.projectPageId.slice(0,12)+"…" : "-";
       const tr = document.createElement("tr");
       tr.className = "border-b";
@@ -167,54 +232,91 @@ async function loadInvoiceList(){
   }
 }
 
-
 const modal = document.getElementById("invModal");
 const modalTitle = document.getElementById("modalTitle");
 const btnAddInv = document.getElementById("btnAddInv");
 const btnCloseModal = document.getElementById("btnCloseModal");
 const btnSaveInv = document.getElementById("btnSaveInv");
 
-btnAddInv.onclick = ()=>{
+//新增发票弹窗
+btnAddInv.onclick = async ()=>{
   modalTitle.innerText = "新增发票";
   document.getElementById("editPageId").value = "";
   document.getElementById("invId").value = "";
-  document.getElementById("invProjId").value = "";
-  document.getElementById("invClientId").value = "";
+  editCacheClientId = "";
+  editCacheProjectId = "";
   document.getElementById("invCountry").value = "";
   document.getElementById("invNet").value = "";
   document.getElementById("invVatRate").value = "";
   document.getElementById("invDue").value = "";
   document.getElementById("invStatus").value = "Draft";
+
+  invClientSel.innerHTML = `<option value="">--请选择客户--</option>`;
+  invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
+
+  await loadClientOptions();
   modal.classList.add("active");
 }
 
-function openEditModal(inv,pageId){
+//编辑发票弹窗
+async function openEditModal(inv,pageId){
   modalTitle.innerText = "编辑发票";
   document.getElementById("editPageId").value = pageId;
   document.getElementById("invId").value = inv.invoiceId;
-  document.getElementById("invProjId").value = inv.projectPageId;
-  document.getElementById("invClientId").value = inv.clientPageId;
   document.getElementById("invCountry").value = inv.clientCountry;
   document.getElementById("invNet").value = inv.netAmount;
   document.getElementById("invVatRate").value = inv.vatRate;
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;
+
+  editCacheClientId = inv.clientPageId;
+  editCacheProjectId = inv.projectPageId;
+
+  invClientSel.innerHTML = `<option value="">--请选择客户--</option>`;
+  invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
+
+  await loadClientOptions();
   modal.classList.add("active");
 }
 
-btnCloseModal.onclick = ()=> modal.classList.remove("active");
+btnCloseModal.onclick = ()=> {
+  modal.classList.remove("active");
+  editCacheClientId = "";
+  editCacheProjectId = "";
+};
 
 btnSaveInv.onclick = async ()=>{
   const editPageId = document.getElementById("editPageId").value.trim();
+  const clientPageId = invClientSel.value;
+  const projectPageId = invProjectSel.value;
+
+  //前端强制校验必填
+  if(!clientPageId){
+    alert("请选择客户");
+    return;
+  }
+  if(!projectPageId){
+    alert("请选择项目");
+    return;
+  }
+  const invIdVal = document.getElementById("invId").value.trim();
+  const invNetVal = Number(document.getElementById("invNet").value);
+  const invVatVal = Number(document.getElementById("invVatRate").value);
+  const invDueVal = document.getElementById("invDue").value;
+  if(!invIdVal || !invDueVal || isNaN(invNetVal)||isNaN(invVatVal)){
+    alert("发票编号、金额、税率、到期日不能为空");
+    return;
+  }
+
   const payload = {
     uid,
-    invoiceId: document.getElementById("invId").value.trim(),
-    projectPageId: document.getElementById("invProjId").value.trim(),
-    clientPageId: document.getElementById("invClientId").value.trim(),
+    invoiceId: invIdVal,
+    projectPageId: projectPageId,
+    clientPageId: clientPageId,
     clientCountry: document.getElementById("invCountry").value.trim(),
-    netAmount: Number(document.getElementById("invNet").value),
-    vatRate: Number(document.getElementById("invVatRate").value),
-    dueDate: document.getElementById("invDue").value,
+    netAmount: invNetVal,
+    vatRate: invVatVal,
+    dueDate: invDueVal,
     paymentStatus: document.getElementById("invStatus").value
   }
   let actionName = editPageId ? "editInvoice" : "addInvoice";
@@ -228,6 +330,8 @@ btnSaveInv.onclick = async ()=>{
     if(ret.success){
       alert("保存成功");
       modal.classList.remove("active");
+      editCacheClientId = "";
+      editCacheProjectId = "";
       await loadInvoiceList();
     }else{
       alert(ret.error);
