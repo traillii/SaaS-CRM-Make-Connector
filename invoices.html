@@ -106,7 +106,6 @@ document.addEventListener("DOMContentLoaded",async function(){
   invProjectSel = document.getElementById("invProjectSel");
   invClientSel = document.getElementById("invClientSel");
   invNetInput = document.getElementById("invNet");
-
   modal = document.getElementById("invModal");
   modalTitle = document.getElementById("modalTitle");
   btnAddInv = document.getElementById("btnAddInv");
@@ -231,20 +230,18 @@ async function loadInvoiceList(){
       const grossTotal = Number(inv.netAmount)*(1+Number(inv.vatRate)/100);
       const tr = document.createElement("tr");
       tr.className = "border-b";
-            tr.innerHTML = `
-            <td class="p-3">${inv.invoiceId || '-'}</td>
-            <td class="p-3 text-xs">${inv.clientName || '-'}</td>
-            <td class="p-3 text-xs">${inv.projectName || '-'}</td>
-            <td class="p-3">€${Number(inv.netAmount).toFixed(2)}</td>
-            <td class="p-3">${Number(inv.vatRate).toFixed(2)}%</td>
-            <td class="p-3 font-medium">€${Number(grossTotal).toFixed(2)}</td>
-            <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
-            <td class="p-3">${inv.dueDate || ""}</td>
-            <td class="p-3">
-              <button class="editBtn text-blue-600 hover:underline" data-id="${inv.id}">编辑</button>
-            </td>
-
-
+      tr.innerHTML = `
+        <td class="p-3">${inv.invoiceId || '-'}</td>
+        <td class="p-3 text-xs">${inv.clientName || '-'}</td>
+        <td class="p-3 text-xs">${inv.projectName || '-'}</td>
+        <td class="p-3">€${Number(inv.netAmount).toFixed(2)}</td>
+        <td class="p-3">${Number(inv.vatRate).toFixed(2)}%</td>
+        <td class="p-3 font-medium">€${Number(grossTotal).toFixed(2)}</td>
+        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
+        <td class="p-3">${inv.dueDate || ""}</td>
+        <td class="p-3">
+          <button class="editBtn text-blue-600 hover:underline" data-id="${inv.id}">编辑</button>
+        </td>
       `;
       tbody.appendChild(tr);
     })
@@ -271,7 +268,6 @@ async function openAddModal(){
   document.getElementById("invVatRate").value = "";
   document.getElementById("invDue").value = "";
   document.getElementById("invStatus").value = "Draft";
-
   invClientSel.innerHTML = `<option value="">--请先选择客户--</option>`;
   invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
   await loadClientOptions();
