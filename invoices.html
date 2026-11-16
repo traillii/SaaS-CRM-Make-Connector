@@ -231,14 +231,6 @@ async function loadInvoiceList(){
       const grossTotal = Number(inv.netAmount)*(1+Number(inv.vatRate)/100);
       const tr = document.createElement("tr");
       tr.className = "border-b";
-       const grossTotal = inv.grossTotal;
-            const statusColor = {
-              "Draft": "bg-gray-100 text-gray-700",
-              "Sent": "bg-blue-100 text-blue-700",
-              "Paid": "bg-green-100 text-green-700",
-              "Overdue": "bg-red-100 text-red-700"
-            }[inv.paymentStatus] || "bg-gray-100";
-            
             tr.innerHTML = `
             <td class="p-3">${inv.invoiceId || '-'}</td>
             <td class="p-3 text-xs">${inv.clientName || '-'}</td>
