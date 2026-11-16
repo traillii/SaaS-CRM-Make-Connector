@@ -37,6 +37,7 @@
     </table>
   </div>
 </div>
+
 <!-- 新增/编辑弹窗 -->
 <div class="modal" id="invModal">
   <div class="bg-white rounded-xl w-full max-w-lg p-6 mx-4">
@@ -61,11 +62,11 @@
       </div>
       <div>
         <label class="block text-sm text-gray-600">不含税金额 €（自动读取项目，不可修改）</label>
-        <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invNet" readonly>
+        <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invNet" readonly placeholder="选择项目后自动显示">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">VAT税率 % <span class="text-red-500">*</span></label>
-        <input class="w-full border rounded p-2" type="number" step="0.01" id="invVatRate">
+        <label class="block text-sm text-gray-600">VAT税率 %（由 Notion 根据客户国家自动计算）</label>
+        <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invVatRate" readonly placeholder="保存后系统自动匹配税率">
       </div>
       <div>
         <label class="block text-sm text-gray-600">到期日 <span class="text-red-500">*</span></label>
@@ -87,25 +88,25 @@
     </div>
   </div>
 </div>
+
 <script>
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let invoiceListCache = [];
-let editCacheProjectId = "";
-let editCacheClientId = "";
 
-let invProjectSel,invClientSel,invNetInput;
-let modal,modalTitle,btnAddInv,btnCloseModal,btnSaveInv;
+let invProjectSel, invClientSel, invNetInput;
+let modal, modalTitle, btnAddInv, btnCloseModal, btnSaveInv;
 
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
   return params.get(name);
 }
 
-document.addEventListener("DOMContentLoaded",async function(){
+document.addEventListener("DOMContentLoaded", async function(){
   invProjectSel = document.getElementById("invProjectSel");
   invClientSel = document.getElementById("invClientSel");
   invNetInput = document.getElementById("invNet");
+
   modal = document.getElementById("invModal");
   modalTitle = document.getElementById("modalTitle");
   btnAddInv = document.getElementById("btnAddInv");
@@ -115,10 +116,12 @@ document.addEventListener("DOMContentLoaded",async function(){
   invClientSel.onchange = async function(){
     const clientId = this.value;
     invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
+    invNetInput.value = "";
     if(clientId){
       await loadProjectByClient(clientId);
     }
-  }
+  };
+
   invProjectSel.onchange = async function(){
     await fillProjectInfo(this.value);
   };
@@ -135,52 +138,52 @@ document.addEventListener("DOMContentLoaded",async function(){
   try{
     await loadInvoiceList();
   }catch(e){
-    alert("初始化加载异常："+e.message);
+    alert("初始化加载异常：" + e.message);
   }
 });
 
-async function loadClientOptions(){
-  invClientSel.innerHTML = `<option value="">--请先选择客户--</option>`;
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid,action:"getClientList"})
+async function loadClientOptions(selectedClientId = ""){
+  invClientSel.innerHTML = `<option value="">--加载客户中…--</option>`;
+  const res = await fetch(WORKER_B_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid, action: "getClientList" })
   });
   const json = await res.json();
+  invClientSel.innerHTML = `<option value="">--请先选择客户--</option>`;
   if(json.success){
-    json.clients.forEach(c=>{
+    json.clients.forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.id;
       opt.innerText = c.name;
       invClientSel.appendChild(opt);
-    })
+    });
   }
-  if(editCacheClientId){
-    invClientSel.value = editCacheClientId;
-    invClientSel.dispatchEvent(new Event('change'));
+  if(selectedClientId){
+    invClientSel.value = selectedClientId;
   }
 }
 
-async function loadProjectByClient(clientId){
-  invProjectSel.innerHTML = `<option value="">--加载项目--</option>`;
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid,action:"getProjectsByClient",clientId})
+async function loadProjectByClient(clientId, selectedProjectId = ""){
+  invProjectSel.innerHTML = `<option value="">--加载项目…--</option>`;
+  const res = await fetch(WORKER_B_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid, action: "getProjectsByClient", clientId })
   });
   const json = await res.json();
   invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
   if(json.success){
-    json.projects.forEach(p=>{
+    json.projects.forEach(p => {
       const opt = document.createElement("option");
       opt.value = p.id;
       opt.innerText = p.projectName;
       invProjectSel.appendChild(opt);
-    })
+    });
   }
-  if(editCacheProjectId){
-    invProjectSel.value = editCacheProjectId;
-    await fillProjectInfo(editCacheProjectId);
+  if(selectedProjectId){
+    invProjectSel.value = selectedProjectId;
+    await fillProjectInfo(selectedProjectId);
   }
 }
 
@@ -189,14 +192,14 @@ async function fillProjectInfo(projectId){
     invNetInput.value = "";
     return;
   }
-  const res = await fetch(WORKER_B_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid,action:"getProjectDetail",projectId})
+  const res = await fetch(WORKER_B_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid, action: "getProjectDetail", projectId })
   });
   const ret = await res.json();
   if(ret.success){
-    invNetInput.value = ret.netAmount || 0;
+    invNetInput.value = Number(ret.netAmount || 0).toFixed(2);
   }else{
     invNetInput.value = "";
   }
@@ -206,15 +209,15 @@ async function loadInvoiceList(){
   const tbody = document.getElementById("invTableBody");
   tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-400">加载中…</td></tr>`;
   try{
-    const res = await fetch(WORKER_B_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"listInvoices",uid})
-    })
+    const res = await fetch(WORKER_B_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "listInvoices", uid })
+    });
     const ret = await res.json();
     tbody.innerHTML = "";
     if(!ret.success){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">${ret.error||"加载失败"}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">${ret.error || "加载失败"}</td></tr>`;
       return;
     }
     invoiceListCache = ret.invoices || [];
@@ -222,12 +225,12 @@ async function loadInvoiceList(){
       tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-400">暂无发票，点击新增发票</td></tr>`;
       return;
     }
-    invoiceListCache.forEach(inv=>{
+    invoiceListCache.forEach(inv => {
       let statusColor = "bg-gray-100 text-gray-700";
       if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
       if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
       if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
-      const grossTotal = Number(inv.netAmount)*(1+Number(inv.vatRate)/100);
+
       const tr = document.createElement("tr");
       tr.className = "border-b";
       tr.innerHTML = `
@@ -236,7 +239,7 @@ async function loadInvoiceList(){
         <td class="p-3 text-xs">${inv.projectName || '-'}</td>
         <td class="p-3">€${Number(inv.netAmount).toFixed(2)}</td>
         <td class="p-3">${Number(inv.vatRate).toFixed(2)}%</td>
-        <td class="p-3 font-medium">€${Number(grossTotal).toFixed(2)}</td>
+        <td class="p-3 font-medium">€${Number(inv.grossTotal).toFixed(2)}</td>
         <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
         <td class="p-3">${inv.dueDate || ""}</td>
         <td class="p-3">
@@ -244,15 +247,15 @@ async function loadInvoiceList(){
         </td>
       `;
       tbody.appendChild(tr);
-    })
-    document.querySelectorAll(".editBtn").forEach(btn=>{
-      btn.onclick = ()=>{
+    });
+    document.querySelectorAll(".editBtn").forEach(btn => {
+      btn.onclick = () => {
         const pid = btn.dataset.id;
-        const invData = invoiceListCache.find(x=>x.id === pid);
+        const invData = invoiceListCache.find(x => x.id === pid);
         if(!invData) return;
         openEditModal(invData, pid);
-      }
-    })
+      };
+    });
   }catch(err){
     tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">网络异常：${err.message}</td></tr>`;
   }
@@ -262,41 +265,35 @@ async function openAddModal(){
   modalTitle.innerText = "新增发票";
   document.getElementById("editPageId").value = "";
   document.getElementById("invId").value = "";
-  editCacheProjectId = "";
-  editCacheClientId = "";
   invNetInput.value = "";
   document.getElementById("invVatRate").value = "";
   document.getElementById("invDue").value = "";
   document.getElementById("invStatus").value = "Draft";
+
   invClientSel.innerHTML = `<option value="">--请先选择客户--</option>`;
   invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
-  await loadClientOptions();
   modal.classList.add("active");
+  await loadClientOptions();
 }
 
-async function openEditModal(inv,pageId){
+async function openEditModal(inv, pageId){
   modalTitle.innerText = "编辑发票";
   document.getElementById("editPageId").value = pageId;
   document.getElementById("invId").value = inv.invoiceId;
-  invNetInput.value = inv.netAmount;
-  document.getElementById("invVatRate").value = inv.vatRate;
+  invNetInput.value = Number(inv.netAmount || 0).toFixed(2);
+  document.getElementById("invVatRate").value = `${Number(inv.vatRate || 0).toFixed(2)}%`;
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;
 
-  editCacheClientId = inv.clientPageId;
-  editCacheProjectId = inv.projectPageId;
-
-  invClientSel.innerHTML = `<option value="">--加载中…--</option>`;
-  invProjectSel.innerHTML = `<option value="">--加载中…--</option>`;
-
-  await loadClientOptions();
   modal.classList.add("active");
+  await loadClientOptions(inv.clientPageId);
+  if(inv.clientPageId){
+    await loadProjectByClient(inv.clientPageId, inv.projectPageId);
+  }
 }
 
 function closeModal(){
   modal.classList.remove("active");
-  editCacheProjectId = "";
-  editCacheClientId = "";
 }
 
 async function saveInvoice(){
@@ -312,29 +309,31 @@ async function saveInvoice(){
     return;
   }
   const invIdVal = document.getElementById("invId").value.trim();
-  const invVatVal = Number(document.getElementById("invVatRate").value);
   const invDueVal = document.getElementById("invDue").value;
-  if(!invIdVal || !invDueVal || isNaN(invVatVal)){
-    alert("发票编号、税率、到期日不能为空");
+  if(!invIdVal || !invDueVal){
+    alert("发票编号和到期日不能为空");
     return;
   }
 
+  btnSaveInv.disabled = true;
+  btnSaveInv.innerText = "保存中…";
+
   const payload = {
     uid,
+    pageId: editPageId,
     invoiceId: invIdVal,
     clientPageId: clientId,
     projectPageId: projectPageId,
-    vatRate: invVatVal,
     dueDate: invDueVal,
     paymentStatus: document.getElementById("invStatus").value
-  }
+  };
   const actionName = editPageId ? "editInvoice" : "addInvoice";
   try{
-    const res = await fetch(WORKER_B_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:actionName,...payload})
-    })
+    const res = await fetch(WORKER_B_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: actionName, ...payload })
+    });
     const ret = await res.json();
     if(ret.success){
       alert("保存成功");
@@ -344,7 +343,10 @@ async function saveInvoice(){
       alert(ret.error);
     }
   }catch(e){
-    alert("请求异常："+e.message);
+    alert("请求异常：" + e.message);
+  }finally{
+    btnSaveInv.disabled = false;
+    btnSaveInv.innerText = "保存";
   }
 }
 </script>
