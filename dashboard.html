@@ -55,65 +55,87 @@
             </div>
 
             <!-- 客户面板 -->
-            <div id="panelClient">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Your Clients</h2>
-                    <div class="flex gap-2">
-                        <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
-                            + Add Client
-                        </button>
-                        <button id="openBatchBtn" class="bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-600">
-                            Batch Import
-                        </button>
-                    </div>
-                </div>
-                <div id="clientListBox" class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-10 text-center text-slate-400">
-                        No clients yet, add your first client above.
-                    </div>
-                </div>
-                <!-- 批量导入弹窗 -->
-                <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-                        <h3 class="text-lg font-semibold mb-4">Batch Import Clients</h3>
-                        <p class="text-sm text-slate-500 mb-2">格式：Name,Email,Phone,Notes，每行一条</p>
-                        <textarea id="batchTextarea" rows="8" class="w-full border rounded-lg p-3"></textarea>
-                        <div class="flex justify-end gap-2 mt-4">
-                            <button id="closeBatchBtn" type="button" class="px-4 py-2 border rounded-lg">Cancel</button>
-                            <button id="submitBatchBtn" class="px-4 py-2 bg-primary text-white rounded-lg">Import</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- 新增/编辑共用弹窗 -->
-                <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-                        <h3 id="modalTitle" class="text-lg font-semibold mb-4">Add New Client</h3>
-                        <form id="addForm">
-                            <input type="hidden" id="editPageId" name="editPageId" value="">
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Client Name *</label>
-                                <input required name="clientName" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Contact Email</label>
-                                <input name="contactEmail" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Phone</label>
-                                <input name="phone" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm text-slate-600 mb-1">Notes</label>
-                                <textarea name="notes" rows="3" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200"></textarea>
-                            </div>
-                            <div class="flex justify-end gap-2">
-                                <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded-lg">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg">Save</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+            <!-- 客户管理 Tab -->
+<div id="panelClient">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Your Clients</h2>
+        <div class="flex gap-2">
+            <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
+                + Add Client
+            </button>
+            <button id="openBatchBtn" class="bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-600">
+                Batch Import
+            </button>
+        </div>
+    </div>
+    <div id="clientListBox" class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-10 text-center text-slate-400">
+            No clients yet, add your first client above.
+        </div>
+    </div>
+
+    <!-- 批量导入弹窗 -->
+    <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
+            <h3 class="text-lg font-semibold mb-4">Batch Import Clients</h3>
+            <p class="text-sm text-slate-500 mb-2">格式：Name,Email,Phone,Notes，每行一条<br/>⚠批量导入暂不支持Country Region / VAT字段</p>
+            <textarea id="batchTextarea" rows="8" class="w-full border rounded-lg p-3"></textarea>
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="closeBatchBtn" type="button" class="px-4 py-2 border rounded-lg">Cancel</button>
+                <button id="submitBatchBtn" class="px-4 py-2 bg-primary text-white rounded-lg">Import</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑共用弹窗 -->
+    <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
+            <h3 id="modalTitle" class="text-lg font-semibold mb-4">Add New Client</h3>
+            <form id="addForm">
+                <input type="hidden" id="editPageId" name="editPageId" value="">
+                <div class="mb-3">
+                    <label class="block text-sm text-slate-600 mb-1">Client Name <span class="text-red-500">*</span></label>
+                    <input required name="clientName" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm text-slate-600 mb-1">Contact Email</label>
+                    <input name="contactEmail" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm text-slate-600 mb-1">Phone</label>
+                    <input name="phone" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
+                </div>
+                <!-- 新增：Country Region 下拉，选项严格对齐Notion -->
+                <div class="mb-3">
+                    <label class="block text-sm text-slate-600 mb-1">Country Region</label>
+                    <select name="countryRegion" class="w-full border rounded-lg px-3 py-2">
+                        <option value="">-- Select --</option>
+                        <option value="Outside EU">Outside EU</option>
+                        <option value="EU(Non‑nordic)">EU(Non‑nordic)</option>
+                        <option value="Denmark">Denmark</option>
+                        <option value="Sweden">Sweden</option>
+                        <option value="Finland">Finland</option>
+                        <option value="Norway">Norway</option>
+                    </select>
+                </div>
+                <!-- 新增：VAT/CVR/Org No. 输入框 -->
+                <div class="mb-3">
+                    <label class="block text-sm text-slate-600 mb-1">VAT/CVR/Org No.</label>
+                    <input name="vatNo" type="text" class="w-full border rounded-lg px-3 py-2" placeholder="税号 / 组织编号">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-slate-600 mb-1">Notes</label>
+                    <textarea name="notes" rows="3" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
             <!-- 项目管理面板 -->
             <div id="panelProject" class="hidden">
@@ -282,188 +304,208 @@
         }
 
         async function loadClientList() {
-            try {
-                const res = await fetch(WORKER_B_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({ uid, action:"listClients" })
-                });
-                const data = await res.json();
-                const list = data.list || [];
-                if (!data.success || list.length === 0) {
-                    clientListBox.innerHTML = `<div class="p-10 text-center text-slate-400">No clients yet, add your first client above.</div>`;
-                    return;
-                }
-                let html = `<table class="w-full"><thead class="bg-slate-50"><tr class="text-left text-sm text-slate-500">
-                    <th class="px-4 py-3">Name</th>
-                    <th class="px-4 py-3">Email</th>
-                    <th class="px-4 py-3">Phone</th>
-                    <th class="px-4 py-3">Notes</th>
-                    <th class="px-4 py-3">Created</th>
-                    <th class="px-4 py-3">Operate</th>
-                </tr></thead><tbody>`;
-                const isTrial = currentPlanKey === "Trial";
-                list.forEach(item=>{
-                    html += `<tr class="border-t">
-                        <td class="px-4 py-3">${item.clientName}</td>
-                        <td class="px-4 py-3">${item.contactEmail}</td>
-                        <td class="px-4 py-3">${item.phone}</td>
-                        <td class="px-4 py-3">${item.notes}</td>
-                        <td class="px-4 py-3 text-sm">${item.createdTime || ""}</td>
-                        <td class="px-4 py-3">
-                            <button data-pageid="${item.pageId}" data-name="${item.clientName}" data-email="${item.contactEmail}" data-phone="${item.phone}" data-notes="${item.notes}" class="editBtn text-blue-600 hover:underline mr-3">Edit</button>
-                            ${!isTrial ? `<button data-pageid="${item.pageId}" class="delBtn text-red-600 hover:underline">Delete</button>` : ""}
-                        </td>
-                    </tr>`;
-                })
-                html += "</tbody></table>";
-                clientListBox.innerHTML = html;
-                document.querySelectorAll(".editBtn").forEach(btn=>{
-                    btn.onclick = function(){
-                        const pid = this.dataset.pageid;
-                        addForm.reset();
-                        editPageIdInput.value = pid;
-                        modalTitle.innerText = "Edit Client";
-                        addForm.clientName.value = this.dataset.name;
-                        addForm.contactEmail.value = this.dataset.email;
-                        addForm.phone.value = this.dataset.phone;
-                        addForm.notes.value = this.dataset.notes;
-                        addModal.classList.remove("hidden");
-                    }
-                });
-                document.querySelectorAll(".delBtn").forEach(btn=>{
-                    btn.onclick = function(){
-                        const pageId = this.dataset.pageid;
-                        delClient(pageId);
-                    }
-                });
-            } catch (err) {
-                console.error(err);
-                clientListBox.innerHTML = `<div class="p-10 text-center text-red-400">Load client error</div>`;
-            }
+    try {
+        const res = await fetch(WORKER_B_URL, {
+            method: "POST",
+            headers: {"Content‑Type":"application/json"},
+            body: JSON.stringify({ uid, action:"listClients" })
+        });
+        const data = await res.json();
+        const list = data.list || [];
+        if (!data.success || list.length === 0) {
+            clientListBox.innerHTML = `<div class="p‑10 text‑center text‑slate‑400">No clients yet, add your first client above.</div>`;
+            return;
         }
-
-        async function delClient(pageId) {
-            if (!confirm("Are you sure you want to delete this client?")) return;
-            try {
-                const res = await fetch(WORKER_B_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({
-                        uid,
-                        action: "deleteClient",
-                        payload: { pageId }
-                    })
-                });
-                const data = await res.json();
-                if (!data.success) {
-                    alert(data.error);
-                    return;
-                }
-                alert("Deleted successfully");
-                loadClientList();
-            } catch(err) {
-                console.error(err);
-                alert("Delete request failed");
-            }
-        }
-
-        addForm.addEventListener("submit", async (e)=>{
-            e.preventDefault();
-            const formData = new FormData(addForm);
-            const editPageId = editPageIdInput.value.trim();
-            const payload = {
-                clientName: formData.get("clientName"),
-                contactEmail: formData.get("contactEmail"),
-                phone: formData.get("phone"),
-                notes: formData.get("notes")
-            };
-            try {
-                let res,data;
-                if(editPageId){
-                    payload.pageId = editPageId;
-                    res = await fetch(WORKER_B_URL, {
-                        method: "POST",
-                        headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({ uid, action:"editClient", payload })
-                    });
-                    data = await res.json();
-                }else{
-                    res = await fetch(WORKER_B_URL, {
-                        method: "POST",
-                        headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({ uid, action:"addClient", payload })
-                    });
-                    data = await res.json();
-                }
-                if (data.success) {
-                    addModal.classList.add("hidden");
-                    addForm.reset();
-                    editPageIdInput.value = "";
-                    modalTitle.innerText = "Add New Client";
-                    loadClientList();
-                } else {
-                    alert(data.error || "Save failed");
-                }
-            } catch(err) {
-                console.error(err);
-                alert("Network error");
-            }
+        // 表格增加 Country Region、VAT/CVR/Org No. 两列
+        let html = `<table class="w-full"><thead class="bg‑slate‑50"><tr class="text‑left text‑sm text‑slate‑500">
+            <th class="px‑4 py‑3">Name</th>
+            <th class="px‑4 py‑3">Email</th>
+            <th class="px‑4 py‑3">Phone</th>
+            <th class="px‑4 py‑3">Country Region</th>
+            <th class="px‑4 py‑3">VAT/CVR/Org No.</th>
+            <th class="px‑4 py‑3">Notes</th>
+            <th class="px‑4 py‑3">Created</th>
+            <th class="px‑4 py‑3">Operate</th>
+        </tr></thead><tbody>`;
+        const isTrial = currentPlanKey === "Trial";
+        list.forEach(item=>{
+            html += `<tr class="border‑t">
+                <td class="px‑4 py‑3">${item.clientName}</td>
+                <td class="px‑4 py‑3">${item.contactEmail || "‑"}</td>
+                <td class="px‑4 py‑3">${item.phone || "‑"}</td>
+                <td class="px‑4 py‑3">${item.countryRegion || "‑"}</td>
+                <td class="px‑4 py‑3">${item.vatNo || "‑"}</td>
+                <td class="px‑4 py‑3">${item.notes || "‑"}</td>
+                <td class="px‑4 py‑3 text‑sm">${item.createdTime || ""}</td>
+                <td class="px‑4 py‑3">
+                    <button 
+                        data‑pageid="${item.pageId}" 
+                        data‑name="${item.clientName}" 
+                        data‑email="${item.contactEmail}" 
+                        data‑phone="${item.phone}"
+                        data‑countryregion="${item.countryRegion}"
+                        data‑vatno="${item.vatNo}"
+                        data‑notes="${item.notes}" 
+                        class="editBtn text‑blue‑600 hover:underline mr‑3">Edit</button>
+                    ${!isTrial ? `<button data‑pageid="${item.pageId}" class="delBtn text‑red‑600 hover:underline">Delete</button>` : ""}
+                </td>
+            </tr>`;
         })
+        html += "</tbody></table>";
+        clientListBox.innerHTML = html;
 
-        openAddBtn.onclick = ()=>{
-            addForm.reset();
-            editPageIdInput.value = "";
-            modalTitle.innerText = "Add New Client";
-            addModal.classList.remove("hidden");
-        };
-        closeModalBtn.onclick = ()=> {
+        document.querySelectorAll(".editBtn").forEach(btn=>{
+            btn.onclick = function(){
+                const pid = this.dataset.pageid;
+                addForm.reset();
+                editPageIdInput.value = pid;
+                modalTitle.innerText = "Edit Client";
+                // 基础字段赋值
+                addForm.clientName.value = this.dataset.name;
+                addForm.contactEmail.value = this.dataset.email;
+                addForm.phone.value = this.dataset.phone;
+                // ✅新增字段回显
+                addForm.countryRegion.value = this.dataset.countryregion;
+                addForm.vatNo.value = this.dataset.vatno;
+
+                addForm.notes.value = this.dataset.notes;
+                addModal.classList.remove("hidden");
+            }
+        });
+        document.querySelectorAll(".delBtn").forEach(btn=>{
+            btn.onclick = function(){
+                const pageId = this.dataset.pageid;
+                delClient(pageId);
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        clientListBox.innerHTML = `<div class="p‑10 text‑center text‑red‑400">Load client error</div>`;
+    }
+}
+
+async function delClient(pageId) {
+    if (!confirm("Are you sure you want to delete this client?")) return;
+    try {
+        const res = await fetch(WORKER_B_URL, {
+            method: "POST",
+            headers: {"Content‑Type":"application/json"},
+            body: JSON.stringify({
+                uid,
+                action: "deleteClient",
+                payload: { pageId }
+            })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            alert(data.error);
+            return;
+        }
+        alert("Deleted successfully");
+        loadClientList();
+    } catch(err) {
+        console.error(err);
+        alert("Delete request failed");
+    }
+}
+
+addForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const formData = new FormData(addForm);
+    const editPageId = editPageIdInput.value.trim();
+    // ✅ payload带上两个新字段传给后端WorkerB
+    const payload = {
+        clientName: formData.get("clientName"),
+        contactEmail: formData.get("contactEmail"),
+        phone: formData.get("phone"),
+        countryRegion: formData.get("countryRegion"),
+        vatNo: formData.get("vatNo"),
+        notes: formData.get("notes")
+    };
+    try {
+        let res,data;
+        if(editPageId){
+            payload.pageId = editPageId;
+            res = await fetch(WORKER_B_URL, {
+                method: "POST",
+                headers: {"Content‑Type":"application/json"},
+                body: JSON.stringify({ uid, action:"editClient", payload })
+            });
+            data = await res.json();
+        }else{
+            res = await fetch(WORKER_B_URL, {
+                method: "POST",
+                headers: {"Content‑Type":"application/json"},
+                body: JSON.stringify({ uid, action:"addClient", payload })
+            });
+            data = await res.json();
+        }
+        if (data.success) {
             addModal.classList.add("hidden");
             addForm.reset();
             editPageIdInput.value = "";
             modalTitle.innerText = "Add New Client";
-        };
+            loadClientList();
+        } else {
+            alert(data.error || "Save failed");
+        }
+    } catch(err) {
+        console.error(err);
+        alert("Network error");
+    }
+})
 
-        verifyUser();
+openAddBtn.onclick = ()=>{
+    addForm.reset();
+    editPageIdInput.value = "";
+    modalTitle.innerText = "Add New Client";
+    addModal.classList.remove("hidden");
+};
+closeModalBtn.onclick = ()=> {
+    addModal.classList.add("hidden");
+    addForm.reset();
+    editPageIdInput.value = "";
+    modalTitle.innerText = "Add New Client";
+};
 
-        openBatchBtn.onclick = ()=>{
-            batchTextarea.value = "";
-            batchModal.classList.remove("hidden");
-        };
-        closeBatchBtn.onclick = ()=>{
-            batchModal.classList.add("hidden");
-        };
-        
-        submitBatchBtn.onclick = async ()=>{
-            const raw = batchTextarea.value.trim();
-            if(!raw){
-                alert("请粘贴导入数据");
-                return;
-            }
-            const lines = raw.split("\n").map(l=>l.trim()).filter(l=>!!l);
-            try{
-                const res = await fetch(WORKER_B_URL,{
-                    method:"POST",
-                    headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify({
-                        uid,
-                        action:"batchAddClient",
-                        payload:{ lines }
-                    })
-                });
-                const data = await res.json();
-                if(!data.success){
-                    alert(data.error);
-                    return;
-                }
-                alert(data.message);
-                batchModal.classList.add("hidden");
-                loadClientList();
-            }catch(e){
-                console.error(e);
-                alert("批量导入请求失败");
-            }
-        };
+openBatchBtn.onclick = ()=>{
+    batchTextarea.value = "";
+    batchModal.classList.remove("hidden");
+};
+closeBatchBtn.onclick = ()=>{
+    batchModal.classList.add("hidden");
+};
+
+submitBatchBtn.onclick = async ()=>{
+    const raw = batchTextarea.value.trim();
+    if(!raw){
+        alert("请粘贴导入数据");
+        return;
+    }
+    const lines = raw.split("\n").map(l=>l.trim()).filter(l=>!!l);
+    try{
+        const res = await fetch(WORKER_B_URL,{
+            method:"POST",
+            headers:{"Content‑Type":"application/json"},
+            body:JSON.stringify({
+                uid,
+                action:"batchAddClient",
+                payload:{ lines }
+            })
+        });
+        const data = await res.json();
+        if(!data.success){
+            alert(data.error);
+            return;
+        }
+        alert(data.message);
+        batchModal.classList.add("hidden");
+        loadClientList();
+    }catch(e){
+        console.error(e);
+        alert("批量导入请求失败");
+    }
+};
 
        // ====================== 【项目模块JS开始】 ======================
 const tabClient = document.getElementById("tabClient");
