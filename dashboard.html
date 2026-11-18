@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,236 +14,309 @@
                         neutral: '#f8fafc',
                     },
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'Segoe UI', 'Roboto', 'sans-serif'],
                     },
                 }
             }
         }
     </script>
+    <style>
+        body { background-color: #f8fafc; color: #111827; margin: 0; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #4b5563;
+            transition: all 0.15s ease;
+            text-align: left;
+            cursor: pointer;
+        }
+        .nav-item:hover { background-color: #f3f4f6; color: #111827; }
+        .nav-item.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            font-weight: 600;
+        }
+        .card-box {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+        .table-header {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-700 min-h-screen">
-    <div class="max-w-6xl mx-auto px-4 py-10">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-8 border-b pb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">Dashboard</h1>
-                <p class="text-slate-500 mt-1">Your Nordic CRM Portal</p>
-            </div>
-            <a href="/index.html" class="text-slate-500 hover:text-slate-800 flex items-center gap-1">
-                &larr; Back to Home
-            </a>        
-        </header>
+<body class="min-h-screen">
 
-        <!-- Account Verification Loader -->
-        <div id="loadingBox" class="py-20 text-center text-slate-500">
-            Verifying your account...
-        </div>
+    <!-- Account Verification Loader -->
+    <div id="loadingBox" class="py-32 text-center text-slate-500 text-sm">
+        Verifying your account...
+    </div>
 
-        <!-- Main Content -->
-        <div id="mainBox" class="hidden">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <p class="text-slate-600">Welcome, <span id="userEmail" class="font-medium"></span></p>
-                    <div id="planBadge" class="mt-1 text-sm text-blue-600"></div>
+    <!-- Main Layout (Left Sidebar + Right Workspace) -->
+    <div id="mainBox" class="hidden flex min-h-screen">
+        
+        <!-- ==================== 左侧导航边栏 ==================== -->
+        <aside class="w-60 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
+            <div class="p-5">
+                <!-- Brand Title -->
+                <div class="pb-5 mb-5 border-b border-gray-100">
+                    <h1 class="text-lg font-bold text-gray-900 tracking-tight">Nordic CRM</h1>
+                    <p class="text-xs text-gray-500 mt-0.5">北欧企业财税与客户门户</p>
                 </div>
-                <a id="accountLink" href="#" class="px-4 py-2 border rounded-lg hover:bg-slate-100 text-sm font-medium">账户管理</a>
+
+                <!-- User Info Mini Card -->
+                <div class="mb-6 p-3 rounded-lg bg-gray-50 border border-gray-200/80">
+                    <div class="text-xs text-gray-500">当前登录账号</div>
+                    <div id="userEmail" class="text-xs font-semibold text-gray-800 truncate mt-0.5"></div>
+                    <div id="planBadge" class="mt-1.5 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-100"></div>
+                </div>
+
+                <!-- Sidebar Navigation Menu -->
+                <nav class="space-y-1.5">
+                    <button id="tabClient" class="nav-item active">
+                        <span>👥</span> 客户管理
+                    </button>
+                    <button id="tabProject" class="nav-item">
+                        <span>📁</span> 项目管理
+                    </button>
+                    <button id="tabInvoice" class="nav-item">
+                        <span>🧾</span> 发票管理
+                    </button>
+                    <button id="tabExpense" class="nav-item">
+                        <span>💳</span> 支出与资产
+                    </button>
+                </nav>
             </div>
 
-            <!-- Navigation Tabs -->
-            <div class="flex border-b mb-6">
-                <button id="tabClient" class="px-4 py-2 border-b-2 border-blue-500 text-blue-600 font-medium">客户管理</button>
-                <button id="tabProject" class="px-4 py-2 border-b-2 border-transparent text-gray-500 font-medium hover:text-gray-700">项目管理</button>
-                <button id="tabInvoice" class="px-4 py-2 border-b-2 border-transparent text-gray-500 font-medium hover:text-gray-700">发票管理</button>
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-gray-200 space-y-2">
+                <a id="accountLink" href="#" class="block w-full text-center px-3 py-2 border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
+                    ⚙️ 账户管理
+                </a>
+                <a href="index.html" class="block w-full text-center px-3 py-1.5 text-xs text-gray-500 hover:text-gray-800">
+                    &larr; Back to Home
+                </a>
             </div>
+        </aside>
 
-            <!-- ==================== 1. Client Management Panel ==================== -->
-            <div id="panelClient">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Your Clients</h2>
-                    <div class="flex gap-2">
-                        <button id="openAddBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
-                            + Add Client
-                        </button>
-                        <button id="openBatchBtn" class="bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-600">
-                            Batch Import
-                        </button>
+        <!-- ==================== 右侧主工作区 ==================== -->
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+            <div class="max-w-6xl mx-auto">
+
+                <!-- ==================== 1. Client Management Panel ==================== -->
+                <div id="panelClient">
+                    <div class="flex justify-between items-center mb-5 flex-wrap gap-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">客户管理 (Your Clients)</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">管理北欧及跨境客户资料与税务识别号</p>
+                        </div>
+                        <div class="flex gap-2.5">
+                            <button id="openBatchBtn" class="px-4 py-2 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
+                                Batch Import
+                            </button>
+                            <button id="openAddBtn" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700">
+                                + Add Client
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Client Table Container -->
-                <div id="clientListBox" class="bg-white rounded-xl shadow-sm overflow-x-auto">
-                    <div class="p-10 text-center text-slate-400">Loading clients...</div>
-                </div>
+                    <!-- Client Table Container -->
+                    <div id="clientListBox" class="card-box overflow-x-auto">
+                        <div class="p-10 text-center text-gray-400 text-sm">Loading clients...</div>
+                    </div>
 
-                <!-- Batch Import Modal -->
-                <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-                        <h3 class="text-lg font-semibold mb-2">Batch Import Clients</h3>
-                        <p class="text-sm text-slate-500 mb-3">
-                            格式: Name,Email,Phone,Notes (每行一条)<br/>
-                            <span class="text-amber-600">注意: 批量导入暂不支持 Country Region / VAT 字段</span>
-                        </p>
-                        <textarea id="batchTextarea" rows="8" class="w-full border rounded-lg p-3 text-sm" placeholder="Acme Corp,contact@acme.com,+45123456,VIP Client"></textarea>
-                        <div class="flex justify-end gap-2 mt-4">
-                            <button id="closeBatchBtn" type="button" class="px-4 py-2 border rounded-lg hover:bg-slate-50">Cancel</button>
-                            <button id="submitBatchBtn" type="button" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">Import</button>
+                    <!-- Batch Import Modal -->
+                    <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                        <div class="bg-white w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-xl">
+                            <h3 class="text-base font-bold text-gray-900 mb-2">Batch Import Clients</h3>
+                            <p class="text-xs text-gray-500 mb-3 leading-relaxed">
+                                格式：Name,Email,Phone,Notes (每行一条)<br>
+                                <span class="text-amber-600">注意：批量导入暂不支持 Country Region / VAT 字段</span>
+                            </p>
+                            <textarea id="batchTextarea" rows="8" class="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:border-blue-500" placeholder="Acme Corp,contact@acme.com,+45123456,VIP Client"></textarea>
+                            <div class="flex justify-end gap-2 mt-4">
+                                <button id="closeBatchBtn" type="button" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
+                                <button id="submitBatchBtn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Import</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add / Edit Client Modal -->
+                    <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                        <div class="bg-white w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-xl">
+                            <h3 id="modalTitle" class="text-base font-bold text-gray-900 mb-4">Add New Client</h3>
+                            <form id="addForm">
+                                <input type="hidden" id="editPageId" name="editPageId" value="">
+                                <div class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Client Name <span class="text-red-500">*</span></label>
+                                    <input required name="clientName" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Contact Email</label>
+                                    <input type="email" name="contactEmail" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                                    <input name="phone" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Country Region</label>
+                                    <select name="countryRegion" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500">
+                                        <option value="">-- Select --</option>
+                                        <option value="Outside EU">Outside EU</option>
+                                        <option value="EU(Non-nordic)">EU(Non-nordic)</option>
+                                        <option value="Denmark">Denmark</option>
+                                        <option value="Sweden">Sweden</option>
+                                        <option value="Finland">Finland</option>
+                                        <option value="Norway">Norway</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">VAT/CVR/Org No.</label>
+                                    <input name="vatNo" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="税号 / 组织编号">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                                    <textarea name="notes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" id="closeModalBtn" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
 
-                <!-- Add / Edit Client Modal -->
-                <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-                        <h3 id="modalTitle" class="text-lg font-semibold mb-4">Add New Client</h3>
-                        <form id="addForm">
-                            <input type="hidden" id="editPageId" name="editPageId" value="">
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Client Name <span class="text-red-500">*</span></label>
-                                <input required name="clientName" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Contact Email</label>
-                                <input type="email" name="contactEmail" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Phone</label>
-                                <input name="phone" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">Country Region</label>
-                                <select name="countryRegion" class="w-full border rounded-lg px-3 py-2 border-slate-200">
-                                    <option value="">-- Select --</option>
-                                    <option value="Outside EU">Outside EU</option>
-                                    <option value="EU(Non‑nordic)">EU(Non-nordic)</option>
-                                    <option value="Denmark">Denmark</option>
-                                    <option value="Sweden">Sweden</option>
-                                    <option value="Finland">Finland</option>
-                                    <option value="Norway">Norway</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-slate-600 mb-1">VAT/CVR/Org No.</label>
-                                <input name="vatNo" type="text" class="w-full border rounded-lg px-3 py-2 border-slate-200" placeholder="税号 / 组织编号">
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm text-slate-600 mb-1">Notes</label>
-                                <textarea name="notes" rows="3" class="w-full border rounded-lg px-3 py-2 focus:outline-primary/50 border-slate-200"></textarea>
-                            </div>
-                            <div class="flex justify-end gap-2">
-                                <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded-lg hover:bg-slate-50">Cancel</button>
-                                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">Save</button>
-                            </div>
-                        </form>
+                <!-- ==================== 2. Project Management Panel ==================== -->
+                <div id="panelProject" class="hidden">
+                    <div class="mb-5 flex justify-between items-center flex-wrap gap-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">项目管理 (Projects)</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">追踪按时计费与包月服务项目的税前总价值</p>
+                        </div>
+                        <button id="btnAddProject" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700">+ 新增项目</button>
                     </div>
-                </div>
-            </div>
 
-            <!-- ==================== 2. Project Management Panel ==================== -->
-            <div id="panelProject" class="hidden">
-                <div class="mb-4 flex justify-between items-center">
-                    <h2 class="text-lg font-semibold">项目列表</h2>
-                    <button id="btnAddProject" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">+ 新增项目</button>
-                </div>
+                    <div class="card-box overflow-x-auto">
+                        <table class="w-full border-collapse text-sm">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="p-3 text-left">项目名称</th>
+                                    <th class="p-3 text-left">关联客户</th>
+                                    <th class="p-3 text-left">计费方式</th>
+                                    <th class="p-3 text-right">单价 (EUR)</th>
+                                    <th class="p-3 text-right">总工时</th>
+                                    <th class="p-3 text-right">项目税前金额 (EUR)</th>
+                                    <th class="p-3 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projectTableBody" class="divide-y divide-gray-100">
+                                <tr><td colspan="7" class="p-8 text-center text-gray-400">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-sm text-slate-500 border-b">
-                                <th class="p-3 text-left">项目名称</th>
-                                <th class="p-3 text-left">关联客户</th>
-                                <th class="p-3 text-left">计费方式</th>
-                                <th class="p-3 text-right">单价 (EUR)</th>
-                                <th class="p-3 text-right">总工时</th>
-                                <th class="p-3 text-right">项目税前金额 (EUR)</th>
-                                <th class="p-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="projectTableBody">
-                            <tr><td colspan="7" class="p-6 text-center text-slate-400">加载中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Add Project Modal -->
-                <div id="modalAddProject" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-                    <div class="bg-white p-6 rounded-xl w-full max-w-md shadow-lg">
-                        <h3 class="text-lg font-semibold mb-4">新增项目</h3>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">项目名称 <span class="text-red-500">*</span></label>
-                                <input type="text" id="inpProjectName" class="w-full border p-2 rounded-lg" placeholder="填写项目名称">
+                    <!-- Add Project Modal -->
+                    <div id="modalAddProject" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+                        <div class="bg-white p-6 rounded-lg border border-gray-200 w-full max-w-md shadow-xl">
+                            <h3 class="text-base font-bold text-gray-900 mb-4">新增项目</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="inpProjectName" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="填写项目名称">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">关联客户 <span class="text-red-500">*</span></label>
+                                    <select id="selProjectClient" class="w-full border border-gray-300 p-2 rounded-md text-sm bg-white"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">计费类型 <span class="text-red-500">*</span></label>
+                                    <select id="selBillingType" class="w-full border border-gray-300 p-2 rounded-md text-sm bg-white">
+                                        <option value="Hourly Rate">Hourly Rate (按时计费)</option>
+                                        <option value="Retainer">Retainer (固定包月)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">单价 (EUR) <span class="text-red-500">*</span></label>
+                                    <input type="number" step="0.01" id="inpRateAmount" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="0.00">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">总工时</label>
+                                    <input type="number" step="0.01" id="inpTotalHours" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="0">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">关联客户 <span class="text-red-500">*</span></label>
-                                <select id="selProjectClient" class="w-full border p-2 rounded-lg"></select>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">计费类型 <span class="text-red-500">*</span></label>
-                                <select id="selBillingType" class="w-full border p-2 rounded-lg">
-                                    <option value="Hourly Rate">Hourly Rate (按时计费)</option>
-                                    <option value="Retainer">Retainer (固定包月)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">单价 (EUR) <span class="text-red-500">*</span></label>
-                                <input type="number" step="0.01" id="inpRateAmount" class="w-full border p-2 rounded-lg" placeholder="0.00">
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">总工时</label>
-                                <input type="number" step="0.01" id="inpTotalHours" class="w-full border p-2 rounded-lg" placeholder="0">
+                            <div class="flex justify-end gap-2 mt-6">
+                                <button id="closeProjectModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">取消</button>
+                                <button id="submitAddProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">保存</button>
                             </div>
                         </div>
-                        <div class="flex justify-end gap-3 mt-6">
-                            <button id="closeProjectModal" class="px-4 py-2 border rounded-lg hover:bg-slate-50">取消</button>
-                            <button id="submitAddProject" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">保存</button>
+                    </div>
+
+                    <!-- Edit Project Modal -->
+                    <div id="editProjectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+                        <div class="bg-white p-6 rounded-lg border border-gray-200 w-full max-w-md shadow-xl">
+                            <h3 class="text-base font-bold text-gray-900 mb-4">编辑项目</h3>
+                            <input type="hidden" id="editProjectId">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="editProjectName" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">关联客户 <span class="text-red-500">*</span></label>
+                                    <select id="editProjectClient" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm bg-white"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">计费方式 <span class="text-red-500">*</span></label>
+                                    <select id="editBillingType" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm bg-white">
+                                        <option value="Hourly Rate">Hourly Rate</option>
+                                        <option value="Retainer">Retainer</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">单价 (EUR)</label>
+                                    <input type="number" step="0.01" id="editRateAmount" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">总工时</label>
+                                    <input type="number" step="0.01" id="editTotalHours" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
+                                </div>
+                            </div>
+                            <div class="flex gap-2 justify-end mt-6">
+                                <button id="btnCancelEditProject" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">取消</button>
+                                <button id="btnSaveEditProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">保存修改</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Edit Project Modal -->
-                <div id="editProjectModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-                    <div class="bg-white p-6 rounded-xl w-full max-w-md shadow-lg">
-                        <h3 class="text-lg font-semibold mb-4">编辑项目</h3>
-                        <input type="hidden" id="editProjectId">
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">项目名称 <span class="text-red-500">*</span></label>
-                                <input type="text" id="editProjectName" class="w-full border px-3 py-2 rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">关联客户 <span class="text-red-500">*</span></label>
-                                <select id="editProjectClient" class="w-full border px-3 py-2 rounded-lg"></select>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">计费方式 <span class="text-red-500">*</span></label>
-                                <select id="editBillingType" class="w-full border px-3 py-2 rounded-lg">
-                                    <option value="Hourly Rate">Hourly Rate</option>
-                                    <option value="Retainer">Retainer</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">单价 (EUR)</label>
-                                <input type="number" step="0.01" id="editRateAmount" class="w-full border px-3 py-2 rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm text-slate-600 mb-1">总工时</label>
-                                <input type="number" step="0.01" id="editTotalHours" class="w-full border px-3 py-2 rounded-lg">
-                            </div>
-                        </div>
-                        <div class="flex gap-3 justify-end mt-6">
-                            <button id="btnCancelEditProject" class="px-4 py-2 border rounded-lg hover:bg-slate-50">取消</button>
-                            <button id="btnSaveEditProject" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">保存修改</button>
-                        </div>
-                    </div>
+                <!-- ==================== 3. Invoice Management Panel ==================== -->
+                <div id="panelInvoice" class="hidden">
+                    <iframe id="invoiceIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
+                        style="width:100%; min-height:780px; border:0; background:transparent;"></iframe>
                 </div>
-            </div>
 
-            <!-- ==================== 3. Invoice Management Panel ==================== -->
-            <div id="panelInvoice" class="hidden mt-4">
-                <iframe id="invoiceIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
-                 style="width:100%; min-height:750px; border:0;"></iframe>
+                <!-- ==================== 4. Expenses & Capital Assets Panel ==================== -->
+                <div id="panelExpense" class="hidden">
+                    <iframe id="expenseIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
+                        style="width:100%; min-height:780px; border:0; background:transparent;"></iframe>
+                </div>
+
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
@@ -253,11 +326,12 @@
 
         let currentPlanKey = "";
         let invoiceIframeLoaded = false;
+        let expenseIframeLoaded = false;
         let cachedClientList = [];
         let cachedProjectList = [];
 
         if (!uid) {
-            location.href = "/error.html";
+            location.href = "error.html";
         }
         document.getElementById("accountLink").href = `account.html?uid=${uid}`;
 
@@ -286,41 +360,40 @@
             try {
                 const data = await postWorker({});
                 if (!data.success) {
-                    location.href = "/error.html";
+                    location.href = "error.html";
                     return;
                 }
 
                 currentPlanKey = data.planKey;
                 document.getElementById("openBatchBtn").style.display = (currentPlanKey === "Trial") ? "none" : "inline-block";
                 document.getElementById("userEmail").innerText = data.email;
-                document.getElementById("planBadge").innerText = `当前套餐: ${data.planName} (最多 ${data.maxClients} 客户)`;
+                document.getElementById("planBadge").innerText = `${data.planName} · 限 ${data.maxClients} 客户`;
 
                 document.getElementById("loadingBox").classList.add("hidden");
                 document.getElementById("mainBox").classList.remove("hidden");
 
                 await loadClientList();
             } catch (err) {
-                console.error("Verify user failed:", err);
-                location.href = "/error.html";
+                console.error("Verify user failed", err);
+                location.href = "error.html";
             }
         }
 
-        // ==================== 2. Tab Navigation ====================
+        // ==================== 2. Sidebar Tab Navigation ====================
         const tabs = {
             client: { btn: document.getElementById("tabClient"), panel: document.getElementById("panelClient") },
             project: { btn: document.getElementById("tabProject"), panel: document.getElementById("panelProject") },
-            invoice: { btn: document.getElementById("tabInvoice"), panel: document.getElementById("panelInvoice") }
+            invoice: { btn: document.getElementById("tabInvoice"), panel: document.getElementById("panelInvoice") },
+            expense: { btn: document.getElementById("tabExpense"), panel: document.getElementById("panelExpense") }
         };
 
         function switchTab(activeKey) {
             Object.entries(tabs).forEach(([key, { btn, panel }]) => {
                 if (key === activeKey) {
-                    btn.classList.add("border-blue-500", "text-blue-600");
-                    btn.classList.remove("border-transparent", "text-gray-500");
+                    btn.classList.add("active");
                     panel.classList.remove("hidden");
                 } else {
-                    btn.classList.remove("border-blue-500", "text-blue-600");
-                    btn.classList.add("border-transparent", "text-gray-500");
+                    btn.classList.remove("active");
                     panel.classList.add("hidden");
                 }
             });
@@ -338,8 +411,16 @@
         tabs.invoice.btn.onclick = () => {
             switchTab("invoice");
             if (!invoiceIframeLoaded) {
-                document.getElementById("invoiceIframe").src = `/invoices.html?uid=${uid}`;
+                document.getElementById("invoiceIframe").src = `invoices.html?uid=${uid}`;
                 invoiceIframeLoaded = true;
+            }
+        };
+
+        tabs.expense.btn.onclick = () => {
+            switchTab("expense");
+            if (!expenseIframeLoaded) {
+                document.getElementById("expenseIframe").src = `expenses.html?uid=${uid}`;
+                expenseIframeLoaded = true;
             }
         };
 
@@ -356,15 +437,15 @@
                 cachedClientList = data.list || [];
 
                 if (!data.success || cachedClientList.length === 0) {
-                    clientListBox.innerHTML = `<div class="p-10 text-center text-slate-400">No clients yet, add your first client above.</div>`;
+                    clientListBox.innerHTML = `<div class="p-10 text-center text-gray-400 text-sm">No clients yet, add your first client above.</div>`;
                     return;
                 }
 
                 const isTrial = currentPlanKey === "Trial";
                 let html = `
-                <table class="w-full">
-                    <thead class="bg-slate-50 border-b">
-                        <tr class="text-left text-sm text-slate-500">
+                <table class="w-full text-sm">
+                    <thead class="table-header">
+                        <tr class="text-left">
                             <th class="px-4 py-3">Name</th>
                             <th class="px-4 py-3">Email</th>
                             <th class="px-4 py-3">Phone</th>
@@ -372,25 +453,27 @@
                             <th class="px-4 py-3">VAT/CVR/Org No.</th>
                             <th class="px-4 py-3">Notes</th>
                             <th class="px-4 py-3">Created</th>
-                            <th class="px-4 py-3">Operate</th>
+                            <th class="px-4 py-3 text-center">Operate</th>
                         </tr>
                     </thead>
-                    <tbody>`;
+                    <tbody class="divide-y divide-gray-100">`;
 
                 cachedClientList.forEach((item, index) => {
                     const formattedDate = item.createdTime ? item.createdTime.split("T")[0] : "-";
                     html += `
-                    <tr class="border-t hover:bg-slate-50/50">
-                        <td class="px-4 py-3 font-medium text-slate-800">${escapeHtml(item.clientName)}</td>
-                        <td class="px-4 py-3">${escapeHtml(item.contactEmail) || "-"}</td>
-                        <td class="px-4 py-3">${escapeHtml(item.phone) || "-"}</td>
-                        <td class="px-4 py-3">${escapeHtml(item.countryRegion) || "-"}</td>
-                        <td class="px-4 py-3">${escapeHtml(item.vatNo) || "-"}</td>
-                        <td class="px-4 py-3 max-w-xs truncate">${escapeHtml(item.notes) || "-"}</td>
-                        <td class="px-4 py-3 text-sm text-slate-500">${formattedDate}</td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <button data-index="${index}" class="editClientBtn text-blue-600 hover:underline mr-3">Edit</button>
-                            ${!isTrial ? `<button data-pageid="${escapeHtml(item.pageId)}" class="delClientBtn text-red-600 hover:underline">Delete</button>` : ""}
+                    <tr class="hover:bg-gray-50/70">
+                        <td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(item.clientName)}</td>
+                        <td class="px-4 py-3 text-gray-600">${escapeHtml(item.contactEmail) || "-"}</td>
+                        <td class="px-4 py-3 text-gray-600">${escapeHtml(item.phone) || "-"}</td>
+                        <td class="px-4 py-3">
+                            ${item.countryRegion ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">${escapeHtml(item.countryRegion)}</span>` : "-"}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 font-mono text-xs">${escapeHtml(item.vatNo) || "-"}</td>
+                        <td class="px-4 py-3 max-w-xs truncate text-gray-500">${escapeHtml(item.notes) || "-"}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500">${formattedDate}</td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <button data-index="${index}" class="editClientBtn text-blue-600 hover:underline mr-3 text-xs font-medium">Edit</button>
+                            ${!isTrial ? `<button data-pageid="${escapeHtml(item.pageId)}" class="delClientBtn text-red-500 hover:underline text-xs font-medium">Delete</button>` : ""}
                         </td>
                     </tr>`;
                 });
@@ -423,7 +506,7 @@
                 });
             } catch (err) {
                 console.error(err);
-                clientListBox.innerHTML = `<div class="p-10 text-center text-red-400">Load client error</div>`;
+                clientListBox.innerHTML = `<div class="p-10 text-center text-red-500 text-sm">Load client error</div>`;
             }
         }
 
@@ -541,18 +624,18 @@
 
         async function loadProjects() {
             const tbody = document.getElementById("projectTableBody");
-            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">加载中...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">加载中...</td></tr>`;
 
             try {
                 const json = await postWorker({ action: "getProjects" });
                 if (!json.success) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500">${escapeHtml(json.error || json.msg)}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">${escapeHtml(json.error || json.msg)}</td></tr>`;
                     return;
                 }
 
                 cachedProjectList = json.projects || [];
                 if (cachedProjectList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">暂无项目, 点击右上角新增</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无项目, 点击右上角新增</td></tr>`;
                     return;
                 }
 
@@ -562,17 +645,19 @@
                     const clientName = foundClient ? foundClient.clientName : "-";
 
                     const tr = document.createElement("tr");
-                    tr.className = "border-t hover:bg-slate-50/50";
+                    tr.className = "hover:bg-gray-50/70";
                     tr.innerHTML = `
-                        <td class="p-3 font-medium text-slate-800">${escapeHtml(p.projectName)}</td>
-                        <td class="p-3">${escapeHtml(clientName)}</td>
-                        <td class="p-3">${escapeHtml(p.billingType)}</td>
-                        <td class="p-3 text-right">${p.rateAmount}</td>
-                        <td class="p-3 text-right">${p.totalHours}</td>
-                        <td class="p-3 text-right font-medium">${p.projectValue}</td>
+                        <td class="p-3 font-medium text-gray-900">${escapeHtml(p.projectName)}</td>
+                        <td class="p-3 text-gray-600">${escapeHtml(clientName)}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">${escapeHtml(p.billingType)}</span>
+                        </td>
+                        <td class="p-3 text-right text-gray-700">€${Number(p.rateAmount || 0).toFixed(2)}</td>
+                        <td class="p-3 text-right text-gray-700">${p.totalHours}</td>
+                        <td class="p-3 text-right font-semibold text-emerald-600">€${Number(p.projectValue || 0).toFixed(2)}</td>
                         <td class="p-3 text-center whitespace-nowrap">
-                            <button data-index="${index}" class="editProjBtn text-blue-600 hover:underline mr-3">编辑</button>
-                            <button data-id="${escapeHtml(p.id)}" class="delProjBtn text-red-600 hover:underline">删除</button>
+                            <button data-index="${index}" class="editProjBtn text-blue-600 hover:underline mr-3 text-xs font-medium">编辑</button>
+                            <button data-id="${escapeHtml(p.id)}" class="delProjBtn text-red-500 hover:underline text-xs font-medium">删除</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -592,7 +677,7 @@
                 });
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500">加载项目失败</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">加载项目失败</td></tr>`;
             }
         }
 
@@ -690,7 +775,7 @@
         };
 
         async function delProject(projectId) {
-            if (!confirm("确定删除这个项目?")) return;
+            if (!confirm("确定删除这个项目？")) return;
             const delJson = await postWorker({ action: "deleteProject", projectId });
             alert(delJson.error || delJson.msg);
             if (delJson.success) {
