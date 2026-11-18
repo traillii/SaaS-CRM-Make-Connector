@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>支出与固定资产 | Nordic CRM</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: transparent;
+      color: #111827;
+      margin: 0;
+      padding: 4px;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .card.highlight {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+    .card-label {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .card.highlight .card-label {
+      color: #065f46;
+    }
+    .card-value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .card.highlight .card-value {
+      color: #059669;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .form-box {
+      display: none;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #374151;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    .preview-bar {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: #1e40af;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      background: #f9fafb;
+      padding: 12px;
+      color: #4b5563;
+      font-weight: 600;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .badge {
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .badge-cat { background: #e0e7ff; color: #3730a3; }
+    .badge-cap { background: #fce7f3; color: #9d174d; }
+    .badge-cur { background: #f3f4f6; color: #374151; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 顶部 KPI 税务概览 -->
+  <div class="kpi-grid">
+    <div class="card">
+      <div class="card-label">总支出金额 (Gross Paid)</div>
+      <div class="card-value" id="kpi-gross">€0.00</div>
+    </div>
+    <div class="card highlight">
+      <div class="card-label">可退进项税 (Reclaimable Input VAT)</div>
+      <div class="card-value" id="kpi-vat">€0.00</div>
+    </div>
+    <div class="card">
+      <div class="card-label">合规抵税开支 (Eligible Deductible)</div>
+      <div class="card-value" id="kpi-deductible">€0.00</div>
+    </div>
+    <div class="card">
+      <div class="card-label">固定资产总额 (Capital Assets)</div>
+      <div class="card-value" id="kpi-assets">€0.00</div>
+    </div>
+  </div>
+
+  <!-- 2. 操作与筛选栏 -->
+  <div class="toolbar">
+    <h2 style="margin: 0; font-size: 18px;">DB4: 支出与固定资产 (Expenses & Capital Assets)</h2>
+    <div style="display: flex; gap: 10px;">
+      <select id="filter-ledger" class="btn" onchange="renderTable()">
+        <option value="ALL">全部账期 (All Ledgers)</option>
+        <option value="2026" selected>2026 账期</option>
+        <option value="2025">2025 账期</option>
+      </select>
+      <button class="btn btn-primary" onclick="toggleForm(true)">+ 新增支出</button>
+    </div>
+  </div>
+
+  <!-- 3. 新增支出折叠表单 -->
+  <div id="expense-form-box" class="form-box">
+    <h3 style="margin: 0 0 16px 0; font-size: 16px;">新增采购 / 固定资产记录</h3>
+    <form id="add-expense-form" onsubmit="handleSaveExpense(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>交易名称 (Transaction Name) *</label>
+          <input type="text" id="exp-name" required placeholder="例如: Software Purchase" />
+        </div>
+        <div class="form-group">
+          <label>支出类别 (Expense Category) *</label>
+          <select id="exp-category">
+            <option value="Software/SaaS">Software/SaaS</option>
+            <option value="Travel & Meals">Travel & Meals</option>
+            <option value="Subcontracting">Subcontracting</option>
+            <option value="Hardware & Equipment">Hardware & Equipment</option>
+            <option value="Office & Admin">Office & Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>含税实付金额 EUR (Gross Paid) *</label>
+          <input type="number" id="exp-gross" step="0.01" min="0" required placeholder="0.00" oninput="updatePreview()" />
+        </div>
+        <div class="form-group">
+          <label>进项税率 (Input VAT Rate %) *</label>
+          <select id="exp-vat-rate" onchange="updatePreview()">
+            <option value="0.25">25% (北欧标准税率)</option>
+            <option value="0.12">12% (餐饮/食品/酒店)</option>
+            <option value="0.06">6% (交通/书籍/文化)</option>
+            <option value="0">0% (免税/跨境逆向征收)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>资产类型 (Asset Type) *</label>
+          <select id="exp-asset-type">
+            <option value="Current Expense">Current Expense (当期费用)</option>
+            <option value="Capital Asset">Capital Asset (固定资产)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>税务抵扣状态 (Tax Deductibility) *</label>
+          <select id="exp-deductibility" onchange="onDeductibilityChange()">
+            <option value="Fully Deductible">Fully Deductible (全额抵扣)</option>
+            <option value="Partially Deductible">Partially Deductible (部分抵扣)</option>
+            <option value="Non-deductible">Non-deductible (不可抵扣)</option>
+          </select>
+        </div>
+        <div class="form-group" id="ratio-group" style="display: none;">
+          <label>可抵扣比例 (%)</label>
+          <input type="number" id="exp-ratio" value="50" min="1" max="99" oninput="updatePreview()" />
+        </div>
+        <div class="form-group">
+          <label>关联账期 (Tax Ledger)</label>
+          <input type="text" id="exp-ledger" value="2026" required />
+        </div>
+      </div>
+
+      <div class="preview-bar">
+        <span><strong>净支出 (Net Expense):</strong> <span id="prev-net">€0.00</span></span>
+        <span><strong>可退进项税 (Reclaimable VAT):</strong> <span id="prev-vat">€0.00</span></span>
+        <span><strong>合规抵税额 (Eligible Deductible):</strong> <span id="prev-deductible">€0.00</span></span>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; gap: 10px;">
+        <button type="button" class="btn" onclick="toggleForm(false)">取消</button>
+        <button type="submit" id="btn-submit" class="btn btn-primary">保存并同步至 Worker C</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 4. 数据列表 -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>交易名称</th>
+          <th>分类 & 资产类型</th>
+          <th style="text-align: right;">含税金额</th>
+          <th style="text-align: center;">VAT %</th>
+          <th style="text-align: right;">净支出</th>
+          <th>抵扣状态</th>
+          <th style="text-align: right;">可退进项税</th>
+          <th style="text-align: right;">合规抵税额</th>
+          <th style="text-align: center;">账期</th>
+          <th style="text-align: center;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-expenses">
+        <tr><td colspan="10" style="text-align: center; padding: 24px; color: #6b7280;">正在从 Worker C 加载数据...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // 请将此处替换为你新建的 Worker C 实际域名
+    const WORKER_C_URL = "https://workerc.qq596337481.workers.dev/api/expenses";
+    const uid = new URLSearchParams(window.location.search).get("uid") || "";
+    let records = [];
+
+    function toggleForm(show) {
+      document.getElementById("expense-form-box").style.display = show ? "block" : "none";
+      if (show) updatePreview();
+    }
+
+    function onDeductibilityChange() {
+      const val = document.getElementById("exp-deductibility").value;
+      document.getElementById("ratio-group").style.display = val === "Partially Deductible" ? "block" : "none";
+      updatePreview();
+    }
+
+    function calcTax(gross, rate, status, partialPct) {
+      const net = gross / (1 + rate);
+      const vat = gross - net;
+      let ratio = 1;
+      if (status === "Non-deductible") ratio = 0;
+      if (status === "Partially Deductible") ratio = (partialPct || 0) / 100;
+      return {
+        netExpense: Number(net.toFixed(2)),
+        reclaimableInputVat: Number((vat * ratio).toFixed(2)),
+        eligibleDeductibleAmount: Number((net * ratio).toFixed(2))
+      };
+    }
+
+    function updatePreview() {
+      const gross = parseFloat(document.getElementById("exp-gross").value) || 0;
+      const rate = parseFloat(document.getElementById("exp-vat-rate").value) || 0;
+      const status = document.getElementById("exp-deductibility").value;
+      const pct = parseFloat(document.getElementById("exp-ratio").value) || 0;
+      const res = calcTax(gross, rate, status, pct);
+
+      document.getElementById("prev-net").textContent = `€${res.netExpense.toFixed(2)}`;
+      document.getElementById("prev-vat").textContent = `€${res.reclaimableInputVat.toFixed(2)}`;
+      document.getElementById("prev-deductible").textContent = `€${res.eligibleDeductibleAmount.toFixed(2)}`;
+    }
+
+    async function loadExpenses() {
+      try {
+        const res = await fetch(`${WORKER_C_URL}?uid=${encodeURIComponent(uid)}`);
+        const json = await res.json();
+        records = json.data || [];
+        renderTable();
+      } catch (e) {
+        document.getElementById("tbody-expenses").innerHTML =
+          `<tr><td colspan="10" style="text-align: center; padding: 24px; color: #ef4444;">连接 Worker C 失败，请检查接口地址或 CORS 配置。</td></tr>`;
+      }
+    }
+
+    function renderTable() {
+      const ledger = document.getElementById("filter-ledger").value;
+      const list = records.filter(r => ledger === "ALL" || r.taxLedger === ledger);
+
+      let g = 0, v = 0, d = 0, a = 0;
+      list.forEach(item => {
+        g += Number(item.grossPaid || 0);
+        v += Number(item.reclaimableInputVat || 0);
+        d += Number(item.eligibleDeductibleAmount || 0);
+        if (item.assetType === "Capital Asset") a += Number(item.netExpense || 0);
+      });
+
+      document.getElementById("kpi-gross").textContent = `€${g.toFixed(2)}`;
+      document.getElementById("kpi-vat").textContent = `€${v.toFixed(2)}`;
+      document.getElementById("kpi-deductible").textContent = `€${d.toFixed(2)}`;
+      document.getElementById("kpi-assets").textContent = `€${a.toFixed(2)}`;
+
+      const tbody = document.getElementById("tbody-expenses");
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 24px; color: #6b7280;">暂无记录，点击右上角“+ 新增支出”添加第一条数据。</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => `
+        <tr>
+          <td style="font-weight: 500;">${item.transactionName}</td>
+          <td>
+            <span class="badge badge-cat">${item.expenseCategory}</span>
+            <span class="badge ${item.assetType === 'Capital Asset' ? 'badge-cap' : 'badge-cur'}">${item.assetType}</span>
+          </td>
+          <td style="text-align: right;">€${Number(item.grossPaid).toFixed(2)}</td>
+          <td style="text-align: center;">${Math.round(item.inputVatRate * 100)}%</td>
+          <td style="text-align: right;">€${Number(item.netExpense).toFixed(2)}</td>
+          <td>${item.taxDeductibility}</td>
+          <td style="text-align: right; font-weight: 600; color: #059669;">€${Number(item.reclaimableInputVat).toFixed(2)}</td>
+          <td style="text-align: right;">€${Number(item.eligibleDeductibleAmount).toFixed(2)}</td>
+          <td style="text-align: center;">${item.taxLedger}</td>
+          <td style="text-align: center;">
+            <button onclick="deleteRecord('${item.id}')" style="color: #ef4444; background: none; border: none; cursor: pointer;">删除</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function handleSaveExpense(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-submit");
+      btn.disabled = true;
+      btn.textContent = "保存中...";
+
+      const grossPaid = parseFloat(document.getElementById("exp-gross").value);
+      const inputVatRate = parseFloat(document.getElementById("exp-vat-rate").value);
+      const taxDeductibility = document.getElementById("exp-deductibility").value;
+      const pct = parseFloat(document.getElementById("exp-ratio").value) || 0;
+      const calc = calcTax(grossPaid, inputVatRate, taxDeductibility, pct);
+
+      const payload = {
+        uid,
+        transactionName: document.getElementById("exp-name").value.trim(),
+        expenseCategory: document.getElementById("exp-category").value,
+        grossPaid,
+        inputVatRate,
+        taxDeductibility,
+        assetType: document.getElementById("exp-asset-type").value,
+        taxLedger: document.getElementById("exp-ledger").value.trim(),
+        ...calc
+      };
+
+      try {
+        const res = await fetch(WORKER_C_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        records.unshift(json.data || { id: Date.now().toString(), ...payload });
+        renderTable();
+        document.getElementById("add-expense-form").reset();
+        toggleForm(false);
+      } catch (err) {
+        alert("提交失败，请检查 Worker C 网络状态");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "保存并同步至 Worker C";
+      }
+    }
+
+    async function deleteRecord(id) {
+      if (!confirm("确定删除这条支出记录吗？")) return;
+      try {
+        await fetch(`${WORKER_C_URL}?id=${encodeURIComponent(id)}&uid=${encodeURIComponent(uid)}`, { method: "DELETE" });
+        records = records.filter(r => r.id !== id);
+        renderTable();
+      } catch (err) {
+        alert("删除失败");
+      }
+    }
+
+    loadExpenses();
+  </script>
+</body>
+</html>
