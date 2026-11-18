@@ -6,33 +6,55 @@
 <title>发票管理</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:99;align-items:center;justify-content:center;}
-.modal.active{display:flex;}
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: transparent;
+    color: #111827;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal.active { display: flex; }
 </style>
 </head>
-<body class="bg-gray-50 p-4 min-h-[700px] overflow-auto">
-<div class="max-w-7xl mx-auto min-h-[650px]">
-<div class="flex justify-between items-center gap-4 mb-4">
-  <h2 class="text-xl font-semibold flex-shrink-0">发票列表</h2>
-  <button id="btnAddInv" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex-shrink-0">新增发票</button>
-</div>
-  <div class="overflow-x-auto bg-white rounded-lg shadow">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-100">
+<body class="p-1 min-h-[700px] overflow-auto">
+<div class="w-full min-h-[650px]">
+  
+  <!-- Header & Action Bar -->
+  <div class="flex justify-between items-center gap-4 mb-5 flex-wrap">
+    <div>
+      <h2 class="text-lg font-bold text-gray-900">发票管理 (Invoices)</h2>
+      <p class="text-xs text-gray-500 mt-0.5">自动关联客户国家税率并跟踪应收账款状态</p>
+    </div>
+    <button id="btnAddInv" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700 flex-shrink-0">
+      + 新增发票
+    </button>
+  </div>
+
+  <!-- Table Card -->
+  <div class="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm">
+    <table class="w-full text-sm text-left border-collapse">
+      <thead class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs font-semibold">
         <tr>
-          <th class="text-left p-3">发票编号</th>
-          <th class="text-left p-3">客户</th>
-          <th class="text-left p-3">项目</th>
-          <th class="text-left p-3">不含税金额</th>
-          <th class="text-left p-3">税率</th>
-          <th class="text-left p-3">应付总额</th>
-          <th class="text-left p-3">付款状态</th>
-          <th class="text-left p-3">到期日</th>
-          <th class="text-left p-3">操作</th>
+          <th class="p-3">发票编号</th>
+          <th class="p-3">客户</th>
+          <th class="p-3">项目</th>
+          <th class="p-3 text-right">不含税金额</th>
+          <th class="p-3 text-center">税率</th>
+          <th class="p-3 text-right">应付总额</th>
+          <th class="p-3">付款状态</th>
+          <th class="p-3">到期日</th>
+          <th class="p-3 text-center">操作</th>
         </tr>
       </thead>
-      <tbody id="invTableBody">
-        <tr><td colspan="9" class="p-4 text-center text-gray-400">加载中…</td></tr>
+      <tbody id="invTableBody" class="divide-y divide-gray-100">
+        <tr><td colspan="9" class="p-8 text-center text-gray-400">加载中…</td></tr>
       </tbody>
     </table>
   </div>
@@ -40,41 +62,41 @@
 
 <!-- 新增/编辑弹窗 -->
 <div class="modal" id="invModal">
-  <div class="bg-white rounded-xl w-full max-w-lg p-6 mx-4">
-    <h3 class="text-lg font-semibold mb-4" id="modalTitle">新增发票</h3>
+  <div class="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-6 mx-4 shadow-xl">
+    <h3 class="text-base font-bold text-gray-900 mb-4" id="modalTitle">新增发票</h3>
     <input type="hidden" id="editPageId">
-    <div class="grid gap-3">
+    <div class="grid gap-3.5">
       <div>
-        <label class="block text-sm text-gray-600">发票编号 <span class="text-red-500">*</span></label>
-        <input class="w-full border rounded p-2" id="invId" placeholder="INV-2026-001">
+        <label class="block text-xs font-medium text-gray-700 mb-1">发票编号 <span class="text-red-500">*</span></label>
+        <input class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" id="invId" placeholder="INV-2026-001">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">选择客户 <span class="text-red-500">*</span></label>
-        <select class="w-full border rounded p-2" id="invClientSel">
+        <label class="block text-xs font-medium text-gray-700 mb-1">选择客户 <span class="text-red-500">*</span></label>
+        <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invClientSel">
           <option value="">--请先选择客户--</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm text-gray-600">选择项目 <span class="text-red-500">*</span></label>
-        <select class="w-full border rounded p-2" id="invProjectSel">
+        <label class="block text-xs font-medium text-gray-700 mb-1">选择项目 <span class="text-red-500">*</span></label>
+        <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invProjectSel">
           <option value="">--请先选择客户--</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm text-gray-600">不含税金额 €（自动读取项目，不可修改）</label>
-        <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invNet" readonly placeholder="选择项目后自动显示">
+        <label class="block text-xs font-medium text-gray-700 mb-1">不含税金额 €（自动读取项目，不可修改）</label>
+        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invNet" readonly placeholder="选择项目后自动显示">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">VAT税率 %（由 Notion 根据客户国家自动计算）</label>
-        <input class="w-full border rounded p-2 bg-gray-100 text-gray-500" id="invVatRate" readonly placeholder="保存后系统自动匹配税率">
+        <label class="block text-xs font-medium text-gray-700 mb-1">VAT税率 %（由 Notion 根据客户国家自动计算）</label>
+        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invVatRate" readonly placeholder="保存后系统自动匹配税率">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">到期日 <span class="text-red-500">*</span></label>
-        <input class="w-full border rounded p-2" type="date" id="invDue">
+        <label class="block text-xs font-medium text-gray-700 mb-1">到期日 <span class="text-red-500">*</span></label>
+        <input class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" type="date" id="invDue">
       </div>
       <div>
-        <label class="block text-sm text-gray-600">付款状态</label>
-        <select class="w-full border rounded p-2" id="invStatus">
+        <label class="block text-xs font-medium text-gray-700 mb-1">付款状态</label>
+        <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invStatus">
           <option value="Draft">Draft 草稿</option>
           <option value="Sent">Sent 已发送</option>
           <option value="Paid">Paid 已付款</option>
@@ -82,9 +104,9 @@
         </select>
       </div>
     </div>
-    <div class="flex justify-end gap-3 mt-6">
-      <button id="btnCloseModal" class="px-4 py-2 border rounded-lg">取消</button>
-      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-lg">保存</button>
+    <div class="flex justify-end gap-2 mt-6">
+      <button id="btnCloseModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">取消</button>
+      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">保存</button>
     </div>
   </div>
 </div>
@@ -207,7 +229,7 @@ async function fillProjectInfo(projectId){
 
 async function loadInvoiceList(){
   const tbody = document.getElementById("invTableBody");
-  tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-400">加载中…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">加载中…</td></tr>`;
   try{
     const res = await fetch(WORKER_B_URL, {
       method: "POST",
@@ -217,33 +239,33 @@ async function loadInvoiceList(){
     const ret = await res.json();
     tbody.innerHTML = "";
     if(!ret.success){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">${ret.error || "加载失败"}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">${ret.error || "加载失败"}</td></tr>`;
       return;
     }
     invoiceListCache = ret.invoices || [];
     if(invoiceListCache.length === 0){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-gray-400">暂无发票，点击新增发票</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">暂无发票，点击右上角新增发票</td></tr>`;
       return;
     }
     invoiceListCache.forEach(inv => {
       let statusColor = "bg-gray-100 text-gray-700";
-      if(inv.paymentStatus === "Sent") statusColor = "bg-yellow-100 text-yellow-700";
-      if(inv.paymentStatus === "Paid") statusColor = "bg-green-100 text-green-700";
-      if(inv.paymentStatus === "Overdue") statusColor = "bg-red-100 text-red-700";
+      if(inv.paymentStatus === "Sent") statusColor = "bg-amber-50 text-amber-700 border border-amber-200";
+      if(inv.paymentStatus === "Paid") statusColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+      if(inv.paymentStatus === "Overdue") statusColor = "bg-red-50 text-red-700 border border-red-200";
 
       const tr = document.createElement("tr");
-      tr.className = "border-b";
+      tr.className = "hover:bg-gray-50/70";
       tr.innerHTML = `
-        <td class="p-3">${inv.invoiceId || '-'}</td>
-        <td class="p-3 text-xs">${inv.clientName || '-'}</td>
-        <td class="p-3 text-xs">${inv.projectName || '-'}</td>
-        <td class="p-3">€${Number(inv.netAmount).toFixed(2)}</td>
-        <td class="p-3">${Number(inv.vatRate).toFixed(2)}%</td>
-        <td class="p-3 font-medium">€${Number(inv.grossTotal).toFixed(2)}</td>
-        <td class="p-3"><span class="px-2 py-1 rounded text-xs ${statusColor}">${inv.paymentStatus}</span></td>
-        <td class="p-3">${inv.dueDate || ""}</td>
-        <td class="p-3">
-          <button class="editBtn text-blue-600 hover:underline" data-id="${inv.id}">编辑</button>
+        <td class="p-3 font-medium text-gray-900">${inv.invoiceId || '-'}</td>
+        <td class="p-3 text-gray-600 text-xs">${inv.clientName || '-'}</td>
+        <td class="p-3 text-gray-600 text-xs">${inv.projectName || '-'}</td>
+        <td class="p-3 text-right text-gray-700">€${Number(inv.netAmount).toFixed(2)}</td>
+        <td class="p-3 text-center text-gray-600">${Number(inv.vatRate).toFixed(2)}%</td>
+        <td class="p-3 text-right font-semibold text-emerald-600">€${Number(inv.grossTotal).toFixed(2)}</td>
+        <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${inv.paymentStatus}</span></td>
+        <td class="p-3 text-gray-500 text-xs">${inv.dueDate || ""}</td>
+        <td class="p-3 text-center">
+          <button class="editBtn text-blue-600 hover:underline text-xs font-medium" data-id="${inv.id}">编辑</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -257,7 +279,7 @@ async function loadInvoiceList(){
       };
     });
   }catch(err){
-    tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-500">网络异常：${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">网络异常：${err.message}</td></tr>`;
   }
 }
 
