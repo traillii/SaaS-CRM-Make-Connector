@@ -55,7 +55,7 @@
     .header-sub { font-size: 13px; color: var(--muted); }
     .actions { display: flex; gap: 10px; align-items: center; }
 
-    select, input[type="text"], input[type="number"] {
+    select, input[type="text"], input[type="number"], input[type="date"] {
       padding: 8px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -219,7 +219,7 @@
     <div class="header-bar">
       <div>
         <h2>DB4: 支出与固定资产 (Expenses & Capital Assets)</h2>
-        <div class="header-sub">支持拍照或上传小票图片，AI 自动识别商户与税率并免费归档至 Notion 凭证库</div>
+        <div class="header-sub">支持拍照或上传小票图片，AI 自动识别商户、日期、多币种汇率折算及北欧税率</div>
       </div>
       <div class="actions">
         <select id="ledgerFilter" style="width:auto;" onchange="renderTable()">
@@ -238,6 +238,10 @@
         <div class="form-group">
           <label>交易名称 (Transaction Name) *</label>
           <input type="text" id="transactionName" placeholder="例如: AWS Cloud / ICA Supermarket" required />
+        </div>
+        <div class="form-group">
+          <label>发票日期 (Invoice Date)</label>
+          <input type="date" id="invoiceDate" onchange="syncLedgerFromDate()" />
         </div>
         <div class="form-group">
           <label>支出类别 (Expense Category) *</label>
@@ -291,7 +295,7 @@
       <div class="upload-box">
         <div style="font-size:24px;">🧾</div>
         <div style="font-weight:600; margin-top:4px;">税务抵扣凭证 (支持拍照 / 上传发票照片)</div>
-        <div style="font-size:12px; color:var(--muted);">上传后自动压缩归档，并触发 Cloudflare AI 自动识别金额、商户与税率</div>
+        <div style="font-size:12px; color:var(--muted);">上传后自动压缩归档，并自动识别商户、发票日期、外币折算 EUR 与北欧税率</div>
 
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFile(this)" />
         <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleImageFile(this)" />
@@ -318,12 +322,13 @@
       </div>
     </div>
 
-    <!-- 数据表格 -->
+    <!-- 支出明细表格 -->
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>交易名称</th>
+            <th>发票日期</th>
             <th>抵税凭证</th>
             <th>分类 & 资产类型</th>
             <th>含税金额</th>
@@ -337,7 +342,7 @@
           </tr>
         </thead>
         <tbody id="expenseTableBody">
-          <tr><td colspan="11" style="text-align:center; color:var(--muted); padding:24px;">正在加载支出数据...</td></tr>
+          <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">正在加载支出数据...</td></tr>
         </tbody>
       </table>
     </div>
@@ -359,7 +364,6 @@
   </div>
 
   <script>
-    // ⚠️ 请确保此处为你实际的 Cloudflare Worker 地址
     const WORKER_URL = "https://workerc.qq596337481.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
@@ -368,8 +372,17 @@
     let currentReceiptBase64 = "";
     let currentReceiptName = "";
 
+    document.getElementById("invoiceDate").value = new Date().toISOString().slice(0, 10);
+
     function toggleForm() {
       document.getElementById("expenseFormPanel").classList.toggle("active");
+    }
+
+    function syncLedgerFromDate() {
+      const d = document.getElementById("invoiceDate").value;
+      if (d && d.length >= 4) {
+        document.getElementById("taxLedger").value = d.slice(0, 4);
+      }
     }
 
     function recalcPreview() {
@@ -388,7 +401,7 @@
     }
 
     function handleImageFile(input) {
-      const file = input.files && input.files[0];
+      const file = input.files[0];
       if (!file) return;
       currentReceiptName = file.name || "receipt.jpg";
 
@@ -429,7 +442,7 @@
       const statusEl = document.getElementById("ocrStatus");
       statusEl.style.display = "block";
       statusEl.className = "ocr-banner ocr-loading";
-      statusEl.innerText = "✨ Cloudflare AI 正在识别小票商户、含税金额与北欧税率，请稍候...";
+      statusEl.innerText = "✨ Cloudflare AI 正在识别商户、发票日期、币种汇率折算与税率，请稍候...";
 
       try {
         const res = await fetch(`${WORKER_URL}/api/ocr`, {
@@ -447,6 +460,10 @@
         if (info.transactionName) {
           document.getElementById("transactionName").value = info.transactionName;
         }
+        if (info.invoiceDate) {
+          document.getElementById("invoiceDate").value = info.invoiceDate;
+          syncLedgerFromDate();
+        }
         if (info.grossPaid > 0) {
           document.getElementById("grossPaid").value = Number(info.grossPaid).toFixed(2);
         }
@@ -462,8 +479,13 @@
 
         recalcPreview();
 
+        const fxNote = info.converted
+          ? ` | 已按实时汇率将 ${Number(info.originalAmount).toFixed(2)} ${info.currency} 折算为 €${Number(info.grossPaid).toFixed(2)}`
+          : ` | €${Number(info.grossPaid || 0).toFixed(2)}`;
+        const dateNote = info.invoiceDate ? ` | 日期 ${info.invoiceDate}` : "";
+
         statusEl.className = "ocr-banner ocr-success";
-        statusEl.innerText = `✅ AI 识别完成：${info.transactionName || "未知商户"} | €${Number(info.grossPaid || 0).toFixed(2)} | 税率 ${Math.round((info.inputVatRate || 0) * 100)}%，请核对后保存！`;
+        statusEl.innerText = `✅ AI 识别完成：${info.transactionName || "未知商户"}${fxNote}${dateNote} | 税率 ${Math.round((info.inputVatRate || 0) * 100)}%，请核对后保存！`;
       } catch (err) {
         statusEl.className = "ocr-banner ocr-error";
         statusEl.innerText = `⚠️ 自动识别未能提取完整信息（${err.message}），请手动补充后保存。`;
@@ -490,7 +512,7 @@
         renderTable();
       } catch (err) {
         document.getElementById("expenseTableBody").innerHTML =
-          `<tr><td colspan="11" style="text-align:center; color:var(--danger); padding:24px;">加载失败: ${err.message}</td></tr>`;
+          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">加载失败: ${err.message}</td></tr>`;
       }
     }
 
@@ -513,13 +535,14 @@
 
       const tbody = document.getElementById("expenseTableBody");
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--muted); padding:24px;">暂无支出记录，点击右上角「+ 新增支出」或拍照上传发票开始记账。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">暂无支出记录，点击右上角「+ 新增支出」或拍照上传发票开始记账。</td></tr>`;
         return;
       }
 
       tbody.innerHTML = list.map(item => `
         <tr>
           <td><strong>${item.transactionName}</strong></td>
+          <td style="white-space:nowrap;">${item.invoiceDate || "-"}</td>
           <td><button class="btn btn-sm" onclick="viewReceipt('${item.id}')">📄 查看凭证</button></td>
           <td>
             <div>${item.expenseCategory}</div>
@@ -554,6 +577,7 @@
         const payload = {
           uid: CURRENT_UID,
           transactionName,
+          invoiceDate: document.getElementById("invoiceDate").value || "",
           expenseCategory: document.getElementById("expenseCategory").value,
           grossPaid,
           inputVatRate: parseFloat(document.getElementById("inputVatRate").value),
