@@ -786,5 +786,59 @@
         // ==================== Entry Point ====================
         verifyUser();
     </script>
+
+    <!-- 开票前收款资料缺失引导弹窗 -->
+<div id="billingGuideModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-xl border border-slate-100">
+    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+      </svg>
+    </div>
+    <h3 class="text-lg font-bold text-slate-900">请先完善您的开票与收款资料</h3>
+    <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+      在生成并发送客户发票前，系统需要您的<strong>公司/个人抬头、VAT 税号及 IBAN / Bankgiro 收款账号</strong>，以便自动印制在发票底部的付款指引栏中。
+    </p>
+    <div class="mt-6 flex flex-col sm:flex-row gap-2.5 justify-end">
+      <button type="button" onclick="closeBillingGuideModal()" class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+        稍后再说
+      </button>
+      <a id="goToAccountBillingBtn" href="account.html#billing" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
+        前往账户页填写 →
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 在工作台点击“开具发票”时调用此函数进行校验
+  function checkBillingBeforeInvoice(onReadyCallback) {
+    const currentUid = new URLSearchParams(location.search).get("uid") || localStorage.getItem("nordic_uid") || "";
+    const savedProfile = JSON.parse(localStorage.getItem(`nordic_billing_${currentUid}`) || "null");
+
+    if (!savedProfile || !savedProfile.iban || !savedProfile.legalName) {
+      const linkBtn = document.getElementById("goToAccountBillingBtn");
+      if (linkBtn && currentUid) {
+        linkBtn.href = `account.html?uid=${encodeURIComponent(currentUid)}#billing`;
+      }
+      const modal = document.getElementById("billingGuideModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      return false;
+    }
+
+    if (typeof onReadyCallback === "function") {
+      onReadyCallback(savedProfile);
+    }
+    return true;
+  }
+
+  function closeBillingGuideModal() {
+    const modal = document.getElementById("billingGuideModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+</script>
+
 </body>
 </html>
