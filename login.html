@@ -3,34 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Nordic CRM</title>
+    <title>Sign In | Nordic CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#2563eb',
+                        primary: '#364B59',
+                        secondary: '#6C8C9E',
+                        accent: '#4A8C8C',
+                        lightBg: '#F8FAFA',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .grid-bg {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center px-4">
-    <div class="bg-white w-full max-w-md p-8 rounded-xl shadow">
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">Login</h1>
-        <p class="text-slate-500 mb-6">Enter your registered email to sign in</p>
-        <form id="loginForm">
-            <div class="mb-4">
-                <label class="block text-sm text-slate-600 mb-1">Email</label>
-                <input required type="email" name="email" class="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-primary/50">
+<body class="bg-lightBg min-h-screen flex flex-col lg:flex-row text-slate-800">
+
+    <!-- Left Column: Sign In Form -->
+    <div class="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 lg:p-16 bg-white">
+        <!-- Brand Header -->
+        <div class="flex items-center justify-between">
+            <a href="/index.html" class="inline-flex items-center gap-2.5 group">
+                <div class="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-base shadow-sm group-hover:bg-accent transition-colors">
+                    N
+                </div>
+                <span class="text-xl font-bold text-primary tracking-tight">Nordic CRM</span>
+            </a>
+            <a href="/index.html" class="text-sm text-slate-500 hover:text-primary transition-colors flex items-center gap-1">
+                <span>← Back to Home</span>
+            </a>
+        </div>
+
+        <!-- Form Container -->
+        <div class="w-full max-w-md mx-auto my-12">
+            <div class="mb-8">
+                <span class="inline-block px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold tracking-wide uppercase mb-3">
+                    Welcome Back
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-bold text-primary tracking-tight">Sign in to your workspace</h1>
+                <p class="text-slate-500 mt-2 text-sm sm:text-base">Enter your registered email address to access your CRM and tax dashboard.</p>
             </div>
-            <div id="msgBox" class="mb-4 text-red-500 text-sm hidden"></div>
-            <button type="submit" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90">Sign In</button>
-        </form>
-        <div class="mt-4 text-center">
-            <a href="/index.html" class="text-primary hover:underline">← Back to Sign Up</a>
+
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label for="emailInput" class="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <input id="emailInput" required type="email" name="email" placeholder="name@company.se"
+                            class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all">
+                    </div>
+                </div>
+
+                <!-- Error / Status Alert -->
+                <div id="msgBox" class="hidden p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-start gap-2.5">
+                    <svg class="w-5 h-5 shrink-0 text-rose-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="msgText"></span>
+                </div>
+
+                <button type="submit" id="submitBtn"
+                    class="w-full bg-primary hover:bg-[#2a3b47] text-white font-semibold py-3.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    <span id="btnText">Sign In to Workspace</span>
+                    <svg id="btnArrow" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                    <svg id="btnSpinner" class="hidden animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-500">
+                Don't have an account yet?
+                <a href="/register.html" class="font-semibold text-accent hover:text-primary transition-colors ml-1">
+                    Start 30-day free trial →
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>© 2026 Nordic CRM</span>
+            <span>Notion & Stripe Synced</span>
+        </div>
+    </div>
+
+    <!-- Right Column: Nordic Brand Showcase -->
+    <div class="hidden lg:flex lg:w-1/2 bg-primary grid-bg text-white p-16 flex-col justify-between relative overflow-hidden">
+        <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-secondary/20 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-medium text-emerald-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Built for Nordic Freelancers & Consultants
+            </div>
+        </div>
+
+        <div class="relative z-10 max-w-lg my-auto">
+            <h2 class="text-3xl font-bold leading-snug tracking-tight">
+                "Everything from client quotas to AI receipt VAT extraction lives seamlessly in my Notion."
+            </h2>
+            <p class="mt-4 text-slate-300 text-base leading-relaxed">
+                Track active retainers, sync Stripe subscriptions automatically, and scan receipts in SEK, NOK, or EUR with instant VAT calculation.
+            </p>
+
+            <!-- Feature Mini Card -->
+            <div class="mt-8 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-5 space-y-3">
+                <div class="flex items-center justify-between text-xs text-slate-300">
+                    <span>AI Receipt OCR & Tax Ledger</span>
+                    <span class="px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-300 font-medium">Auto-Synced</span>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                    <div>
+                        <div class="text-sm font-semibold">AWS Cloud Services</div>
+                        <div class="text-xs text-slate-400">25% Nordic Input VAT · Deductible</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-base font-bold text-emerald-300">€149.50</div>
+                        <div class="text-xs text-slate-400">VAT: €29.90</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative z-10 flex items-center gap-6 text-xs text-slate-300">
+            <div class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>GDPR Compliant</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Zero Storage Overhead</span>
+            </div>
         </div>
     </div>
 
@@ -38,38 +165,65 @@
         const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
         const loginForm = document.getElementById("loginForm");
         const msgBox = document.getElementById("msgBox");
+        const msgText = document.getElementById("msgText");
+        const submitBtn = document.getElementById("submitBtn");
+        const btnText = document.getElementById("btnText");
+        const btnArrow = document.getElementById("btnArrow");
+        const btnSpinner = document.getElementById("btnSpinner");
 
-        function showMsg(text){
-            msgBox.innerText = text;
+        function showMsg(text) {
+            msgText.innerText = text;
             msgBox.classList.remove("hidden");
         }
 
-        loginForm.addEventListener("submit",async (e)=>{
+        function setLoading(isLoading) {
+            submitBtn.disabled = isLoading;
+            if (isLoading) {
+                btnText.innerText = "Signing in...";
+                btnArrow.classList.add("hidden");
+                btnSpinner.classList.remove("hidden");
+            } else {
+                btnText.innerText = "Sign In to Workspace";
+                btnArrow.classList.remove("hidden");
+                btnSpinner.classList.add("hidden");
+            }
+        }
+
+        loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             msgBox.classList.add("hidden");
             const fd = new FormData(loginForm);
-            const email = fd.get("email");
-            try{
-                const res = await fetch(WORKER_B_URL,{
-                    method:"POST",
-                    headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify({
-                        action:"loginByEmail",
+            const email = (fd.get("email") || "").trim();
+
+            if (!email) {
+                showMsg("Please enter your email address.");
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "loginByEmail",
                         email: email
                     })
                 });
                 const data = await res.json();
-                if(!data.success){
-                    showMsg(data.error || "Login failed");
+                if (!data.success) {
+                    showMsg(data.error || "Account not found or login failed.");
+                    setLoading(false);
                     return;
                 }
-                // 登录成功跳转到dashboard
-                location.href = `/dashboard.html?uid=${data.uid}`;
-            }catch(err){
+                localStorage.setItem("nordic_uid", data.uid);
+                location.href = `/dashboard.html?uid=${encodeURIComponent(data.uid)}`;
+            } catch (err) {
                 console.error(err);
-                showMsg("Network error");
+                showMsg("Network error. Please check your connection and try again.");
+                setLoading(false);
             }
-        })
+        });
     </script>
 </body>
 </html>
