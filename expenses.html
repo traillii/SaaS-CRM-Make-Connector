@@ -211,7 +211,7 @@
     <div class="header-bar">
       <div>
         <h2>DB4: Expenses & Capital Assets</h2>
-        <div class="header-sub">Supports photo or receipt upload; AI automatically extracts merchant, date, multi‑currency conversion and Swedish tax rates</div>
+        <div class="header-sub">Supports photo or receipt upload; AI automatically extracts merchant, date, multi-currency conversion and Swedish tax rates</div>
       </div>
       <div class="actions">
         <select id="ledgerFilter" style="width:auto;" onchange="renderTable()">
@@ -245,7 +245,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Gross Paid EUR (tax‑inclusive) *</label>
+          <label>Gross Paid EUR (tax-inclusive) *</label>
           <input type="number" id="grossPaid" step="0.01" placeholder="0.00" oninput="recalcPreview()" />
         </div>
         <div class="form-group">
@@ -269,7 +269,7 @@
           <select id="taxDeductibility" onchange="recalcPreview()">
             <option value="Fully Deductible">Fully Deductible</option>
             <option value="Partially Deductible">Partially Deductible</option>
-            <option value="Non‑deductible">Non‑deductible</option>
+            <option value="Non-deductible">Non-deductible</option>
           </select>
         </div>
         <div class="form-group">
@@ -284,8 +284,8 @@
       <!-- Receipt Upload & AI OCR -->
       <div class="upload-box">
         <div style="font-size:24px;">🧾</div>
-        <div style="font-weight:600; margin-top:4px;">Tax‑deductible receipt (photo or image upload supported)</div>
-        <div style="font-size:12px; color:var(--muted);">Uploaded files will be compressed and archived. AI extracts merchant, invoice date, foreign‑currency conversion to EUR and Swedish VAT rates.</div>
+        <div style="font-weight:600; margin-top:4px;">Tax-deductible receipt (photo or image upload supported)</div>
+        <div style="font-size:12px; color:var(--muted);">Uploaded files will be compressed and archived. AI extracts merchant, invoice date, foreign-currency conversion to EUR and Swedish VAT rates.</div>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFile(this)" />
         <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleImageFile(this)" />
         <div class="upload-btns">
@@ -341,7 +341,7 @@
           <button class="btn btn-sm" onclick="closeModal()">✕</button>
         </div>
       </div>
-      <div id="modalLoading" style="padding:30px; color:var(--muted);">Fetching high‑resolution receipt from Notion archive…</div>
+      <div id="modalLoading" style="padding:30px; color:var(--muted);">Fetching high-resolution receipt from Notion archive…</div>
       <img id="modalReceiptImg" class="modal-img" style="display:none;" alt="Receipt image" />
     </div>
   </div>
@@ -367,7 +367,7 @@
       const vatRate = parseFloat(document.getElementById("inputVatRate").value) || 0;
       const status = document.getElementById("taxDeductibility").value;
       const customRatio = (parseFloat(document.getElementById("deductRatio").value) || 0) / 100;
-      const ratio = status === "Non‑deductible" ? 0 : (status === "Partially Deductible" ? customRatio : 1);
+      const ratio = status === "Non-deductible" ? 0 : (status === "Partially Deductible" ? customRatio : 1);
       const net = gross / (1 + vatRate);
       const totalVat = gross - net;
       document.getElementById("prevNet").innerText = "€" + net.toFixed(2);
@@ -397,8 +397,8 @@
           currentReceiptBase64 = canvas.toDataURL("image/jpeg", 0.68);
           const preview = document.getElementById("receiptPreview");
           preview.src = currentReceiptBase64;
-          preview.style.display = "inline‑block";
-          document.getElementById("removeImgBtn").style.display = "inline‑flex";
+          preview.style.display = "inline-block";
+          document.getElementById("removeImgBtn").style.display = "inline-flex";
           runAutoOCR(currentReceiptBase64);
         };
         img.src = e.target.result;
@@ -408,12 +408,12 @@
     async function runAutoOCR(base64Str) {
       const statusEl = document.getElementById("ocrStatus");
       statusEl.style.display = "block";
-      statusEl.className = "ocr‑banner ocr‑loading";
+      statusEl.className = "ocr-banner ocr-loading";
       statusEl.innerText = "✨ Cloudflare AI analyzing merchant, invoice date, currency conversion & VAT rates, please wait…";
       try {
         const res = await fetch(`${WORKER_URL}/api/ocr`, {
           method: "POST",
-          headers: { "Content‑Type": "application/json" },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageBase64: base64Str }),
         });
         const json = await res.json();
@@ -445,10 +445,10 @@
           ? ` | Converted ${Number(info.originalAmount).toFixed(2)} ${info.currency} to €${Number(info.grossPaid).toFixed(2)} using live exchange rate`
           : ` | €${Number(info.grossPaid || 0).toFixed(2)}`;
         const dateNote = info.invoiceDate ? ` | Dated ${info.invoiceDate}` : "";
-        statusEl.className = "ocr‑banner ocr‑success";
+        statusEl.className = "ocr-banner ocr-success";
         statusEl.innerText = `✅ AI Recognition complete: ${info.transactionName || "Unknown Merchant"}${fxNote}${dateNote} | VAT ${Math.round((info.inputVatRate || 0) * 100)}%, please verify before saving!`;
       } catch (err) {
-        statusEl.className = "ocr‑banner ocr‑error";
+        statusEl.className = "ocr-banner ocr-error";
         statusEl.innerText = `⚠️ Automatic recognition failed to extract full data (${err.message}), please fill in manually before saving.`;
       }
     }
@@ -471,7 +471,7 @@
         renderTable();
       } catch (err) {
         document.getElementById("expenseTableBody").innerHTML =
-          `<tr><td colspan="12" style="text‑align:center; color:var(--danger); padding:24px;">Load failed: ${err.message}</td></tr>`;
+          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">Load failed: ${err.message}</td></tr>`;
       }
     }
     function renderTable() {
@@ -490,14 +490,14 @@
       document.getElementById("kpiAssets").innerText = "€" + sumAssets.toFixed(2);
       const tbody = document.getElementById("expenseTableBody");
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text‑align:center; color:var(--muted); padding:24px;">No expense records yet. Click "+ New Expense" or upload receipts to start book‑keeping.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">No expense records yet. Click "+ New Expense" or upload receipts to start book-keeping.</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map(item => `
         <tr>
           <td><strong>${item.transactionName}</strong></td>
-          <td style="white‑space:nowrap;">${item.invoiceDate || "-"}</td>
-          <td><button class="btn btn‑sm" onclick="viewReceipt('${item.id}')">📄 View Receipt</button></td>
+          <td style="white-space:nowrap;">${item.invoiceDate || "-"}</td>
+          <td><button class="btn btn-sm" onclick="viewReceipt('${item.id}')">📄 View Receipt</button></td>
           <td>
             <div>${item.expenseCategory}</div>
             <span class="badge">${item.assetType}</span>
@@ -506,10 +506,10 @@
           <td>${Math.round((item.inputVatRate || 0) * 100)}%</td>
           <td>€${Number(item.netExpense).toFixed(2)}</td>
           <td>${item.taxDeductibility}</td>
-          <td style="color:var(--success); font‑weight:600;">€${Number(item.reclaimableInputVat).toFixed(2)}</td>
-          <td style="color:var(--primary); font‑weight:600;">€${Number(item.eligibleDeductibleAmount).toFixed(2)}</td>
+          <td style="color:var(--success); font-weight:600;">€${Number(item.reclaimableInputVat).toFixed(2)}</td>
+          <td style="color:var(--primary); font-weight:600;">€${Number(item.eligibleDeductibleAmount).toFixed(2)}</td>
           <td>${item.taxLedger || "2026"}</td>
-          <td><button class="btn btn‑sm btn‑danger" onclick="deleteExpense('${item.id}')">Delete</button></td>
+          <td><button class="btn btn-sm btn-danger" onclick="deleteExpense('${item.id}')">Delete</button></td>
         </tr>
       `).join("");
     }
@@ -539,7 +539,7 @@
         };
         const res = await fetch(`${WORKER_URL}/api/expenses`, {
           method: "POST",
-          headers: { "Content‑Type": "application/json" },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const json = await res.json();
@@ -564,7 +564,7 @@
       const dlLink = document.getElementById("downloadReceiptLink");
       modal.classList.add("active");
       loading.style.display = "block";
-      loading.innerText = "Fetching high‑resolution receipt from Notion archive...";
+      loading.innerText = "Fetching high-resolution receipt from Notion archive...";
       img.style.display = "none";
       dlLink.style.display = "none";
       try {
@@ -577,9 +577,9 @@
         }
         loading.style.display = "none";
         img.src = json.receiptData;
-        img.style.display = "inline‑block";
+        img.style.display = "inline-block";
         dlLink.href = json.receiptData;
-        dlLink.style.display = "inline‑flex";
+        dlLink.style.display = "inline-flex";
       } catch (err) {
         loading.innerText = "Failed to load receipt: " + err.message;
       }
