@@ -103,18 +103,15 @@
   <div class="container">
     <h1>企业与收款账户信息</h1>
     <p class="subtitle">填写以下信息以同步至 Notion 档案并用于结算与开票。</p>
-
     <form id="accountForm">
       <div class="form-group">
         <label for="companyLegalName">Company / Legal Name <span class="field-hint">公司法定全称</span></label>
         <input type="text" id="companyLegalName" name="companyLegalName" placeholder="例如：Nordic Tech AB" />
       </div>
-
       <div class="form-group">
         <label for="vatNumberOrgNr">VAT Number / Org.nr <span class="field-hint">税号 / 组织机构代码</span></label>
         <input type="text" id="vatNumberOrgNr" name="vatNumberOrgNr" placeholder="例如：SE556000000001" />
       </div>
-
       <div class="form-group">
         <label for="bankName">Bank Name <span class="field-hint">开户银行（Notion Select 对齐）</span></label>
         <select id="bankName" name="bankName">
@@ -130,34 +127,27 @@
           <option value="__CUSTOM__">其他银行（手动输入）</option>
         </select>
       </div>
-
       <div class="form-group" id="customBankGroup" style="display: none;">
         <label for="customBankName">自定义银行名称 <span class="field-hint">请勿包含英文逗号</span></label>
         <input type="text" id="customBankName" placeholder="输入银行名称，例如：Länsförsäkringar Bank" />
       </div>
-
       <div class="form-group">
         <label for="ibanBankgiroPlusgiro">IBAN / Bankgiro / Plusgiro <span class="field-hint">收款账号</span></label>
         <input type="text" id="ibanBankgiroPlusgiro" name="ibanBankgiroPlusgiro" placeholder="例如：SE45 5000 0000 0583 9825 7466 或 123-4567" />
       </div>
-
       <div class="form-group">
         <label for="swiftBic">SWIFT / BIC <span class="field-hint">国际电汇代码</span></label>
         <input type="text" id="swiftBic" name="swiftBic" placeholder="例如：NDEASESS" />
       </div>
-
       <div class="actions">
         <button type="submit" id="saveBtn">保存设置</button>
         <span id="statusMsg" class="status"></span>
       </div>
     </form>
   </div>
-
   <script>
-    // 请替换为你的 workerB 线上域名，例如：https://us-xiaoyan.your-subdomain.workers.dev
+    // Worker后端域名，末尾不要斜杠
     const WORKER_B_BASE_URL = window.WORKER_B_BASE_URL || "https://saa-signup.qq596337481.workers.dev";
-
-
     const PRESET_BANKS = [
       "Wise",
       "Nordea",
@@ -168,7 +158,6 @@
       "DNB",
       "Revolut"
     ];
-
     const form = document.getElementById("accountForm");
     const bankSelect = document.getElementById("bankName");
     const customBankGroup = document.getElementById("customBankGroup");
@@ -176,12 +165,9 @@
     const saveBtn = document.getElementById("saveBtn");
     const statusMsg = document.getElementById("statusMsg");
 
-    function getUserIdentity() {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        email: params.get("email") || localStorage.getItem("user_email") || "",
-        pageId: params.get("pageId") || localStorage.getItem("user_page_id") || ""
-      };
+    // 从localStorage拿uid（登录成功后写入localStorage.setItem("user_uid",返回的uid)）
+    function getUserUid(){
+      return localStorage.getItem("user_uid") || "";
     }
 
     function setStatus(text, isError = false) {
@@ -199,23 +185,30 @@
     });
 
     async function loadProfile() {
-      const { email, pageId } = getUserIdentity();
-      if (!email && !pageId) return;
-
+      const uid = getUserUid();
+      if (!uid) {
+        setStatus("未登录，请返回登录页面",true);
+        return;
+      }
       try {
-        const query = pageId
-          ? `pageId=${encodeURIComponent(pageId)}`
-          : `email=${encodeURIComponent(email)}`;
-        const res = await fetch(`${WORKER_B_BASE_URL}/api/account/profile?${query}`);
+        const res = await fetch(WORKER_B_BASE_URL, {
+          method:"POST",
+          headers:{"Content‑Type":"application/json"},
+          body:JSON.stringify({
+            uid,
+            action:"getAccountProfile"
+          })
+        });
         const data = await res.json();
-        if (!res.ok || !data.ok) return;
-
+        if (!res.ok || !data.success) {
+          setStatus(data.error||"读取档案失败",true);
+          return;
+        }
         const p = data.profile || {};
         document.getElementById("companyLegalName").value = p.companyLegalName || "";
         document.getElementById("vatNumberOrgNr").value = p.vatNumberOrgNr || "";
         document.getElementById("ibanBankgiroPlusgiro").value = p.ibanBankgiroPlusgiro || "";
         document.getElementById("swiftBic").value = p.swiftBic || "";
-
         if (p.bankName) {
           if (PRESET_BANKS.includes(p.bankName)) {
             bankSelect.value = p.bankName;
@@ -228,44 +221,42 @@
         }
       } catch (err) {
         console.error("Failed to load profile:", err);
+        setStatus("网络读取失败",true);
       }
     }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const { email, pageId } = getUserIdentity();
-
-      if (!email && !pageId) {
-        setStatus("未检测到当前登录用户标识（email 或 pageId）", true);
+      const uid = getUserUid();
+      if (!uid) {
+        setStatus("未登录，请返回登录页面", true);
         return;
       }
-
       const selectedBank =
         bankSelect.value === "__CUSTOM__"
           ? customBankInput.value.replace(/,/g, " ").trim()
           : bankSelect.value;
-
       const payload = {
-        email,
-        pageId,
         companyLegalName: document.getElementById("companyLegalName").value.trim(),
         vatNumberOrgNr: document.getElementById("vatNumberOrgNr").value.trim(),
         bankName: selectedBank,
         ibanBankgiroPlusgiro: document.getElementById("ibanBankgiroPlusgiro").value.trim(),
         swiftBic: document.getElementById("swiftBic").value.trim(),
       };
-
       saveBtn.disabled = true;
       setStatus("正在保存...");
-
       try {
-        const res = await fetch(`${WORKER_B_BASE_URL}/api/account/profile`, {
+        const res = await fetch(WORKER_B_BASE_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          headers: { "Content‑Type": "application/json" },
+          body: JSON.stringify({
+            uid,
+            action:"updateAccountProfile",
+            payload
+          }),
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) {
+        if (!res.ok || !data.success) {
           throw new Error(data.error || "保存失败");
         }
         setStatus("已成功同步至 Notion！");
