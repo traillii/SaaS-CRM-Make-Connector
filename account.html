@@ -1,685 +1,281 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>账户与订阅 | Nordic CRM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        html {
-            scroll-behavior: smooth;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
-        @keyframes pulse-soft {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .skeleton {
-            animation: pulse-soft 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            background-color: #e2e8f0;
-            border-radius: 0.5rem;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>账户与收款设置 - Account Settings</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --error: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 32px 16px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .subtitle {
+      margin: 0 0 24px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .field-hint {
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 6px;
+      font-size: 12px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--primary-hover); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .status {
+      font-size: 13px;
+    }
+    .status.ok { color: var(--success); }
+    .status.err { color: var(--error); }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
+  <div class="container">
+    <h1>企业与收款账户信息</h1>
+    <p class="subtitle">填写以下信息以同步至 Notion 档案并用于结算与开票。</p>
 
-    <!-- 顶部全局导航栏 -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-[#364B59] text-white flex items-center justify-center font-bold text-sm">
-                    N
-                </div>
-                <div>
-                    <span class="font-semibold text-slate-900 tracking-tight">Nordic CRM</span>
-                    <span class="hidden sm:inline-block text-slate-300 mx-2">|</span>
-                    <span class="hidden sm:inline-block text-sm text-slate-500">账户与订阅中心</span>
-                </div>
-            </div>
+    <form id="accountForm">
+      <div class="form-group">
+        <label for="companyLegalName">Company / Legal Name <span class="field-hint">公司法定全称</span></label>
+        <input type="text" id="companyLegalName" name="companyLegalName" placeholder="例如：Nordic Tech AB" />
+      </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <a href="#" id="backBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition">
-                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    <span>返回工作台</span>
-                </a>
-                <a href="login.html" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition">
-                    <span>退出登录</span>
-                </a>
-            </div>
-        </div>
-    </header>
+      <div class="form-group">
+        <label for="vatNumberOrgNr">VAT Number / Org.nr <span class="field-hint">税号 / 组织机构代码</span></label>
+        <input type="text" id="vatNumberOrgNr" name="vatNumberOrgNr" placeholder="例如：SE556000000001" />
+      </div>
 
-    <!-- 主内容区域 -->
-    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <div class="form-group">
+        <label for="bankName">Bank Name <span class="field-hint">开户银行（Notion Select 对齐）</span></label>
+        <select id="bankName" name="bankName">
+          <option value="">-- 请选择开户银行 --</option>
+          <option value="Wise">Wise</option>
+          <option value="Nordea">Nordea</option>
+          <option value="Swedbank">Swedbank</option>
+          <option value="SEB">SEB</option>
+          <option value="Handelsbanken">Handelsbanken</option>
+          <option value="Danske Bank">Danske Bank</option>
+          <option value="DNB">DNB</option>
+          <option value="Revolut">Revolut</option>
+          <option value="__CUSTOM__">其他银行（手动输入）</option>
+        </select>
+      </div>
 
-        <!-- 页面标题区 -->
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">账户、收款 & 订阅管理</h1>
-                <p class="text-sm text-slate-500 mt-1">管理您的个人账号信息、配置客户发票收款银行账号，以及随时升级订阅方案</p>
-            </div>
-            <!-- UID 快捷复制徽章 -->
-            <button onclick="copyUid()" id="uidCopyBtn" class="self-start sm:self-auto inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition shadow-sm" title="点击复制账户 ID">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>ID: <strong id="displayUidText" class="font-mono text-slate-800">加载中...</strong></span>
-                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                </svg>
-            </button>
-        </div>
+      <div class="form-group" id="customBankGroup" style="display: none;">
+        <label for="customBankName">自定义银行名称 <span class="field-hint">请勿包含英文逗号</span></label>
+        <input type="text" id="customBankName" placeholder="输入银行名称，例如：Länsförsäkringar Bank" />
+      </div>
 
-        <!-- 全局错误提示条（默认隐藏） -->
-        <div id="errorBanner" class="hidden mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span id="errorText">无法加载账户数据，请检查网络连接。</span>
-            </div>
-            <button onclick="initPage()" class="px-3 py-1 bg-white border border-rose-200 rounded-lg text-xs font-medium hover:bg-rose-100 transition">重试</button>
-        </div>
+      <div class="form-group">
+        <label for="ibanBankgiroPlusgiro">IBAN / Bankgiro / Plusgiro <span class="field-hint">收款账号</span></label>
+        <input type="text" id="ibanBankgiroPlusgiro" name="ibanBankgiroPlusgiro" placeholder="例如：SE45 5000 0000 0583 9825 7466 或 123-4567" />
+      </div>
 
-        <!-- 1. 当前账户与订阅概览卡片 -->
-        <section class="mb-10">
-            <div id="userInfoBox" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <!-- 骨架屏占位 -->
-                <div class="p-6 sm:p-8 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div class="skeleton h-6 w-32"></div>
-                        <div class="skeleton h-6 w-20 rounded-full"></div>
-                    </div>
-                    <div class="skeleton h-10 w-56"></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
-                        <div class="skeleton h-16 w-full"></div>
-                        <div class="skeleton h-16 w-full"></div>
-                        <div class="skeleton h-16 w-full"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
+      <div class="form-group">
+        <label for="swiftBic">SWIFT / BIC <span class="field-hint">国际电汇代码</span></label>
+        <input type="text" id="swiftBic" name="swiftBic" placeholder="例如：NDEASESS" />
+      </div>
 
-        <!-- 2. 开票与收款资料设置区 (支持展示与修改) -->
-        <section id="billing" class="mb-12 scroll-mt-24">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <!-- 卡片头部 -->
-                <div class="px-6 py-5 sm:px-8 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/60">
-                    <div class="flex items-start gap-3.5">
-                        <div class="w-10 h-10 rounded-xl bg-[#4A8C8C]/10 text-[#4A8C8C] flex items-center justify-center shrink-0 mt-0.5">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2.5">
-                                <h2 class="text-lg font-bold text-slate-900">开票与银行收款资料</h2>
-                                <span id="billingStatusBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                    待完善
-                                </span>
-                            </div>
-                            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-                                用于自动印制在您向客户发送的正式发票（Invoice）底部收款栏，支持随时修改
-                            </p>
-                        </div>
-                    </div>
+      <div class="actions">
+        <button type="submit" id="saveBtn">保存设置</button>
+        <span id="statusMsg" class="status"></span>
+      </div>
+    </form>
+  </div>
 
-                    <button type="button" id="toggleEditBillingBtn" onclick="toggleBillingEditMode(true)" class="self-start sm:self-auto inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition shadow-xs">
-                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                        </svg>
-                        <span>修改资料</span>
-                    </button>
-                </div>
+  <script>
+    // 请替换为你的 workerB 线上域名，例如：https://us-xiaoyan.your-subdomain.workers.dev
+    const WORKER_B_BASE_URL = window.WORKER_B_BASE_URL || "";
 
-                <!-- 保存成功/异常内联提示 -->
-                <div id="billingFeedback" class="hidden mx-6 sm:mx-8 mt-5 p-3.5 rounded-xl text-sm flex items-center gap-2"></div>
+    const PRESET_BANKS = [
+      "Wise",
+      "Nordea",
+      "Swedbank",
+      "SEB",
+      "Handelsbanken",
+      "Danske Bank",
+      "DNB",
+      "Revolut"
+    ];
 
-                <!-- 视图模式：展示已保存的开票收款资料 -->
-                <div id="billingViewMode" class="p-6 sm:p-8">
-                    <div id="billingEmptyState" class="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
-                        <p class="text-sm font-medium text-slate-700">您尚未配置开票抬头与收款银行信息</p>
-                        <p class="text-xs text-slate-500 mt-1">填写后，工作台生成的客户发票将自动附带您的 IBAN / Bankgiro 收款信息</p>
-                        <button type="button" onclick="toggleBillingEditMode(true)" class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#364B59] hover:bg-[#2a3b47] text-white text-sm font-medium rounded-xl transition">
-                            <span>立即填写收款资料</span>
-                        </button>
-                    </div>
+    const form = document.getElementById("accountForm");
+    const bankSelect = document.getElementById("bankName");
+    const customBankGroup = document.getElementById("customBankGroup");
+    const customBankInput = document.getElementById("customBankName");
+    const saveBtn = document.getElementById("saveBtn");
+    const statusMsg = document.getElementById("statusMsg");
 
-                    <div id="billingSummaryGrid" class="hidden space-y-6">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                <div class="text-xs text-slate-500">公司 / 法定开票抬头</div>
-                                <div id="viewLegalName" class="text-sm font-semibold text-slate-900 mt-1">-</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                <div class="text-xs text-slate-500">VAT 税号 / 组织机构号 (Org.nr)</div>
-                                <div id="viewVatNumber" class="text-sm font-mono font-semibold text-slate-900 mt-1">-</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                <div class="text-xs text-slate-500">默认发票付款账期</div>
-                                <div id="viewPaymentTerms" class="text-sm font-semibold text-slate-900 mt-1">-</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                <div class="text-xs text-slate-500">开户银行名称</div>
-                                <div id="viewBankName" class="text-sm font-semibold text-slate-900 mt-1">-</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                <div class="text-xs text-slate-500">IBAN / Bankgiro 收款账号</div>
-                                <div id="viewIban" class="text-sm font-mono font-semibold text-[#364B59] mt-1 break-all">-</div>
-                            </div>
-                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                <div class="text-xs text-slate-500">SWIFT / BIC 代码</div>
-                                <div id="viewSwift" class="text-sm font-mono font-semibold text-slate-900 mt-1">-</div>
-                            </div>
-                        </div>
+    function getUserIdentity() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        email: params.get("email") || localStorage.getItem("user_email") || "",
+        pageId: params.get("pageId") || localStorage.getItem("user_page_id") || ""
+      };
+    }
 
-                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                                <span class="text-xs text-slate-500 block">注册账单地址 (Billing Address)</span>
-                                <span id="viewAddress" class="text-sm text-slate-800 font-medium mt-0.5 block">-</span>
-                            </div>
-                            <span class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg self-start sm:self-center">
-                                ✓ 已同步至发票模板
-                            </span>
-                        </div>
-                    </div>
-                </div>
+    function setStatus(text, isError = false) {
+      statusMsg.textContent = text;
+      statusMsg.className = "status " + (isError ? "err" : "ok");
+    }
 
-                <!-- 编辑模式：填写与修改表单 -->
-                <form id="billingEditForm" onsubmit="saveBillingProfile(event)" class="hidden p-6 sm:p-8 space-y-5">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                公司名称或法定个人姓名 (Legal / Company Name) <span class="text-rose-500">*</span>
-                            </label>
-                            <input type="text" id="inputLegalName" required placeholder="例如: Nord Studio AB 或 Anders Lindqvist"
-                                class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                        </div>
+    bankSelect.addEventListener("change", () => {
+      if (bankSelect.value === "__CUSTOM__") {
+        customBankGroup.style.display = "block";
+        customBankInput.focus();
+      } else {
+        customBankGroup.style.display = "none";
+      }
+    });
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                VAT 增值税号 / 组织机构号 (VAT ID / Org.nr)
-                            </label>
-                            <input type="text" id="inputVatNumber" placeholder="例如: SE556677889901"
-                                class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                        </div>
+    async function loadProfile() {
+      const { email, pageId } = getUserIdentity();
+      if (!email && !pageId) return;
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                开户银行名称 (Bank Name) <span class="text-rose-500">*</span>
-                            </label>
-                            <input type="text" id="inputBankName" required placeholder="例如: SEB / Swedbank / Nordea / Wise"
-                                class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                        </div>
+      try {
+        const query = pageId
+          ? `pageId=${encodeURIComponent(pageId)}`
+          : `email=${encodeURIComponent(email)}`;
+        const res = await fetch(`${WORKER_B_BASE_URL}/api/account/profile?${query}`);
+        const data = await res.json();
+        if (!res.ok || !data.ok) return;
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                收款账号 (IBAN / Bankgiro / Plusgiro) <span class="text-rose-500">*</span>
-                            </label>
-                            <input type="text" id="inputIban" required placeholder="例如: SE45 5000 0000 0583 9825 7466 或 BG 123-4567"
-                                class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                        </div>
+        const p = data.profile || {};
+        document.getElementById("companyLegalName").value = p.companyLegalName || "";
+        document.getElementById("vatNumberOrgNr").value = p.vatNumberOrgNr || "";
+        document.getElementById("ibanBankgiroPlusgiro").value = p.ibanBankgiroPlusgiro || "";
+        document.getElementById("swiftBic").value = p.swiftBic || "";
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                SWIFT / BIC 代码 (跨境欧元收款建议填写)
-                            </label>
-                            <input type="text" id="inputSwift" placeholder="例如: ESSESESS"
-                                class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                默认发票付款账期 (Payment Terms)
-                            </label>
-                            <select id="inputPaymentTerms"
-                                class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                                <option value="14 Days Net">14 Days Net (14天内付款)</option>
-                                <option value="30 Days Net" selected>30 Days Net (30天内付款 - 北欧标准)</option>
-                                <option value="10 Days Net">10 Days Net (10天内付款)</option>
-                                <option value="Due on Receipt">Due on Receipt (见票即付)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                            开票注册地址 (Business / Billing Address)
-                        </label>
-                        <input type="text" id="inputAddress" placeholder="例如: Sveavägen 44, 111 34 Stockholm, Sweden"
-                            class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A8C8C]/30 focus:border-[#4A8C8C]">
-                    </div>
-
-                    <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-3">
-                        <button type="button" onclick="toggleBillingEditMode(false)" class="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-                            取消
-                        </button>
-                        <button type="submit" id="saveBillingBtn" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-white bg-[#364B59] hover:bg-[#2a3b47] rounded-xl transition shadow-sm">
-                            保存收款与开票资料
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- 3. 套餐升级与对比列表 -->
-        <section>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-2">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900">更换 / 升级订阅方案</h2>
-                    <p class="text-sm text-slate-500 mt-0.5">所有付费套餐均支持通过 Stripe 安全结账，升级后客户上限立即生效</p>
-                </div>
-                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full self-start sm:self-auto">
-                    <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                    </svg>
-                    Stripe 加密支付保障
-                </span>
-            </div>
-
-            <div id="planListBox" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- 套餐骨架屏 -->
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
-                    <div class="skeleton h-6 w-28"></div>
-                    <div class="skeleton h-10 w-36"></div>
-                    <div class="skeleton h-20 w-full"></div>
-                    <div class="skeleton h-10 w-full rounded-xl"></div>
-                </div>
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 space-y-4">
-                    <div class="skeleton h-6 w-28"></div>
-                    <div class="skeleton h-10 w-36"></div>
-                    <div class="skeleton h-20 w-full"></div>
-                    <div class="skeleton h-10 w-full rounded-xl"></div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- 底部辅助提示 -->
-    <footer class="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 border-t border-slate-200/80 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-        <div>Nordic CRM & Tax Automation System · 专为北欧自由职业者与中小企业打造</div>
-        <div>需要发票开具或企业定制配额？请联系客服并附上您的账户 ID</div>
-    </footer>
-
-    <script>
-        const workerB = "https://us-xiaoyan.qq596337481.workers.dev/";
-        const urlParams = new URLSearchParams(location.search);
-        const uid = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
-
-        if (!uid) {
-            location.href = "login.html";
-        } else {
-            localStorage.setItem("nordic_uid", uid);
-            document.getElementById("backBtn").href = `dashboard.html?uid=${encodeURIComponent(uid)}`;
-            document.getElementById("displayUidText").innerText = uid;
+        if (p.bankName) {
+          if (PRESET_BANKS.includes(p.bankName)) {
+            bankSelect.value = p.bankName;
+            customBankGroup.style.display = "none";
+          } else {
+            bankSelect.value = "__CUSTOM__";
+            customBankGroup.style.display = "block";
+            customBankInput.value = p.bankName;
+          }
         }
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      }
+    }
 
-        let userData = null;
-        let currentBillingProfile = null;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const { email, pageId } = getUserIdentity();
 
-        // 一键复制 UID
-        function copyUid() {
-            if (!uid) return;
-            navigator.clipboard.writeText(uid).then(() => {
-                const textEl = document.getElementById("displayUidText");
-                const oldText = textEl.innerText;
-                textEl.innerText = "已复制!";
-                textEl.classList.add("text-emerald-600");
-                setTimeout(() => {
-                    textEl.innerText = oldText;
-                    textEl.classList.remove("text-emerald-600");
-                }, 1500);
-            });
+      if (!email && !pageId) {
+        setStatus("未检测到当前登录用户标识（email 或 pageId）", true);
+        return;
+      }
+
+      const selectedBank =
+        bankSelect.value === "__CUSTOM__"
+          ? customBankInput.value.replace(/,/g, " ").trim()
+          : bankSelect.value;
+
+      const payload = {
+        email,
+        pageId,
+        companyLegalName: document.getElementById("companyLegalName").value.trim(),
+        vatNumberOrgNr: document.getElementById("vatNumberOrgNr").value.trim(),
+        bankName: selectedBank,
+        ibanBankgiroPlusgiro: document.getElementById("ibanBankgiroPlusgiro").value.trim(),
+        swiftBic: document.getElementById("swiftBic").value.trim(),
+      };
+
+      saveBtn.disabled = true;
+      setStatus("正在保存...");
+
+      try {
+        const res = await fetch(`${WORKER_B_BASE_URL}/api/account/profile`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "保存失败");
         }
+        setStatus("已成功同步至 Notion！");
+      } catch (err) {
+        setStatus(err.message || "保存失败，请稍后重试", true);
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
 
-        function showError(msg) {
-            const banner = document.getElementById("errorBanner");
-            document.getElementById("errorText").innerText = msg;
-            banner.classList.remove("hidden");
-        }
-
-        function hideError() {
-            document.getElementById("errorBanner").classList.add("hidden");
-        }
-
-        // ==================== 开票与收款资料管理逻辑 ====================
-        function getBillingStorageKey() {
-            return `nordic_billing_${uid}`;
-        }
-
-        function loadLocalBillingProfile() {
-            try {
-                return JSON.parse(localStorage.getItem(getBillingStorageKey()) || "null");
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function renderBillingProfile(profile) {
-            currentBillingProfile = profile;
-            const badge = document.getElementById("billingStatusBadge");
-            const emptyState = document.getElementById("billingEmptyState");
-            const summaryGrid = document.getElementById("billingSummaryGrid");
-
-            const hasValidData = profile && (profile.legalName || profile.iban);
-
-            if (!hasValidData) {
-                badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
-                badge.innerText = "待完善";
-                emptyState.classList.remove("hidden");
-                summaryGrid.classList.add("hidden");
-                return;
-            }
-
-            badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
-            badge.innerText = "已配置";
-            emptyState.classList.add("hidden");
-            summaryGrid.classList.remove("hidden");
-
-            document.getElementById("viewLegalName").innerText = profile.legalName || "-";
-            document.getElementById("viewVatNumber").innerText = profile.vatNumber || "未填写";
-            document.getElementById("viewPaymentTerms").innerText = profile.paymentTerms || "30 Days Net";
-            document.getElementById("viewBankName").innerText = profile.bankName || "-";
-            document.getElementById("viewIban").innerText = profile.iban || "-";
-            document.getElementById("viewSwift").innerText = profile.swift || "未填写";
-            document.getElementById("viewAddress").innerText = profile.address || "未填写";
-
-            // 同步填充编辑框默认值
-            document.getElementById("inputLegalName").value = profile.legalName || "";
-            document.getElementById("inputVatNumber").value = profile.vatNumber || "";
-            document.getElementById("inputBankName").value = profile.bankName || "";
-            document.getElementById("inputIban").value = profile.iban || "";
-            document.getElementById("inputSwift").value = profile.swift || "";
-            document.getElementById("inputPaymentTerms").value = profile.paymentTerms || "30 Days Net";
-            document.getElementById("inputAddress").value = profile.address || "";
-        }
-
-        function toggleBillingEditMode(isEdit) {
-            const viewMode = document.getElementById("billingViewMode");
-            const editForm = document.getElementById("billingEditForm");
-            const toggleBtn = document.getElementById("toggleEditBillingBtn");
-            const feedback = document.getElementById("billingFeedback");
-            feedback.classList.add("hidden");
-
-            if (isEdit) {
-                viewMode.classList.add("hidden");
-                editForm.classList.remove("hidden");
-                toggleBtn.classList.add("hidden");
-            } else {
-                viewMode.classList.remove("hidden");
-                editForm.classList.add("hidden");
-                toggleBtn.classList.remove("hidden");
-            }
-        }
-
-        function showBillingFeedback(msg, isSuccess) {
-            const el = document.getElementById("billingFeedback");
-            el.className = isSuccess
-                ? "mx-6 sm:mx-8 mt-5 p-3.5 rounded-xl text-sm flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700"
-                : "mx-6 sm:mx-8 mt-5 p-3.5 rounded-xl text-sm flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700";
-            el.innerText = msg;
-            el.classList.remove("hidden");
-        }
-
-        async function saveBillingProfile(e) {
-            e.preventDefault();
-            const saveBtn = document.getElementById("saveBillingBtn");
-            saveBtn.disabled = true;
-            saveBtn.innerText = "正在保存...";
-
-            const profileData = {
-                legalName: document.getElementById("inputLegalName").value.trim(),
-                vatNumber: document.getElementById("inputVatNumber").value.trim(),
-                bankName: document.getElementById("inputBankName").value.trim(),
-                iban: document.getElementById("inputIban").value.trim(),
-                swift: document.getElementById("inputSwift").value.trim(),
-                paymentTerms: document.getElementById("inputPaymentTerms").value,
-                address: document.getElementById("inputAddress").value.trim(),
-                updatedAt: new Date().toISOString()
-            };
-
-            // 1. 立即写入本地缓存，保证工作台弹窗检测与当前页即刻生效
-            localStorage.setItem(getBillingStorageKey(), JSON.stringify(profileData));
-
-            // 2. 尝试同步到 workerB 后端（若后端已扩展 updateBillingProfile 则同步写入 Notion）
-            try {
-                await fetch(workerB, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        action: "updateBillingProfile",
-                        uid,
-                        billingProfile: profileData
-                    })
-                });
-            } catch (err) {
-                console.warn("后端暂未同步开票字段，已保存至本地账户配置:", err);
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerText = "保存收款与开票资料";
-                renderBillingProfile(profileData);
-                toggleBillingEditMode(false);
-                showBillingFeedback("✅ 开票与收款资料已更新，返回工作台即可直接生成带收款账号的发票！", true);
-            }
-        }
-
-        // ==================== 读取用户当前套餐信息 ====================
-        async function loadUserInfo() {
-            const res = await fetch(workerB, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ uid })
-            });
-            const json = await res.json();
-            if (!json.success) {
-                throw new Error(json.error || "账户验证失败或登录已过期");
-            }
-            userData = json;
-            renderUserInfo(json);
-
-            // 优先使用后端返回的 billingProfile，其次回退到本地缓存
-            const mergedProfile = json.billingProfile || loadLocalBillingProfile();
-            renderBillingProfile(mergedProfile);
-
-            // 如果是从工作台弹窗带 #billing 锚点跳转过来且尚未填写资料，自动展开编辑表单
-            if (location.hash === "#billing" && (!mergedProfile || !mergedProfile.iban)) {
-                toggleBillingEditMode(true);
-            }
-        }
-
-        function renderUserInfo(u) {
-            const box = document.getElementById("userInfoBox");
-            const isFree = (u.planKey || "").toLowerCase().includes("free") || (u.planKey || "").toLowerCase().includes("trial") || Number(u.maxClients) <= 5;
-            const statusText = isFree ? "试用 / 基础版" : "订阅生效中";
-
-            box.innerHTML = `
-                <div class="bg-gradient-to-r from-[#364B59] via-[#2c3e4a] to-[#364B59] px-6 py-5 sm:px-8 sm:py-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-xs uppercase tracking-wider text-slate-300 font-semibold">当前生效套餐</span>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/10 text-emerald-300 border border-white/10">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                ${statusText}
-                            </span>
-                        </div>
-                        <h3 class="text-2xl sm:text-3xl font-bold mt-1 tracking-tight">${u.planName || "标准版"}</h3>
-                    </div>
-                    <div class="text-left sm:text-right">
-                        <div class="text-xs text-slate-300">绑定登录邮箱</div>
-                        <div class="text-sm sm:text-base font-medium text-white mt-0.5">${u.email || "未绑定邮箱"}</div>
-                    </div>
-                </div>
-
-                <div class="p-6 sm:px-8 sm:py-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 bg-white">
-                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                        <div class="text-xs text-slate-500 font-medium">客户管理上限</div>
-                        <div class="mt-1 flex items-baseline gap-1.5">
-                            <span class="text-2xl font-bold text-slate-900">${u.maxClients ?? "-"}</span>
-                            <span class="text-xs text-slate-500">个活跃客户档案</span>
-                        </div>
-                    </div>
-
-                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                        <div class="text-xs text-slate-500 font-medium">套餐标识符 (Plan Key)</div>
-                        <div class="mt-1.5">
-                            <span class="inline-block font-mono text-sm font-semibold text-slate-800 bg-white px-2.5 py-0.5 rounded border border-slate-200">
-                                ${u.planKey || "default"}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                        <div class="text-xs text-slate-500 font-medium">已解锁核心功能</div>
-                        <div class="mt-1.5 text-sm font-medium text-slate-800 flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-[#4A8C8C] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Notion 同步 & AI 发票识别</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 加载所有套餐
-        async function loadPlans() {
-            const res = await fetch(workerB, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "listPlans", uid })
-            });
-            const json = await res.json();
-            if (!json.success) {
-                throw new Error(json.error || "无法获取套餐列表");
-            }
-            renderPlans(json.plans || []);
-        }
-
-        function formatBillingCycle(cycle) {
-            if (!cycle) return "月";
-            const c = cycle.toLowerCase();
-            if (c.includes("month")) return "月";
-            if (c.includes("year") || c.includes("annual")) return "年";
-            return cycle;
-        }
-
-        function renderPlans(plans) {
-            const box = document.getElementById("planListBox");
-            box.innerHTML = "";
-
-            if (plans.length === 0) {
-                box.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-200">暂无可切换的订阅套餐</div>`;
-                return;
-            }
-
-            plans.forEach(p => {
-                const stripeUrl = p.stripeSandboxId
-                    ? `https://checkout.stripe.com/pay/${p.stripeSandboxId}?client_reference_id=${encodeURIComponent(uid)}`
-                    : "#";
-                const isCurrent = userData && p.planKey === userData.planKey;
-                const priceNum = Number(p.priceEUR || 0);
-                const cycleLabel = formatBillingCycle(p.billingCycle);
-
-                const cardBorder = isCurrent
-                    ? "border-[#364B59] ring-2 ring-[#364B59]/10"
-                    : "border-slate-200 hover:border-slate-300 hover:shadow-md";
-
-                box.innerHTML += `
-                    <div class="bg-white rounded-2xl p-6 sm:p-7 border ${cardBorder} transition-all flex flex-col justify-between relative">
-                        ${isCurrent ? `
-                            <div class="absolute -top-3 right-6 px-3 py-0.5 bg-[#364B59] text-white text-xs font-semibold rounded-full shadow-sm">
-                                当前使用中
-                            </div>
-                        ` : ""}
-
-                        <div>
-                            <div class="flex items-center justify-between">
-                                <h3 class="font-bold text-lg text-slate-900">${p.displayName}</h3>
-                            </div>
-
-                            <div class="mt-4 flex items-baseline gap-1">
-                                <span class="text-3xl sm:text-4xl font-extrabold text-slate-900">€${priceNum}</span>
-                                <span class="text-sm text-slate-500 font-medium">/ ${cycleLabel}</span>
-                            </div>
-
-                            <p class="text-xs text-slate-400 mt-1">
-                                ${priceNum === 0 ? "永久免费体验基础客户与记账功能" : "支持随时取消或变更订阅级别"}
-                            </p>
-
-                            <hr class="my-5 border-slate-100">
-
-                            <ul class="space-y-3 text-sm text-slate-600 mb-6">
-                                <li class="flex items-center gap-2.5">
-                                    <svg class="w-4 h-4 text-[#4A8C8C] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <span>最多管理 <strong class="text-slate-900">${p.maxClients}</strong> 个客户档案</span>
-                                </li>
-                                <li class="flex items-center gap-2.5">
-                                    <svg class="w-4 h-4 text-[#4A8C8C] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <span>Notion 数据库实时双向同步</span>
-                                </li>
-                                <li class="flex items-center gap-2.5">
-                                    <svg class="w-4 h-4 text-[#4A8C8C] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <span>AI 发票识别与北欧增值税计算</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            ${isCurrent
-                                ? `<button disabled class="w-full py-2.5 px-4 bg-slate-100 text-slate-500 font-medium text-sm rounded-xl cursor-not-allowed">
-                                    当前已订阅此方案
-                                   </button>`
-                                : (p.stripeSandboxId
-                                    ? `<a href="${stripeUrl}" target="_blank" onclick="handleUpgradeClick(this)" class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-[#364B59] hover:bg-[#2a3b47] text-white font-medium text-sm rounded-xl transition shadow-sm">
-                                        <span>立即升级至 ${p.displayName}</span>
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                                        </svg>
-                                       </a>`
-                                    : `<button disabled class="w-full py-2.5 px-4 bg-slate-100 text-slate-400 font-medium text-sm rounded-xl cursor-not-allowed">
-                                        暂未开放线上购买
-                                       </button>`
-                                )
-                            }
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function handleUpgradeClick(el) {
-            const span = el.querySelector("span");
-            if (span) {
-                const orig = span.innerText;
-                span.innerText = "正在前往 Stripe 结账页...";
-                setTimeout(() => { span.innerText = orig; }, 3000);
-            }
-        }
-
-        async function initPage() {
-            hideError();
-            // 先用本地缓存渲染一次开票资料，避免白屏等待
-            renderBillingProfile(loadLocalBillingProfile());
-            try {
-                await loadUserInfo();
-                await loadPlans();
-            } catch (err) {
-                showError(err.message || "加载账户与套餐信息失败，请稍后重试。");
-            }
-        }
-
-        initPage();
-    </script>
+    loadProfile();
+  </script>
 </body>
 </html>
