@@ -160,7 +160,6 @@ function getLocalBillingProfile(){
 function openLocalReminderModal(){
   const modalEl = document.getElementById("localBillingReminderModal");
   const linkEl = document.getElementById("localGoAccountBtn");
-  linkEl.href = `account.html?uid=${encodeURIComponent(uid)}#billing`;
   modalEl.classList.add("active");
 }
 function closeLocalReminderModal(){
