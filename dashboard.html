@@ -739,6 +739,14 @@
   </div>
 </div>
 <script>
+    // 弹窗效验
+    window.addEventListener("message", (e)=>{
+  if(e.data.type === "jumpToAccountBilling"){
+    const targetUrl = `account.html?uid=${encodeURIComponent(e.data.uid)}#billing`;
+    window.location.href = targetUrl;
+  }
+})
+
   // Call this function before opening invoice builder
   function checkBillingBeforeInvoice(onReadyCallback) {
     const currentUid = new URLSearchParams(location.search).get("uid") || localStorage.getItem("nordic_uid") || "";
