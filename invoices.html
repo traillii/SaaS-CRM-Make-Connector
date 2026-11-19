@@ -139,9 +139,9 @@
       <button type="button" onclick="closeLocalReminderModal()" class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
         Remind Me Later
       </button>
-      <a id="localGoAccountBtn" target="_parent" href="" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
+      <button type="button" onclick="sendJumpToAccount()" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
         Go to Account Settings →
-      </a>
+      </button>
     </div>
   </div>
 </div>
@@ -167,6 +167,14 @@ function closeLocalReminderModal(){
   const modalEl = document.getElementById("localBillingReminderModal");
   modalEl.classList.remove("active");
 }
+  function sendJumpToAccount(){
+  // 发消息给父页面dashboard，让父页面自己跳转
+  parent.postMessage({
+    type: "jumpToAccountBilling",
+    uid: uid
+  }, "*");
+}
+
 /**
  * 点击新增发票入口：先校验收款资料
  * 返回true=资料齐全，可以打开新增弹窗；false=资料缺失，弹出提示
