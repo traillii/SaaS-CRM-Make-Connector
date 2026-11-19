@@ -21,6 +21,20 @@
     justify-content: center;
   }
   .modal.active { display: flex; }
+  /* 子页面内缺少开票资料提示弹窗样式 */
+  .local‑reminder‑modal {
+    display: none;
+    position: fixed;
+    inset:0;
+    background:rgba(15,23,42,0.5);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .local‑reminder‑modal.active {
+    display:flex;
+  }
 </style>
 </head>
 <body class="p-1 min-h-[700px] overflow-auto">
@@ -108,12 +122,64 @@
     </div>
   </div>
 </div>
+
+<!--【新增】iframe内部：开票前检查收款资料弹窗（复制自dashboard，样式完全对齐） -->
+<div id="localBillingReminderModal" class="local‑reminder‑modal">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-xl border border-slate-100">
+    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+    </div>
+    <h3 class="text-lg font-bold text-slate-900">Complete Your Invoicing & Payout Details</h3>
+    <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+      Before generating client invoices, please provide your <strong>legal entity name, VAT ID and IBAN / Bankgiro payout account</strong>. These will be automatically printed on invoice payment instructions.
+    </p>
+    <div class="mt-6 flex flex-col sm:flex-row gap-2.5 justify-end">
+      <button type="button" onclick="closeLocalReminderModal()" class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+        Remind Me Later
+      </button>
+      <a id="localGoAccountBtn" target="_parent" href="" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
+        Go to Account Settings →
+      </a>
+    </div>
+  </div>
+</div>
+
 <script>
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let invoiceListCache = [];
 let invProjectSel, invClientSel, invNetInput;
 let modal, modalTitle, btnAddInv, btnCloseModal, btnSaveInv;
+
+// =========【新增】iframe内部本地校验函数，完全复制dashboard逻辑 =========
+function getLocalBillingProfile(){
+  return JSON.parse(localStorage.getItem(`nordic_billing_${uid}`) || "null");
+}
+function openLocalReminderModal(){
+  const modalEl = document.getElementById("localBillingReminderModal");
+  const linkEl = document.getElementById("localGoAccountBtn");
+  linkEl.href = `account.html?uid=${encodeURIComponent(uid)}#billing`;
+  modalEl.classList.add("active");
+}
+function closeLocalReminderModal(){
+  const modalEl = document.getElementById("localBillingReminderModal");
+  modalEl.classList.remove("active");
+}
+/**
+ * 点击新增发票入口：先校验收款资料
+ * 返回true=资料齐全，可以打开新增弹窗；false=资料缺失，弹出提示
+ */
+function checkBillingBeforeOpenInvoice(){
+  const savedProfile = getLocalBillingProfile();
+  if(!savedProfile || !savedProfile.iban || !savedProfile.legalName){
+    openLocalReminderModal();
+    return false;
+  }
+  return true;
+}
+
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
   return params.get(name);
@@ -127,6 +193,15 @@ document.addEventListener("DOMContentLoaded", async function(){
   btnAddInv = document.getElementById("btnAddInv");
   btnCloseModal = document.getElementById("btnCloseModal");
   btnSaveInv = document.getElementById("btnSaveInv");
+
+  //【修改】新增发票按钮点击：先走校验，通过才打开弹窗
+  btnAddInv.onclick = function(){
+    const ok = checkBillingBeforeOpenInvoice();
+    if(ok){
+      openAddModal();
+    }
+  };
+
   invClientSel.onchange = async function(){
     const clientId = this.value;
     invProjectSel.innerHTML = `<option value="">-- Select Client first --</option>`;
@@ -138,7 +213,7 @@ document.addEventListener("DOMContentLoaded", async function(){
   invProjectSel.onchange = async function(){
     await fillProjectInfo(this.value);
   };
-  btnAddInv.onclick = openAddModal;
+
   btnCloseModal.onclick = closeModal;
   btnSaveInv.onclick = saveInvoice;
   uid = getUrlParam("uid");
