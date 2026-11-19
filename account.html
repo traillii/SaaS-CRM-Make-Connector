@@ -58,7 +58,7 @@
         <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Account, Payout & Subscription Management</h1>
-                <p class="text-sm text-slate-500 mt-1">Manage your account profile, configure invoice payout banking details, and upgrade your subscription plan at any time</p>
+                <p class="text-sm text-slate-500 mt-1">Manage your account profile, configure banking details for client invoices, and upgrade your subscription plan at any time</p>
             </div>
             <!-- UID Copy Badge -->
             <button onclick="copyUid()" id="uidCopyBtn" class="self-start sm:self-auto inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition shadow-sm" title="Click to copy your Account ID">
@@ -97,7 +97,7 @@
                 </div>
             </div>
         </section>
-        <!-- 2. Invoicing & Payout Profile Settings -->
+        <!-- 2. Invoicing & Payout Profile Settings Section (View / Edit Mode) -->
         <section id="billing" class="mb-12 scroll-mt-24">
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <!-- Card Header -->
@@ -384,7 +384,9 @@
                 address: document.getElementById("inputAddress").value.trim(),
                 updatedAt: new Date().toISOString()
             };
+            // Save to local storage for workspace popup and immediate page rendering
             localStorage.setItem(getBillingStorageKey(), JSON.stringify(profileData));
+            // Sync to workerB backend if updateBillingProfile is implemented
             try {
                 await fetch(workerB, {
                     method: "POST",
@@ -405,7 +407,7 @@
                 showBillingFeedback("✅ Invoicing and payout details updated. Return to workspace to generate invoices with your banking information attached.", true);
             }
         }
-        // ==================== Load user subscription information ====================
+        // ==================== Load current user subscription information ====================
         async function loadUserInfo() {
             const res = await fetch(workerB, {
                 method: "POST",
@@ -418,8 +420,10 @@
             }
             userData = json;
             renderUserInfo(json);
+            // Prefer backend‑returned billingProfile, fallback to local storage
             const mergedProfile = json.billingProfile || loadLocalBillingProfile();
             renderBillingProfile(mergedProfile);
+            // Auto‑open edit form when coming from workspace anchor #billing with incomplete profile
             if (location.hash === "#billing" && (!mergedProfile || !mergedProfile.iban)) {
                 toggleBillingEditMode(true);
             }
@@ -473,10 +477,11 @@
                 </div>
             `;
         }
+        // Load subscription plans list
         async function loadPlans() {
             const res = await fetch(workerB, {
                 method: "POST",
-                headers: { "Content‑Type": "application/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "listPlans", uid })
             });
             const json = await res.json();
@@ -496,7 +501,7 @@
             const box = document.getElementById("planListBox");
             box.innerHTML = "";
             if (plans.length === 0) {
-                box.innerHTML = `<div class="col‑span‑full text‑center py‑10 text‑slate‑400 bg‑white rounded‑2xl border border‑slate‑200">No available subscription plans</div>`;
+                box.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-200">No available subscription plans</div>`;
                 return;
             }
             plans.forEach(p => {
