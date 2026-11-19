@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,69 +58,62 @@
     </style>
 </head>
 <body class="min-h-screen">
-
     <!-- Account Verification Loader -->
     <div id="loadingBox" class="py-32 text-center text-slate-500 text-sm">
         Verifying your account...
     </div>
-
     <!-- Main Layout (Left Sidebar + Right Workspace) -->
     <div id="mainBox" class="hidden flex min-h-screen">
         
-        <!-- ==================== 左侧导航边栏 ==================== -->
+        <!-- ==================== Left Sidebar ==================== -->
         <aside class="w-60 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
             <div class="p-5">
                 <!-- Brand Title -->
                 <div class="pb-5 mb-5 border-b border-gray-100">
                     <h1 class="text-lg font-bold text-gray-900 tracking-tight">Nordic CRM</h1>
-                    <p class="text-xs text-gray-500 mt-0.5">北欧企业财税与客户门户</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Nordic Business Tax & Client Portal</p>
                 </div>
-
                 <!-- User Info Mini Card -->
                 <div class="mb-6 p-3 rounded-lg bg-gray-50 border border-gray-200/80">
-                    <div class="text-xs text-gray-500">当前登录账号</div>
+                    <div class="text-xs text-gray-500">Signed‑in Account</div>
                     <div id="userEmail" class="text-xs font-semibold text-gray-800 truncate mt-0.5"></div>
                     <div id="planBadge" class="mt-1.5 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-100"></div>
                 </div>
-
                 <!-- Sidebar Navigation Menu -->
                 <nav class="space-y-1.5">
                     <button id="tabClient" class="nav-item active">
-                        <span>👥</span> 客户管理
+                        <span>👥</span> Client Management
                     </button>
                     <button id="tabProject" class="nav-item">
-                        <span>📁</span> 项目管理
+                        <span>📁</span> Project Management
                     </button>
                     <button id="tabInvoice" class="nav-item">
-                        <span>🧾</span> 发票管理
+                        <span>🧾</span> Invoice Management
                     </button>
                     <button id="tabExpense" class="nav-item">
-                        <span>💳</span> 支出与资产
+                        <span>💳</span> Expenses & Assets
                     </button>
                 </nav>
             </div>
-
             <!-- Sidebar Footer -->
             <div class="p-4 border-t border-gray-200 space-y-2">
                 <a id="accountLink" href="#" class="block w-full text-center px-3 py-2 border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
-                    ⚙️ 账户管理
+                    ⚙️ Account Settings
                 </a>
                 <a href="index.html" class="block w-full text-center px-3 py-1.5 text-xs text-gray-500 hover:text-gray-800">
                     &larr; Back to Home
                 </a>
             </div>
         </aside>
-
-        <!-- ==================== 右侧主工作区 ==================== -->
+        <!-- ==================== Right Main Workspace ==================== -->
         <main class="flex-1 p-6 md:p-8 overflow-y-auto">
             <div class="mx-auto">
-
                 <!-- ==================== 1. Client Management Panel ==================== -->
                 <div id="panelClient">
                     <div class="flex justify-between items-center mb-5 flex-wrap gap-3">
                         <div>
-                            <h2 class="text-lg font-bold text-gray-900">客户管理 (Your Clients)</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">管理北欧及跨境客户资料与税务识别号</p>
+                            <h2 class="text-lg font-bold text-gray-900">Client Management (Your Clients)</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">Manage Nordic and cross‑border client records & tax identifiers</p>
                         </div>
                         <div class="flex gap-2.5">
                             <button id="openBatchBtn" class="px-4 py-2 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
@@ -131,19 +124,17 @@
                             </button>
                         </div>
                     </div>
-
                     <!-- Client Table Container -->
                     <div id="clientListBox" class="card-box overflow-x-auto">
                         <div class="p-10 text-center text-gray-400 text-sm">Loading clients...</div>
                     </div>
-
                     <!-- Batch Import Modal -->
                     <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                         <div class="bg-white w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-xl">
                             <h3 class="text-base font-bold text-gray-900 mb-2">Batch Import Clients</h3>
                             <p class="text-xs text-gray-500 mb-3 leading-relaxed">
-                                格式：Name,Email,Phone,Notes (每行一条)<br>
-                                <span class="text-amber-600">注意：批量导入暂不支持 Country Region / VAT 字段</span>
+                                Format: Name,Email,Phone,Notes (one record per line)<br>
+                                <span class="text-amber-600">Note: Batch import does not support Country Region / VAT fields</span>
                             </p>
                             <textarea id="batchTextarea" rows="8" class="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:border-blue-500" placeholder="Acme Corp,contact@acme.com,+45123456,VIP Client"></textarea>
                             <div class="flex justify-end gap-2 mt-4">
@@ -152,7 +143,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Add / Edit Client Modal -->
                     <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                         <div class="bg-white w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-xl">
@@ -176,7 +166,7 @@
                                     <select name="countryRegion" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500">
                                         <option value="">-- Select --</option>
                                         <option value="Outside EU">Outside EU</option>
-                                        <option value="EU(Non-nordic)">EU(Non-nordic)</option>
+                                        <option value="EU(Non-nordic)">EU(Non‑nordic)</option>
                                         <option value="Denmark">Denmark</option>
                                         <option value="Sweden">Sweden</option>
                                         <option value="Finland">Finland</option>
@@ -185,7 +175,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="block text-xs font-medium text-gray-700 mb-1">VAT/CVR/Org No.</label>
-                                    <input name="vatNo" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="税号 / 组织编号">
+                                    <input name="vatNo" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Tax / Organisation number">
                                 </div>
                                 <div class="mb-4">
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Notes</label>
@@ -199,142 +189,131 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- ==================== 2. Project Management Panel ==================== -->
                 <div id="panelProject" class="hidden">
                     <div class="mb-5 flex justify-between items-center flex-wrap gap-3">
                         <div>
-                            <h2 class="text-lg font-bold text-gray-900">项目管理 (Projects)</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">追踪按时计费与包月服务项目的税前总价值</p>
+                            <h2 class="text-lg font-bold text-gray-900">Project Management (Projects)</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">Track pre‑tax total value for hourly‑billed and retainer‑based services</p>
                         </div>
-                        <button id="btnAddProject" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700">+ 新增项目</button>
+                        <button id="btnAddProject" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700">+ Add Project</button>
                     </div>
-
                     <div class="card-box overflow-x-auto">
                         <table class="w-full border-collapse text-sm">
                             <thead class="table-header">
                                 <tr>
-                                    <th class="p-3 text-left">项目名称</th>
-                                    <th class="p-3 text-left">关联客户</th>
-                                    <th class="p-3 text-left">计费方式</th>
-                                    <th class="p-3 text-right">单价 (EUR)</th>
-                                    <th class="p-3 text-right">总工时</th>
-                                    <th class="p-3 text-right">项目税前金额 (EUR)</th>
-                                    <th class="p-3 text-center">操作</th>
+                                    <th class="p-3 text-left">Project Name</th>
+                                    <th class="p-3 text-left">Linked Client</th>
+                                    <th class="p-3 text-left">Billing Type</th>
+                                    <th class="p-3 text-right">Unit Price (EUR)</th>
+                                    <th class="p-3 text-right">Total Hours</th>
+                                    <th class="p-3 text-right">Project Pre‑tax Amount (EUR)</th>
+                                    <th class="p-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="projectTableBody" class="divide-y divide-gray-100">
-                                <tr><td colspan="7" class="p-8 text-center text-gray-400">加载中...</td></tr>
+                                <tr><td colspan="7" class="p-8 text-center text-gray-400">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
-
                     <!-- Add Project Modal -->
                     <div id="modalAddProject" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
                         <div class="bg-white p-6 rounded-lg border border-gray-200 w-full max-w-md shadow-xl">
-                            <h3 class="text-base font-bold text-gray-900 mb-4">新增项目</h3>
+                            <h3 class="text-base font-bold text-gray-900 mb-4">Add New Project</h3>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
-                                    <input type="text" id="inpProjectName" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="填写项目名称">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Project Name <span class="text-red-500">*</span></label>
+                                    <input type="text" id="inpProjectName" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="Enter project name">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">关联客户 <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Linked Client <span class="text-red-500">*</span></label>
                                     <select id="selProjectClient" class="w-full border border-gray-300 p-2 rounded-md text-sm bg-white"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">计费类型 <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Billing Type <span class="text-red-500">*</span></label>
                                     <select id="selBillingType" class="w-full border border-gray-300 p-2 rounded-md text-sm bg-white">
-                                        <option value="Hourly Rate">Hourly Rate (按时计费)</option>
-                                        <option value="Retainer">Retainer (固定包月)</option>
+                                        <option value="Hourly Rate">Hourly Rate</option>
+                                        <option value="Retainer">Retainer (Fixed Monthly)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">单价 (EUR) <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Unit Price (EUR) <span class="text-red-500">*</span></label>
                                     <input type="number" step="0.01" id="inpRateAmount" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="0.00">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">总工时</label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Total Hours</label>
                                     <input type="number" step="0.01" id="inpTotalHours" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="0">
                                 </div>
                             </div>
                             <div class="flex justify-end gap-2 mt-6">
-                                <button id="closeProjectModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">取消</button>
-                                <button id="submitAddProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">保存</button>
+                                <button id="closeProjectModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
+                                <button id="submitAddProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save</button>
                             </div>
                         </div>
                     </div>
-
                     <!-- Edit Project Modal -->
                     <div id="editProjectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
                         <div class="bg-white p-6 rounded-lg border border-gray-200 w-full max-w-md shadow-xl">
-                            <h3 class="text-base font-bold text-gray-900 mb-4">编辑项目</h3>
+                            <h3 class="text-base font-bold text-gray-900 mb-4">Edit Project</h3>
                             <input type="hidden" id="editProjectId">
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Project Name <span class="text-red-500">*</span></label>
                                     <input type="text" id="editProjectName" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">关联客户 <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Linked Client <span class="text-red-500">*</span></label>
                                     <select id="editProjectClient" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm bg-white"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">计费方式 <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Billing Type <span class="text-red-500">*</span></label>
                                     <select id="editBillingType" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm bg-white">
                                         <option value="Hourly Rate">Hourly Rate</option>
                                         <option value="Retainer">Retainer</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">单价 (EUR)</label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Unit Price (EUR)</label>
                                     <input type="number" step="0.01" id="editRateAmount" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">总工时</label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Total Hours</label>
                                     <input type="number" step="0.01" id="editTotalHours" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
                                 </div>
                             </div>
                             <div class="flex gap-2 justify-end mt-6">
-                                <button id="btnCancelEditProject" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">取消</button>
-                                <button id="btnSaveEditProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">保存修改</button>
+                                <button id="btnCancelEditProject" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
+                                <button id="btnSaveEditProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Changes</button>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <!-- ==================== 3. Invoice Management Panel ==================== -->
                 <div id="panelInvoice" class="hidden">
                     <iframe id="invoiceIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
                         style="width:100%; min-height:1210px; border:0; background:transparent;"></iframe>
                 </div>
-
                 <!-- ==================== 4. Expenses & Capital Assets Panel ==================== -->
                 <div id="panelExpense" class="hidden">
                     <iframe id="expenseIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
                         style="width:100%; min-height:1210px; border:0; background:transparent;"></iframe>
                 </div>
-
             </div>
         </main>
     </div>
-
     <script>
         // ==================== Global Configuration & State ====================
         const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
         const uid = new URLSearchParams(location.search).get("uid");
-
         let currentPlanKey = "";
         let invoiceIframeLoaded = false;
         let expenseIframeLoaded = false;
         let cachedClientList = [];
         let cachedProjectList = [];
-
         if (!uid) {
             location.href = "error.html";
         }
         document.getElementById("accountLink").href = `account.html?uid=${uid}`;
-
         // ==================== Utility Functions ====================
         async function postWorker(payload) {
             const res = await fetch(WORKER_B_URL, {
@@ -344,17 +323,15 @@
             });
             return await res.json();
         }
-
         function escapeHtml(str) {
             if (str === null || str === undefined) return "";
             return String(str)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
+                .replace( />/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#39;");
         }
-
         // ==================== 1. User Verification & Initialization ====================
         async function verifyUser() {
             try {
@@ -363,22 +340,18 @@
                     location.href = "error.html";
                     return;
                 }
-
                 currentPlanKey = data.planKey;
                 document.getElementById("openBatchBtn").style.display = (currentPlanKey === "Trial") ? "none" : "inline-block";
                 document.getElementById("userEmail").innerText = data.email;
-                document.getElementById("planBadge").innerText = `${data.planName} · 限 ${data.maxClients} 客户`;
-
+                document.getElementById("planBadge").innerText = `${data.planName} · Limit ${data.maxClients} clients`;
                 document.getElementById("loadingBox").classList.add("hidden");
                 document.getElementById("mainBox").classList.remove("hidden");
-
                 await loadClientList();
             } catch (err) {
                 console.error("Verify user failed", err);
                 location.href = "error.html";
             }
         }
-
         // ==================== 2. Sidebar Tab Navigation ====================
         const tabs = {
             client: { btn: document.getElementById("tabClient"), panel: document.getElementById("panelClient") },
@@ -386,7 +359,6 @@
             invoice: { btn: document.getElementById("tabInvoice"), panel: document.getElementById("panelInvoice") },
             expense: { btn: document.getElementById("tabExpense"), panel: document.getElementById("panelExpense") }
         };
-
         function switchTab(activeKey) {
             Object.entries(tabs).forEach(([key, { btn, panel }]) => {
                 if (key === activeKey) {
@@ -398,16 +370,13 @@
                 }
             });
         }
-
         tabs.client.btn.onclick = () => switchTab("client");
-
         tabs.project.btn.onclick = async () => {
             switchTab("project");
             await loadClientList();
             fillClientDropdowns();
             await loadProjects();
         };
-
         tabs.invoice.btn.onclick = () => {
             switchTab("invoice");
             if (!invoiceIframeLoaded) {
@@ -415,7 +384,6 @@
                 invoiceIframeLoaded = true;
             }
         };
-
         tabs.expense.btn.onclick = () => {
             switchTab("expense");
             if (!expenseIframeLoaded) {
@@ -423,24 +391,20 @@
                 expenseIframeLoaded = true;
             }
         };
-
         // ==================== 3. Client Management Logic ====================
         const clientListBox = document.getElementById("clientListBox");
         const addModal = document.getElementById("addModal");
         const addForm = document.getElementById("addForm");
         const modalTitle = document.getElementById("modalTitle");
         const editPageIdInput = document.getElementById("editPageId");
-
         async function loadClientList() {
             try {
                 const data = await postWorker({ action: "listClients" });
                 cachedClientList = data.list || [];
-
                 if (!data.success || cachedClientList.length === 0) {
                     clientListBox.innerHTML = `<div class="p-10 text-center text-gray-400 text-sm">No clients yet, add your first client above.</div>`;
                     return;
                 }
-
                 const isTrial = currentPlanKey === "Trial";
                 let html = `
                 <table class="w-full text-sm">
@@ -457,7 +421,6 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">`;
-
                 cachedClientList.forEach((item, index) => {
                     const formattedDate = item.createdTime ? item.createdTime.split("T")[0] : "-";
                     html += `
@@ -477,15 +440,12 @@
                         </td>
                     </tr>`;
                 });
-
                 html += `</tbody></table>`;
                 clientListBox.innerHTML = html;
-
                 document.querySelectorAll(".editClientBtn").forEach(btn => {
                     btn.onclick = function() {
                         const item = cachedClientList[Number(this.dataset.index)];
                         if (!item) return;
-
                         addForm.reset();
                         editPageIdInput.value = item.pageId;
                         modalTitle.innerText = "Edit Client";
@@ -498,7 +458,6 @@
                         addModal.classList.remove("hidden");
                     };
                 });
-
                 document.querySelectorAll(".delClientBtn").forEach(btn => {
                     btn.onclick = function() {
                         delClient(this.dataset.pageid);
@@ -509,12 +468,10 @@
                 clientListBox.innerHTML = `<div class="p-10 text-center text-red-500 text-sm">Load client error</div>`;
             }
         }
-
         addForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const formData = new FormData(addForm);
             const editPageId = editPageIdInput.value.trim();
-
             const payload = {
                 clientName: formData.get("clientName"),
                 contactEmail: formData.get("contactEmail"),
@@ -523,7 +480,6 @@
                 vatNo: formData.get("vatNo"),
                 notes: formData.get("notes")
             };
-
             try {
                 let data;
                 if (editPageId) {
@@ -532,7 +488,6 @@
                 } else {
                     data = await postWorker({ action: "addClient", payload });
                 }
-
                 if (data.success) {
                     addModal.classList.add("hidden");
                     addForm.reset();
@@ -546,7 +501,6 @@
                 alert("Network error");
             }
         });
-
         async function delClient(pageId) {
             if (!confirm("Are you sure you want to delete this client?")) return;
             try {
@@ -562,7 +516,6 @@
                 alert("Delete request failed");
             }
         }
-
         document.getElementById("openAddBtn").onclick = () => {
             addForm.reset();
             editPageIdInput.value = "";
@@ -572,10 +525,8 @@
         document.getElementById("closeModalBtn").onclick = () => {
             addModal.classList.add("hidden");
         };
-
         const batchModal = document.getElementById("batchModal");
         const batchTextarea = document.getElementById("batchTextarea");
-
         document.getElementById("openBatchBtn").onclick = () => {
             batchTextarea.value = "";
             batchModal.classList.remove("hidden");
@@ -586,7 +537,7 @@
         document.getElementById("submitBatchBtn").onclick = async () => {
             const raw = batchTextarea.value.trim();
             if (!raw) {
-                alert("请粘贴导入数据");
+                alert("Please paste import data");
                 return;
             }
             const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
@@ -601,10 +552,9 @@
                 await loadClientList();
             } catch (e) {
                 console.error(e);
-                alert("批量导入请求失败");
+                alert("Batch import request failed");
             }
         };
-
         // ==================== 4. Project Management Logic ====================
         function fillClientDropdowns() {
             const selects = [
@@ -612,7 +562,7 @@
                 document.getElementById("editProjectClient")
             ];
             selects.forEach(sel => {
-                sel.innerHTML = `<option value="">-- 请选择客户 --</option>`;
+                sel.innerHTML = `<option value="">-- Select Client --</option>`;
                 cachedClientList.forEach(c => {
                     const opt = document.createElement("option");
                     opt.value = c.pageId;
@@ -621,29 +571,24 @@
                 });
             });
         }
-
         async function loadProjects() {
             const tbody = document.getElementById("projectTableBody");
-            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">加载中...</td></tr>`;
-
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">Loading...</td></tr>`;
             try {
                 const json = await postWorker({ action: "getProjects" });
                 if (!json.success) {
                     tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">${escapeHtml(json.error || json.msg)}</td></tr>`;
                     return;
                 }
-
                 cachedProjectList = json.projects || [];
                 if (cachedProjectList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">暂无项目, 点击右上角新增</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">No projects yet, click Add Project in top‑right corner.</td></tr>`;
                     return;
                 }
-
                 tbody.innerHTML = "";
                 cachedProjectList.forEach((p, index) => {
                     const foundClient = cachedClientList.find(c => c.pageId === p.clientPageId);
                     const clientName = foundClient ? foundClient.clientName : "-";
-
                     const tr = document.createElement("tr");
                     tr.className = "hover:bg-gray-50/70";
                     tr.innerHTML = `
@@ -656,20 +601,18 @@
                         <td class="p-3 text-right text-gray-700">${p.totalHours}</td>
                         <td class="p-3 text-right font-semibold text-emerald-600">€${Number(p.projectValue || 0).toFixed(2)}</td>
                         <td class="p-3 text-center whitespace-nowrap">
-                            <button data-index="${index}" class="editProjBtn text-blue-600 hover:underline mr-3 text-xs font-medium">编辑</button>
-                            <button data-id="${escapeHtml(p.id)}" class="delProjBtn text-red-500 hover:underline text-xs font-medium">删除</button>
+                            <button data-index="${index}" class="editProjBtn text-blue-600 hover:underline mr-3 text-xs font-medium">Edit</button>
+                            <button data-id="${escapeHtml(p.id)}" class="delProjBtn text-red-500 hover:underline text-xs font-medium">Delete</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
-
                 document.querySelectorAll(".editProjBtn").forEach(btn => {
                     btn.onclick = function() {
                         const proj = cachedProjectList[Number(this.dataset.index)];
                         if (proj) openEditProject(proj);
                     };
                 });
-
                 document.querySelectorAll(".delProjBtn").forEach(btn => {
                     btn.onclick = function() {
                         delProject(this.dataset.id);
@@ -677,10 +620,9 @@
                 });
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">加载项目失败</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">Failed to load projects</td></tr>`;
             }
         }
-
         const modalAddProject = document.getElementById("modalAddProject");
         document.getElementById("btnAddProject").onclick = () => {
             document.getElementById("inpProjectName").value = "";
@@ -699,12 +641,10 @@
             const billingType = document.getElementById("selBillingType").value;
             const rateAmount = Number(document.getElementById("inpRateAmount").value);
             const totalHours = Number(document.getElementById("inpTotalHours").value);
-
             if (!projectName || !clientPageId) {
-                alert("请填写项目名称并选择关联客户");
+                alert("Please fill project name and select linked client");
                 return;
             }
-
             const json = await postWorker({
                 action: "addProject",
                 projectName,
@@ -713,7 +653,6 @@
                 rateAmount,
                 totalHours
             });
-
             alert(json.error || json.msg);
             if (json.success) {
                 modalAddProject.classList.add("hidden");
@@ -721,7 +660,6 @@
                 await loadProjects();
             }
         };
-
         const editProjectModal = document.getElementById("editProjectModal");
         function openEditProject(proj) {
             fillClientDropdowns();
@@ -731,16 +669,13 @@
             document.getElementById("editBillingType").value = proj.billingType;
             document.getElementById("editRateAmount").value = proj.rateAmount;
             document.getElementById("editTotalHours").value = proj.totalHours;
-
             editProjectModal.classList.remove("hidden");
             editProjectModal.classList.add("flex");
         }
-
         document.getElementById("btnCancelEditProject").onclick = () => {
             editProjectModal.classList.add("hidden");
             editProjectModal.classList.remove("flex");
         };
-
         document.getElementById("btnSaveEditProject").onclick = async () => {
             const projectId = document.getElementById("editProjectId").value;
             const projectName = document.getElementById("editProjectName").value.trim();
@@ -748,12 +683,10 @@
             const billingType = document.getElementById("editBillingType").value;
             const rateAmount = document.getElementById("editRateAmount").value;
             const totalHours = document.getElementById("editTotalHours").value;
-
             if (!projectName || !clientPageId) {
-                alert("项目名称和关联客户不能为空");
+                alert("Project name and linked client cannot be empty");
                 return;
             }
-
             const json = await postWorker({
                 action: "editProject",
                 projectId,
@@ -763,7 +696,6 @@
                 rateAmount,
                 totalHours
             });
-
             if (json.success) {
                 alert(json.msg);
                 editProjectModal.classList.add("hidden");
@@ -773,49 +705,44 @@
                 alert(json.error);
             }
         };
-
         async function delProject(projectId) {
-            if (!confirm("确定删除这个项目？")) return;
+            if (!confirm("Are you sure you want to delete this project?")) return;
             const delJson = await postWorker({ action: "deleteProject", projectId });
             alert(delJson.error || delJson.msg);
             if (delJson.success) {
                 await loadProjects();
             }
         }
-
         // ==================== Entry Point ====================
         verifyUser();
     </script>
-
-    <!-- 开票前收款资料缺失引导弹窗 -->
+    <!-- Pre‑invoice billing‑profile reminder modal -->
 <div id="billingGuideModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-xl border border-slate-100">
     <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>
     </div>
-    <h3 class="text-lg font-bold text-slate-900">请先完善您的开票与收款资料</h3>
+    <h3 class="text-lg font-bold text-slate-900">Complete Your Invoicing & Payout Details</h3>
     <p class="text-sm text-slate-500 mt-2 leading-relaxed">
-      在生成并发送客户发票前，系统需要您的<strong>公司/个人抬头、VAT 税号及 IBAN / Bankgiro 收款账号</strong>，以便自动印制在发票底部的付款指引栏中。
+      Before generating client invoices, please provide your <strong>legal entity name, VAT ID and IBAN / Bankgiro payout account</strong>. These will be automatically printed on invoice payment instructions.
     </p>
     <div class="mt-6 flex flex-col sm:flex-row gap-2.5 justify-end">
       <button type="button" onclick="closeBillingGuideModal()" class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-        稍后再说
+        Remind Me Later
       </button>
       <a id="goToAccountBillingBtn" href="account.html#billing" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
-        前往账户页填写 →
+        Go to Account Settings →
       </a>
     </div>
   </div>
 </div>
-
 <script>
-  // 在工作台点击“开具发票”时调用此函数进行校验
+  // Call this function before opening invoice builder
   function checkBillingBeforeInvoice(onReadyCallback) {
     const currentUid = new URLSearchParams(location.search).get("uid") || localStorage.getItem("nordic_uid") || "";
     const savedProfile = JSON.parse(localStorage.getItem(`nordic_billing_${currentUid}`) || "null");
-
     if (!savedProfile || !savedProfile.iban || !savedProfile.legalName) {
       const linkBtn = document.getElementById("goToAccountBillingBtn");
       if (linkBtn && currentUid) {
@@ -826,19 +753,16 @@
       modal.classList.add("flex");
       return false;
     }
-
     if (typeof onReadyCallback === "function") {
       onReadyCallback(savedProfile);
     }
     return true;
   }
-
   function closeBillingGuideModal() {
     const modal = document.getElementById("billingGuideModal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
   }
 </script>
-
 </body>
 </html>
