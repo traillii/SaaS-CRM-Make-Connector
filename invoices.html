@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>发票管理</title>
+<title>Invoice Management</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body {
@@ -29,150 +29,138 @@
   <!-- Header & Action Bar -->
   <div class="flex justify-between items-center gap-4 mb-5 flex-wrap">
     <div>
-      <h2 class="text-lg font-bold text-gray-900">发票管理 (Invoices)</h2>
-      <p class="text-xs text-gray-500 mt-0.5">自动关联客户国家税率并跟踪应收账款状态</p>
+      <h2 class="text-lg font-bold text-gray-900">Invoice Management (Invoices)</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Automatically apply client‑country tax rates and track accounts‑receivable status</p>
     </div>
     <button id="btnAddInv" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700 flex-shrink-0">
-      + 新增发票
+      + New Invoice
     </button>
   </div>
-
   <!-- Table Card -->
   <div class="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm">
     <table class="w-full text-sm text-left border-collapse">
       <thead class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs font-semibold">
         <tr>
-          <th class="p-3">发票编号</th>
-          <th class="p-3">客户</th>
-          <th class="p-3">项目</th>
-          <th class="p-3 text-right">不含税金额</th>
-          <th class="p-3 text-center">税率</th>
-          <th class="p-3 text-right">应付总额</th>
-          <th class="p-3">付款状态</th>
-          <th class="p-3">到期日</th>
-          <th class="p-3 text-center">操作</th>
+          <th class="p-3">Invoice No.</th>
+          <th class="p-3">Client</th>
+          <th class="p-3">Project</th>
+          <th class="p-3 text-right">Net Amount</th>
+          <th class="p-3 text-center">VAT Rate</th>
+          <th class="p-3 text-right">Total Due</th>
+          <th class="p-3">Payment Status</th>
+          <th class="p-3">Due Date</th>
+          <th class="p-3 text-center">Actions</th>
         </tr>
       </thead>
       <tbody id="invTableBody" class="divide-y divide-gray-100">
-        <tr><td colspan="9" class="p-8 text-center text-gray-400">加载中…</td></tr>
+        <tr><td colspan="9" class="p-8 text-center text-gray-400">Loading…</td></tr>
       </tbody>
     </table>
   </div>
 </div>
-
-<!-- 新增/编辑弹窗 -->
+<!-- New / Edit Invoice Modal -->
 <div class="modal" id="invModal">
   <div class="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-6 mx-4 shadow-xl">
-    <h3 class="text-base font-bold text-gray-900 mb-4" id="modalTitle">新增发票</h3>
+    <h3 class="text-base font-bold text-gray-900 mb-4" id="modalTitle">New Invoice</h3>
     <input type="hidden" id="editPageId">
     <div class="grid gap-3.5">
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">发票编号 <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Invoice Number <span class="text-red-500">*</span></label>
         <input class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" id="invId" placeholder="INV-2026-001">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">选择客户 <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Select Client <span class="text-red-500">*</span></label>
         <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invClientSel">
-          <option value="">--请先选择客户--</option>
+          <option value="">-- Select Client --</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">选择项目 <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Select Project <span class="text-red-500">*</span></label>
         <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invProjectSel">
-          <option value="">--请先选择客户--</option>
+          <option value="">-- Select Client first --</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">不含税金额 €（自动读取项目，不可修改）</label>
-        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invNet" readonly placeholder="选择项目后自动显示">
+        <label class="block text-xs font-medium text-gray-700 mb-1">Net Amount € (auto‑filled from project, read‑only)</label>
+        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invNet" readonly placeholder="Will populate after selecting project">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">VAT税率 %（由 Notion 根据客户国家自动计算）</label>
-        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invVatRate" readonly placeholder="保存后系统自动匹配税率">
+        <label class="block text-xs font-medium text-gray-700 mb-1">VAT Rate % (automatically calculated by Notion based on client country)</label>
+        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invVatRate" readonly placeholder="Tax rate will apply on save">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">到期日 <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Due Date <span class="text-red-500">*</span></label>
         <input class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" type="date" id="invDue">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">付款状态</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Payment Status</label>
         <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invStatus">
-          <option value="Draft">Draft 草稿</option>
-          <option value="Sent">Sent 已发送</option>
-          <option value="Paid">Paid 已付款</option>
-          <option value="Overdue">Overdue 逾期</option>
+          <option value="Draft">Draft</option>
+          <option value="Sent">Sent</option>
+          <option value="Paid">Paid</option>
+          <option value="Overdue">Overdue</option>
         </select>
       </div>
     </div>
     <div class="flex justify-end gap-2 mt-6">
-      <button id="btnCloseModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">取消</button>
-      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">保存</button>
+      <button id="btnCloseModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
+      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Save</button>
     </div>
   </div>
 </div>
-
 <script>
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let invoiceListCache = [];
-
 let invProjectSel, invClientSel, invNetInput;
 let modal, modalTitle, btnAddInv, btnCloseModal, btnSaveInv;
-
 function getUrlParam(name){
   const params = new URLSearchParams(location.search);
   return params.get(name);
 }
-
 document.addEventListener("DOMContentLoaded", async function(){
   invProjectSel = document.getElementById("invProjectSel");
   invClientSel = document.getElementById("invClientSel");
   invNetInput = document.getElementById("invNet");
-
   modal = document.getElementById("invModal");
   modalTitle = document.getElementById("modalTitle");
   btnAddInv = document.getElementById("btnAddInv");
   btnCloseModal = document.getElementById("btnCloseModal");
   btnSaveInv = document.getElementById("btnSaveInv");
-
   invClientSel.onchange = async function(){
     const clientId = this.value;
-    invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
+    invProjectSel.innerHTML = `<option value="">-- Select Client first --</option>`;
     invNetInput.value = "";
     if(clientId){
       await loadProjectByClient(clientId);
     }
   };
-
   invProjectSel.onchange = async function(){
     await fillProjectInfo(this.value);
   };
-
   btnAddInv.onclick = openAddModal;
   btnCloseModal.onclick = closeModal;
   btnSaveInv.onclick = saveInvoice;
-
   uid = getUrlParam("uid");
   if(!uid){
-    alert("uid缺失，请从面板进入");
+    alert("uid missing, please open from workspace dashboard");
     return;
   }
   try{
     await loadInvoiceList();
   }catch(e){
-    alert("初始化加载异常：" + e.message);
+    alert("Initialization error: " + e.message);
   }
 });
-
 async function loadClientOptions(selectedClientId = ""){
-  invClientSel.innerHTML = `<option value="">--加载客户中…--</option>`;
+  invClientSel.innerHTML = `<option value="">-- Loading clients…--</option>`;
   const res = await fetch(WORKER_B_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ uid, action: "getClientList" })
   });
   const json = await res.json();
-  invClientSel.innerHTML = `<option value="">--请先选择客户--</option>`;
+  invClientSel.innerHTML = `<option value="">-- Select Client --</option>`;
   if(json.success){
     json.clients.forEach(c => {
       const opt = document.createElement("option");
@@ -185,16 +173,15 @@ async function loadClientOptions(selectedClientId = ""){
     invClientSel.value = selectedClientId;
   }
 }
-
 async function loadProjectByClient(clientId, selectedProjectId = ""){
-  invProjectSel.innerHTML = `<option value="">--加载项目…--</option>`;
+  invProjectSel.innerHTML = `<option value="">-- Loading projects…--</option>`;
   const res = await fetch(WORKER_B_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ uid, action: "getProjectsByClient", clientId })
   });
   const json = await res.json();
-  invProjectSel.innerHTML = `<option value="">--请选择项目--</option>`;
+  invProjectSel.innerHTML = `<option value="">-- Select Project --</option>`;
   if(json.success){
     json.projects.forEach(p => {
       const opt = document.createElement("option");
@@ -208,7 +195,6 @@ async function loadProjectByClient(clientId, selectedProjectId = ""){
     await fillProjectInfo(selectedProjectId);
   }
 }
-
 async function fillProjectInfo(projectId){
   if(!projectId){
     invNetInput.value = "";
@@ -226,10 +212,9 @@ async function fillProjectInfo(projectId){
     invNetInput.value = "";
   }
 }
-
 async function loadInvoiceList(){
   const tbody = document.getElementById("invTableBody");
-  tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">加载中…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">Loading…</td></tr>`;
   try{
     const res = await fetch(WORKER_B_URL, {
       method: "POST",
@@ -239,12 +224,12 @@ async function loadInvoiceList(){
     const ret = await res.json();
     tbody.innerHTML = "";
     if(!ret.success){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">${ret.error || "加载失败"}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">${ret.error || "Load failed"}</td></tr>`;
       return;
     }
     invoiceListCache = ret.invoices || [];
     if(invoiceListCache.length === 0){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">暂无发票，点击右上角新增发票</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">No invoices yet, click New Invoice in top‑right corner</td></tr>`;
       return;
     }
     invoiceListCache.forEach(inv => {
@@ -252,7 +237,6 @@ async function loadInvoiceList(){
       if(inv.paymentStatus === "Sent") statusColor = "bg-amber-50 text-amber-700 border border-amber-200";
       if(inv.paymentStatus === "Paid") statusColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
       if(inv.paymentStatus === "Overdue") statusColor = "bg-red-50 text-red-700 border border-red-200";
-
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-50/70";
       tr.innerHTML = `
@@ -265,7 +249,7 @@ async function loadInvoiceList(){
         <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${inv.paymentStatus}</span></td>
         <td class="p-3 text-gray-500 text-xs">${inv.dueDate || ""}</td>
         <td class="p-3 text-center">
-          <button class="editBtn text-blue-600 hover:underline text-xs font-medium" data-id="${inv.id}">编辑</button>
+          <button class="editBtn text-blue-600 hover:underline text-xs font-medium" data-id="${inv.id}">Edit</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -279,67 +263,59 @@ async function loadInvoiceList(){
       };
     });
   }catch(err){
-    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">网络异常：${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">Network error: ${err.message}</td></tr>`;
   }
 }
-
 async function openAddModal(){
-  modalTitle.innerText = "新增发票";
+  modalTitle.innerText = "New Invoice";
   document.getElementById("editPageId").value = "";
   document.getElementById("invId").value = "";
   invNetInput.value = "";
   document.getElementById("invVatRate").value = "";
   document.getElementById("invDue").value = "";
   document.getElementById("invStatus").value = "Draft";
-
-  invClientSel.innerHTML = `<option value="">--请先选择客户--</option>`;
-  invProjectSel.innerHTML = `<option value="">--请先选择客户--</option>`;
+  invClientSel.innerHTML = `<option value="">-- Select Client --</option>`;
+  invProjectSel.innerHTML = `<option value="">-- Select Client first --</option>`;
   modal.classList.add("active");
   await loadClientOptions();
 }
-
 async function openEditModal(inv, pageId){
-  modalTitle.innerText = "编辑发票";
+  modalTitle.innerText = "Edit Invoice";
   document.getElementById("editPageId").value = pageId;
   document.getElementById("invId").value = inv.invoiceId;
   invNetInput.value = Number(inv.netAmount || 0).toFixed(2);
   document.getElementById("invVatRate").value = `${Number(inv.vatRate || 0).toFixed(2)}%`;
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;
-
   modal.classList.add("active");
   await loadClientOptions(inv.clientPageId);
   if(inv.clientPageId){
     await loadProjectByClient(inv.clientPageId, inv.projectPageId);
   }
 }
-
 function closeModal(){
   modal.classList.remove("active");
 }
-
 async function saveInvoice(){
   const editPageId = document.getElementById("editPageId").value.trim();
   const clientId = invClientSel.value;
   const projectPageId = invProjectSel.value;
   if(!clientId){
-    alert("请选择客户");
+    alert("Please select a client");
     return;
   }
   if(!projectPageId){
-    alert("请选择项目");
+    alert("Please select a project");
     return;
   }
   const invIdVal = document.getElementById("invId").value.trim();
   const invDueVal = document.getElementById("invDue").value;
   if(!invIdVal || !invDueVal){
-    alert("发票编号和到期日不能为空");
+    alert("Invoice number and due date cannot be empty");
     return;
   }
-
   btnSaveInv.disabled = true;
-  btnSaveInv.innerText = "保存中…";
-
+  btnSaveInv.innerText = "Saving…";
   const payload = {
     uid,
     pageId: editPageId,
@@ -358,17 +334,17 @@ async function saveInvoice(){
     });
     const ret = await res.json();
     if(ret.success){
-      alert("保存成功");
+      alert("Saved successfully");
       closeModal();
       await loadInvoiceList();
     }else{
       alert(ret.error);
     }
   }catch(e){
-    alert("请求异常：" + e.message);
+    alert("Request error: " + e.message);
   }finally{
     btnSaveInv.disabled = false;
-    btnSaveInv.innerText = "保存";
+    btnSaveInv.innerText = "Save";
   }
 }
 </script>
