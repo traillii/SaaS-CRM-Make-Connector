@@ -237,6 +237,7 @@
         <div class="form-group">
           <label>Expense Category *</label>
           <select id="expenseCategory">
+            <option value="" selected disabled>-- Select Category --</option>
             <option value="Software/SaaS">Software/SaaS</option>
             <option value="Travel & Meals">Travel & Meals</option>
             <option value="Subcontracting">Subcontracting</option>
@@ -350,7 +351,7 @@
       <img id="modalReceiptImg" class="modal-img" style="display:none;" alt="Receipt image" />
     </div>
   </div>
-<script>
+  <script>
     const WORKER_URL = "https://workerc.qq596337481.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
@@ -372,18 +373,51 @@
       "Training & Courses": 0.06
     };
 
+    // ========= AI OCR识别文本 → 下拉标准分类映射（支持英文+瑞典语）=========
+    const aiCategoryMap = [
+      { keywords: ["software", "saas", "cloud", "aws", "subscription", "program"], value: "Software/SaaS" },
+      { keywords: ["travel", "meal", "hotel", "restaurant", "resor", "mat", "hotell"], value: "Travel & Meals" },
+      { keywords: ["subcontracting", "consultant", "konsult", "underleverantör"], value: "Subcontracting" },
+      { keywords: ["hardware", "equipment", "dator", "skärm", "laptop", "maskin"], value: "Hardware & Equipment" },
+      { keywords: ["office", "admin", "kontor", "papper", "stationery"], value: "Office & Admin" },
+      { keywords: ["marketing", "ads", "advertising", "marknadsföring", "annons"], value: "Marketing & Ads" },
+      { keywords: ["legal", "accounting", "advokat", "bokföring", "revision"], value: "Legal & Accounting" },
+      { keywords: ["bank", "payment fee", "bankavgift", "avgift"], value: "Bank & Payment Fees" },
+      { keywords: ["insurance", "försäkring"], value: "Insurance" },
+      { keywords: ["training", "course", "utbildning", "kurs"], value: "Training & Courses" }
+    ];
+
+    function mapAiCategory(rawText) {
+      if (!rawText) return "";
+      const text = String(rawText).toLowerCase().trim();
+      for (const item of aiCategoryMap) {
+        for (const kw of item.keywords) {
+          if (text.includes(kw.toLowerCase())) {
+            return item.value;
+          }
+        }
+      }
+      return "";
+    }
+
     document.getElementById("invoiceDate").value = new Date().toISOString().slice(0, 10);
 
     // 分类切换自动设置VAT
     document.getElementById("expenseCategory").addEventListener("change", function () {
       const cat = this.value;
-      const rateVal = categoryVatMap[cat] ?? 0.25;
-      document.getElementById("inputVatRate").value = String(rateVal);
+      if (cat && categoryVatMap[cat] !== undefined) {
+        document.getElementById("inputVatRate").value = String(categoryVatMap[cat]);
+      }
       recalcPreview();
     });
 
     function toggleForm() {
-      document.getElementById("expenseFormPanel").classList.toggle("active");
+      const panel = document.getElementById("expenseFormPanel");
+      panel.classList.toggle("active");
+      // 打开新表单时重置分类为"请选择"占位项
+      if (panel.classList.contains("active")) {
+        document.getElementById("expenseCategory").value = "";
+      }
     }
     function syncLedgerFromDate() {
       const d = document.getElementById("invoiceDate").value;
@@ -464,9 +498,12 @@
           document.getElementById("inputVatRate").value = String(info.inputVatRate);
         }
         if (info.expenseCategory) {
-          document.getElementById("expenseCategory").value = info.expenseCategory;
-          // OCR回填分类后自动刷新税率
-          document.getElementById("expenseCategory").dispatchEvent(new Event("change"));
+          // AI原始识别文本经关键词映射得到下拉合法value；匹配不到则保留占位项，由用户手动选择
+          const standardCat = mapAiCategory(info.expenseCategory);
+          if (standardCat) {
+            document.getElementById("expenseCategory").value = standardCat;
+            document.getElementById("expenseCategory").dispatchEvent(new Event("change"));
+          }
         }
         if (info.assetType) {
           document.getElementById("assetType").value = info.assetType;
@@ -547,8 +584,13 @@
     async function submitExpense() {
       const transactionName = document.getElementById("transactionName").value.trim();
       const grossPaid = parseFloat(document.getElementById("grossPaid").value);
+      const expenseCategory = document.getElementById("expenseCategory").value;
       if (!transactionName || isNaN(grossPaid) || grossPaid <= 0) {
         alert("Please enter valid transaction name and gross paid amount!");
+        return;
+      }
+      if (!expenseCategory) {
+        alert("Please select an expense category!");
         return;
       }
       const saveBtn = document.getElementById("saveBtn");
@@ -632,6 +674,6 @@
       }
     }
     loadExpenses();
-</script>
+  </script>
 </body>
 </html>
