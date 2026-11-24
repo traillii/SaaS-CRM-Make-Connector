@@ -19,15 +19,15 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
+      background: transparent;
       color: var(--text);
-      padding: 24px;
+      padding: 4px;
       line-height: 1.5;
     }
     .container { margin: 0 auto; }
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -50,8 +50,8 @@
       gap: 12px;
       margin-bottom: 20px;
     }
-    .header-bar h2 { font-size: 20px; }
-    .header-sub { font-size: 13px; color: var(--muted); }
+    .header-bar h2 { font-size: 18px; }
+    .header-sub { font-size: 12px; color: var(--muted); }
     .actions { display: flex; gap: 10px; align-items: center; }
     select, input[type="text"], input[type="number"], input[type="date"] {
       padding: 8px 12px;
@@ -89,7 +89,7 @@
     .form-panel.active { display: block; }
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 16px;
       margin-top: 16px;
     }
@@ -150,13 +150,20 @@
     }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { background: #f8fafc; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    th { background: #f8fafc; font-weight: 600; color: var(--muted); white-space: nowrap; font-size: 13px; }
     .badge {
       padding: 2px 8px;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 11px;
       background: #e2e8f0;
       color: #334155;
+      display: inline-block;
+      margin-top: 3px;
+    }
+    .fx-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
     }
     .modal {
       display: none;
@@ -188,14 +195,14 @@
 </head>
 <body>
   <div class="container">
-    <!-- KPI Summary -->
+    <!-- 顶部税务与支出 KPI 汇总 -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-title">Total Gross Paid</div>
         <div class="kpi-value" id="kpiGross">€0.00</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-title">Reclaimable Input VAT</div>
+        <div class="kpi-title">Reclaimable Input VAT (MOMS)</div>
         <div class="kpi-value green" id="kpiVat">€0.00</div>
       </div>
       <div class="kpi-card">
@@ -207,11 +214,12 @@
         <div class="kpi-value" id="kpiAssets">€0.00</div>
       </div>
     </div>
-    <!-- Top Action Bar -->
+
+    <!-- 顶部操作栏 -->
     <div class="header-bar">
       <div>
-        <h2>DB4: Expenses & Capital Assets</h2>
-        <div class="header-sub">Supports photo or receipt upload; AI automatically extracts merchant, date, multi-currency conversion and Swedish tax rates</div>
+        <h2>Expenses & Capital Assets</h2>
+        <div class="header-sub">Upload receipts for AI merchant extraction, foreign-currency conversion, and Swedish MOMS categorization</div>
       </div>
       <div class="actions">
         <select id="ledgerFilter" style="width:auto;" onchange="renderTable()">
@@ -219,16 +227,18 @@
           <option value="2026" selected>2026 Tax Ledger</option>
           <option value="2025">2025 Tax Ledger</option>
         </select>
-        <button class="btn btn-primary" onclick="toggleForm()">+ New Expense</button>
+        <button class="btn" onclick="exportExpensesCsv()">⬇ Export CSV</button>
+        <button class="btn btn-primary" onclick="toggleForm()">+ Record Expense</button>
       </div>
     </div>
-    <!-- New Expense Form Panel -->
+
+    <!-- 新增支出 / 固定资产表单 -->
     <div class="form-panel" id="expenseFormPanel">
-      <h3>New Purchase / Capital Asset Record</h3>
+      <h3>Record Expense or Capital Asset</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label>Transaction Name *</label>
-          <input type="text" id="transactionName" placeholder="e.g. AWS Cloud / ICA Supermarket" required />
+          <label>Merchant / Transaction *</label>
+          <input type="text" id="transactionName" placeholder="e.g. AWS EMEA / ICA Supermarket" required />
         </div>
         <div class="form-group">
           <label>Invoice Date</label>
@@ -236,49 +246,43 @@
         </div>
         <div class="form-group">
           <label>Expense Category *</label>
-          <select id="expenseCategory">
-            <option value="" selected disabled>-- Select Category --</option>
-            <option value="Software/SaaS">Software/SaaS</option>
-            <option value="Travel & Meals">Travel & Meals</option>
-            <option value="Subcontracting">Subcontracting</option>
-            <option value="Hardware & Equipment">Hardware & Equipment</option>
-            <option value="Office & Admin">Office & Admin</option>
-            <option value="Marketing & Ads">Marketing & Ads</option>
-            <option value="Legal & Accounting">Legal & Accounting</option>
-            <option value="Bank & Payment Fees">Bank & Payment Fees</option>
-            <option value="Insurance">Insurance</option>
-            <option value="Training & Courses">Training & Courses</option>
+          <select id="expenseCategory" onchange="onCategoryChange()">
+            <option value="Software/SaaS">Software/SaaS (BAS 5420)</option>
+            <option value="Travel & Meals">Travel & Meals (BAS 5800 / 6071)</option>
+            <option value="Subcontracting">Subcontracting (BAS 4000)</option>
+            <option value="Hardware & Equipment">Hardware & Equipment (BAS 5410)</option>
+            <option value="Office & Admin">Office & Admin (BAS 6110)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Gross Paid EUR (tax-inclusive) *</label>
+          <label>Gross Paid EUR (Incl. VAT) *</label>
           <input type="number" id="grossPaid" step="0.01" placeholder="0.00" oninput="recalcPreview()" />
         </div>
         <div class="form-group">
-          <label>Input VAT Rate (%) *</label>
+          <label>Input VAT Rate (MOMS %) *</label>
           <select id="inputVatRate" onchange="recalcPreview()">
             <option value="0.25">25% Standard (Sweden default)</option>
-            <option value="0.12">12% Food / Hotel</option>
+            <option value="0.12">12% Food / Restaurant / Hotel</option>
             <option value="0.06">6% Transport / Books</option>
             <option value="0">0% Reverse Charge / Exempt</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Asset Type *</label>
+          <label>Asset Classification *</label>
           <select id="assetType">
-            <option value="Current Expense">Current Expense (Operating cost)</option>
+            <option value="Current Expense">Current Expense</option>
             <option value="Capital Asset">Capital Asset</option>
           </select>
         </div>
         <div class="form-group">
           <label>Tax Deductibility *</label>
-          <select id="taxDeductibility" onchange="recalcPreview()">
-            <option value="Fully Deductible">Fully Deductible</option>
+          <select id="taxDeductibility" onchange="onDeductibilityChange()">
+            <option value="Fully Deductible">Fully Deductible (100%)</option>
             <option value="Partially Deductible">Partially Deductible</option>
-            <option value="Non-deductible">Non-deductible</option>
+            <option value="Non-deductible">Non-deductible (0%)</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="deductRatioGroup" style="display:none;">
           <label>Deductible Ratio (%)</label>
           <input type="number" id="deductRatio" value="50" min="0" max="100" oninput="recalcPreview()" />
         </div>
@@ -287,144 +291,142 @@
           <input type="text" id="taxLedger" value="2026" />
         </div>
       </div>
-      <!-- Receipt Upload & AI OCR -->
+
+      <!-- 票据上传与 AI OCR 识别区 -->
       <div class="upload-box">
         <div style="font-size:24px;">🧾</div>
-        <div style="font-weight:600; margin-top:4px;">Tax-deductible receipt (photo or image upload supported)</div>
-        <div style="font-size:12px; color:var(--muted);">Uploaded files will be compressed and archived. AI extracts merchant, invoice date, foreign-currency conversion to EUR and Swedish VAT rates.</div>
+        <div style="font-weight:600; margin-top:4px;">Receipt Archive & AI Extraction</div>
+        <div style="font-size:12px; color:var(--muted);">Images are compressed and archived automatically. AI extracts merchant, invoice date, FX conversion, and Swedish MOMS rates.</div>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFile(this)" />
         <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleImageFile(this)" />
         <div class="upload-btns">
-          <button type="button" class="btn" onclick="document.getElementById('cameraInput').click()">📷 Take Photo</button>
-          <button type="button" class="btn" onclick="document.getElementById('fileInput').click()">🖼 Select Receipt Image</button>
+          <button type="button" class="btn" onclick="document.getElementById('cameraInput').click()">📷 Capture Receipt</button>
+          <button type="button" class="btn" onclick="document.getElementById('fileInput').click()">🖼 Upload Image</button>
           <button type="button" class="btn btn-danger" id="removeImgBtn" style="display:none;" onclick="clearReceipt()">Remove</button>
         </div>
         <img id="receiptPreview" class="preview-thumb" alt="Receipt preview" />
         <div id="ocrStatus" class="ocr-banner"></div>
       </div>
+
+      <!-- 实时净额与可抵扣税额预览条 -->
       <div class="calc-bar">
         <span><strong>Net Expense:</strong> <span id="prevNet">€0.00</span></span>
         <span><strong>Reclaimable Input VAT:</strong> <span id="prevVat" style="color:var(--success);">€0.00</span></span>
         <span><strong>Eligible Deductible Amount:</strong> <span id="prevDeduct" style="color:var(--primary);">€0.00</span></span>
       </div>
+
       <div class="form-footer">
         <button type="button" class="btn" onclick="toggleForm()">Cancel</button>
         <button type="button" class="btn btn-primary" id="saveBtn" onclick="submitExpense()">Save & Archive Receipt</button>
       </div>
     </div>
-    <!-- Expense List Table -->
+
+    <!-- 支出明细表格 -->
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Transaction Name</th>
-            <th>Invoice Date</th>
+            <th>Merchant / Transaction</th>
+            <th>Date</th>
             <th>Receipt</th>
-            <th>Category & Asset Type</th>
-            <th>Gross Amount</th>
+            <th>Category & Type</th>
+            <th>Gross Paid</th>
             <th>VAT %</th>
             <th>Net Expense</th>
             <th>Deductibility</th>
             <th>Reclaimable VAT</th>
-            <th>Deductible Amount</th>
-            <th>Tax Ledger</th>
+            <th>Deductible Amt</th>
+            <th>Ledger</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="expenseTableBody">
-          <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">Loading expense records…</td></tr>
+          <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">Loading expense records...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
-  <!-- Receipt Preview Modal -->
+
+  <!-- 票据原图预览弹窗 -->
   <div class="modal" id="receiptModal" onclick="if(event.target===this) closeModal()">
     <div class="modal-content">
       <div class="modal-header">
-        <strong>Tax Receipt Preview</strong>
+        <strong>Archived Receipt</strong>
         <div>
-          <a id="downloadReceiptLink" class="btn btn-sm" download="receipt.jpg">⬇ Download Original</a>
+          <a id="downloadReceiptLink" class="btn btn-sm" download="receipt.jpg">⬇ Download</a>
           <button class="btn btn-sm" onclick="closeModal()">✕</button>
         </div>
       </div>
-      <div id="modalLoading" style="padding:30px; color:var(--muted);">Fetching high-resolution receipt from Notion archive…</div>
+      <div id="modalLoading" style="padding:30px; color:var(--muted);">Loading receipt from cloud archive...</div>
       <img id="modalReceiptImg" class="modal-img" style="display:none;" alt="Receipt image" />
     </div>
   </div>
+
   <script>
+    // ==================== 支出与税务状态初始化 ====================
     const WORKER_URL = "https://workerc.qq596337481.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
     let allExpenses = [];
     let currentReceiptBase64 = "";
     let currentReceiptName = "";
-
-    // ========= 瑞典费用分类 → VAT税率映射 =========
-    const categoryVatMap = {
-      "Software/SaaS": 0.25,
-      "Travel & Meals": 0.12,
-      "Subcontracting": 0.25,
-      "Hardware & Equipment": 0.25,
-      "Office & Admin": 0.25,
-      "Marketing & Ads": 0.25,
-      "Legal & Accounting": 0.25,
-      "Bank & Payment Fees": 0,
-      "Insurance": 0,
-      "Training & Courses": 0.06
-    };
-
-    // ========= AI OCR识别文本 → 下拉标准分类映射（支持英文+瑞典语）=========
-    const aiCategoryMap = [
-      { keywords: ["software", "saas", "cloud", "aws", "subscription", "program"], value: "Software/SaaS" },
-      { keywords: ["travel", "meal", "hotel", "restaurant", "resor", "mat", "hotell"], value: "Travel & Meals" },
-      { keywords: ["subcontracting", "consultant", "konsult", "underleverantör"], value: "Subcontracting" },
-      { keywords: ["hardware", "equipment", "dator", "skärm", "laptop", "maskin"], value: "Hardware & Equipment" },
-      { keywords: ["office", "admin", "kontor", "papper", "stationery"], value: "Office & Admin" },
-      { keywords: ["marketing", "ads", "advertising", "marknadsföring", "annons"], value: "Marketing & Ads" },
-      { keywords: ["legal", "accounting", "advokat", "bokföring", "revision"], value: "Legal & Accounting" },
-      { keywords: ["bank", "payment fee", "bankavgift", "avgift"], value: "Bank & Payment Fees" },
-      { keywords: ["insurance", "försäkring"], value: "Insurance" },
-      { keywords: ["training", "course", "utbildning", "kurs"], value: "Training & Courses" }
-    ];
-
-    function mapAiCategory(rawText) {
-      if (!rawText) return "";
-      const text = String(rawText).toLowerCase().trim();
-      for (const item of aiCategoryMap) {
-        for (const kw of item.keywords) {
-          if (text.includes(kw.toLowerCase())) {
-            return item.value;
-          }
-        }
-      }
-      return "";
-    }
+    let lastOcrMeta = null;
 
     document.getElementById("invoiceDate").value = new Date().toISOString().slice(0, 10);
 
-    // 分类切换自动设置VAT
-    document.getElementById("expenseCategory").addEventListener("change", function () {
-      const cat = this.value;
-      if (cat && categoryVatMap[cat] !== undefined) {
-        document.getElementById("inputVatRate").value = String(categoryVatMap[cat]);
-      }
-      recalcPreview();
-    });
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
 
-    function toggleForm() {
-      const panel = document.getElementById("expenseFormPanel");
-      panel.classList.toggle("active");
-      // 打开新表单时重置分类为"请选择"占位项
-      if (panel.classList.contains("active")) {
-        document.getElementById("expenseCategory").value = "";
+    function notifyParentHeight() {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: "IFRAME_HEIGHT",
+          frameId: "expenseIframe",
+          height: document.documentElement.scrollHeight
+        }, "*");
       }
     }
+
+    function toggleForm() {
+      document.getElementById("expenseFormPanel").classList.toggle("active");
+      notifyParentHeight();
+    }
+
     function syncLedgerFromDate() {
       const d = document.getElementById("invoiceDate").value;
       if (d && d.length >= 4) {
         document.getElementById("taxLedger").value = d.slice(0, 4);
       }
     }
+
+    function onCategoryChange() {
+      const cat = document.getElementById("expenseCategory").value;
+      if (cat === "Travel & Meals") {
+        document.getElementById("inputVatRate").value = "0.12";
+      } else {
+        document.getElementById("inputVatRate").value = "0.25";
+      }
+      recalcPreview();
+    }
+
+    function onDeductibilityChange() {
+      const status = document.getElementById("taxDeductibility").value;
+      const ratioGroup = document.getElementById("deductRatioGroup");
+      if (status === "Partially Deductible") {
+        ratioGroup.style.display = "block";
+      } else {
+        ratioGroup.style.display = "none";
+      }
+      recalcPreview();
+    }
+
     function recalcPreview() {
       const gross = parseFloat(document.getElementById("grossPaid").value) || 0;
       const vatRate = parseFloat(document.getElementById("inputVatRate").value) || 0;
@@ -437,6 +439,8 @@
       document.getElementById("prevVat").innerText = "€" + (totalVat * ratio).toFixed(2);
       document.getElementById("prevDeduct").innerText = "€" + (net * ratio).toFixed(2);
     }
+
+    // ==================== 票据压缩与 AI OCR 识别 ====================
     function handleImageFile(input) {
       const file = input.files[0];
       if (!file) return;
@@ -462,17 +466,20 @@
           preview.src = currentReceiptBase64;
           preview.style.display = "inline-block";
           document.getElementById("removeImgBtn").style.display = "inline-flex";
+          notifyParentHeight();
           runAutoOCR(currentReceiptBase64);
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
+
     async function runAutoOCR(base64Str) {
       const statusEl = document.getElementById("ocrStatus");
       statusEl.style.display = "block";
       statusEl.className = "ocr-banner ocr-loading";
-      statusEl.innerText = "✨ Cloudflare AI analyzing merchant, invoice date, currency conversion & VAT rates, please wait…";
+      statusEl.innerText = "✨ Extracting merchant, date, currency conversion, and Swedish MOMS rate...";
+      notifyParentHeight();
       try {
         const res = await fetch(`${WORKER_URL}/api/ocr`, {
           method: "POST",
@@ -481,11 +488,16 @@
         });
         const json = await res.json();
         if (!json.success) {
-          throw new Error(json.error || "Recognition service failure");
+          throw new Error(json.error || "OCR service unavailable");
         }
         const info = json.data;
+        lastOcrMeta = info;
         if (info.transactionName) {
-          document.getElementById("transactionName").value = info.transactionName;
+          let labelName = info.transactionName;
+          if (info.converted && info.originalAmount && info.currency && !labelName.includes(info.currency)) {
+            labelName = `${labelName} (${Number(info.originalAmount).toFixed(2)} ${info.currency})`;
+          }
+          document.getElementById("transactionName").value = labelName;
         }
         if (info.invoiceDate) {
           document.getElementById("invoiceDate").value = info.invoiceDate;
@@ -498,37 +510,42 @@
           document.getElementById("inputVatRate").value = String(info.inputVatRate);
         }
         if (info.expenseCategory) {
-          // AI原始识别文本经关键词映射得到下拉合法value；匹配不到则保留占位项，由用户手动选择
-          const standardCat = mapAiCategory(info.expenseCategory);
-          if (standardCat) {
-            document.getElementById("expenseCategory").value = standardCat;
-            document.getElementById("expenseCategory").dispatchEvent(new Event("change"));
-          }
+          document.getElementById("expenseCategory").value = info.expenseCategory;
         }
         if (info.assetType) {
           document.getElementById("assetType").value = info.assetType;
         }
         recalcPreview();
+        const fxRate = (info.converted && info.originalAmount > 0 && info.grossPaid > 0)
+          ? ` (FX ${(Number(info.grossPaid) / Number(info.originalAmount)).toFixed(4)})`
+          : "";
         const fxNote = info.converted
-          ? ` | Converted ${Number(info.originalAmount).toFixed(2)} ${info.currency} to €${Number(info.grossPaid).toFixed(2)} using live exchange rate`
+          ? ` | Converted ${Number(info.originalAmount).toFixed(2)} ${info.currency} → €${Number(info.grossPaid).toFixed(2)}${fxRate}`
           : ` | €${Number(info.grossPaid || 0).toFixed(2)}`;
-        const dateNote = info.invoiceDate ? ` | Dated ${info.invoiceDate}` : "";
+        const dateNote = info.invoiceDate ? ` | ${info.invoiceDate}` : "";
         statusEl.className = "ocr-banner ocr-success";
-        statusEl.innerText = `✅ AI Recognition complete: ${info.transactionName || "Unknown Merchant"}${fxNote}${dateNote} | VAT ${Math.round((info.inputVatRate || 0) * 100)}%, please verify before saving!`;
+        statusEl.innerText = `✅ Extracted: ${info.transactionName || "Merchant"}${fxNote}${dateNote} | MOMS ${Math.round((info.inputVatRate || 0) * 100)}%. Review before saving.`;
       } catch (err) {
         statusEl.className = "ocr-banner ocr-error";
-        statusEl.innerText = `⚠️ Automatic recognition failed to extract full data (${err.message}), please fill in manually before saving.`;
+        statusEl.innerText = `⚠️ AI extraction incomplete (${err.message}). Please enter details manually.`;
+      } finally {
+        notifyParentHeight();
       }
     }
+
     function clearReceipt() {
       currentReceiptBase64 = "";
       currentReceiptName = "";
+      lastOcrMeta = null;
       document.getElementById("cameraInput").value = "";
       document.getElementById("fileInput").value = "";
       document.getElementById("receiptPreview").style.display = "none";
       document.getElementById("removeImgBtn").style.display = "none";
       document.getElementById("ocrStatus").style.display = "none";
+      notifyParentHeight();
     }
+
+    // ==================== 支出列表、抵扣口径规范与 CSV 导出 ====================
     async function loadExpenses() {
       try {
         const query = CURRENT_UID ? `?uid=${encodeURIComponent(CURRENT_UID)}` : "";
@@ -539,64 +556,128 @@
         renderTable();
       } catch (err) {
         document.getElementById("expenseTableBody").innerHTML =
-          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">Load failed: ${err.message}</td></tr>`;
+          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">Failed to load expenses: ${escapeHtml(err.message)}</td></tr>`;
+        notifyParentHeight();
       }
     }
+
+    // 若标记为 Non-deductible，可抵扣进项税与可扣除金额强制归零
+    function normalizeDeductibleDisplay(item) {
+      const isNonDeductible = (item.taxDeductibility || "").toLowerCase() === "non-deductible";
+      if (isNonDeductible) {
+        return { vat: 0, deduct: 0 };
+      }
+      return {
+        vat: Number(item.reclaimableInputVat || 0),
+        deduct: Number(item.eligibleDeductibleAmount || 0)
+      };
+    }
+
     function renderTable() {
       const filter = document.getElementById("ledgerFilter").value;
       const list = filter === "ALL" ? allExpenses : allExpenses.filter(item => item.taxLedger === filter);
       let sumGross = 0, sumVat = 0, sumDeduct = 0, sumAssets = 0;
       list.forEach(item => {
-        sumGross += item.grossPaid || 0;
-        sumVat += item.reclaimableInputVat || 0;
-        sumDeduct += item.eligibleDeductibleAmount || 0;
-        if (item.assetType === "Capital Asset") sumAssets += item.netExpense || 0;
+        const norm = normalizeDeductibleDisplay(item);
+        sumGross += Number(item.grossPaid || 0);
+        sumVat += norm.vat;
+        sumDeduct += norm.deduct;
+        if (item.assetType === "Capital Asset") sumAssets += Number(item.netExpense || 0);
       });
       document.getElementById("kpiGross").innerText = "€" + sumGross.toFixed(2);
       document.getElementById("kpiVat").innerText = "€" + sumVat.toFixed(2);
       document.getElementById("kpiDeductible").innerText = "€" + sumDeduct.toFixed(2);
       document.getElementById("kpiAssets").innerText = "€" + sumAssets.toFixed(2);
+
       const tbody = document.getElementById("expenseTableBody");
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">No expense records yet. Click "+ New Expense" or upload receipts to start book-keeping.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">No expenses recorded for this period. Click "+ Record Expense" to add a receipt.</td></tr>`;
+        notifyParentHeight();
         return;
       }
-      tbody.innerHTML = list.map(item => `
+
+      tbody.innerHTML = list.map(item => {
+        const norm = normalizeDeductibleDisplay(item);
+        const fxSub = (item.originalAmount && item.originalCurrency && item.grossPaid > 0)
+          ? `<div class="fx-sub">Orig: ${Number(item.originalAmount).toFixed(2)} ${escapeHtml(item.originalCurrency)} (@ ${(Number(item.grossPaid) / Number(item.originalAmount)).toFixed(4)})</div>`
+          : "";
+
+        return `
         <tr>
-          <td><strong>${item.transactionName}</strong></td>
-          <td style="white-space:nowrap;">${item.invoiceDate || "-"}</td>
-          <td><button class="btn btn-sm" onclick="viewReceipt('${item.id}')">📄 View Receipt</button></td>
           <td>
-            <div>${item.expenseCategory}</div>
-            <span class="badge">${item.assetType}</span>
+            <strong>${escapeHtml(item.transactionName)}</strong>
+            ${fxSub}
           </td>
-          <td>€${Number(item.grossPaid).toFixed(2)}</td>
+          <td style="white-space:nowrap;">${escapeHtml(item.invoiceDate || "-")}</td>
+          <td><button class="btn btn-sm" onclick="viewReceipt('${escapeHtml(item.id)}')">📄 View</button></td>
+          <td>
+            <div>${escapeHtml(item.expenseCategory)}</div>
+            <span class="badge">${escapeHtml(item.assetType)}</span>
+          </td>
+          <td>€${Number(item.grossPaid || 0).toFixed(2)}</td>
           <td>${Math.round((item.inputVatRate || 0) * 100)}%</td>
-          <td>€${Number(item.netExpense).toFixed(2)}</td>
-          <td>${item.taxDeductibility}</td>
-          <td style="color:var(--success); font-weight:600;">€${Number(item.reclaimableInputVat).toFixed(2)}</td>
-          <td style="color:var(--primary); font-weight:600;">€${Number(item.eligibleDeductibleAmount).toFixed(2)}</td>
-          <td>${item.taxLedger || "2026"}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="deleteExpense('${item.id}')">Delete</button></td>
-        </tr>
-      `).join("");
+          <td>€${Number(item.netExpense || 0).toFixed(2)}</td>
+          <td>${escapeHtml(item.taxDeductibility)}</td>
+          <td style="color:var(--success); font-weight:600;">€${norm.vat.toFixed(2)}</td>
+          <td style="color:var(--primary); font-weight:600;">€${norm.deduct.toFixed(2)}</td>
+          <td>${escapeHtml(item.taxLedger || "2026")}</td>
+          <td><button class="btn btn-sm btn-danger" onclick="deleteExpense('${escapeHtml(item.id)}')">Delete</button></td>
+        </tr>`;
+      }).join("");
+
+      notifyParentHeight();
     }
+
+    function exportExpensesCsv() {
+      const filter = document.getElementById("ledgerFilter").value;
+      const list = filter === "ALL" ? allExpenses : allExpenses.filter(item => item.taxLedger === filter);
+      if (list.length === 0) {
+        alert("No expense records available to export for the selected ledger.");
+        return;
+      }
+      const headers = ["Merchant / Transaction", "Invoice Date", "Category", "Asset Type", "Gross EUR", "VAT %", "Net EUR", "Deductibility", "Reclaimable VAT EUR", "Deductible Amount EUR", "Tax Ledger"];
+      const rows = list.map(item => {
+        const norm = normalizeDeductibleDisplay(item);
+        return [
+          `"${String(item.transactionName || "").replace(/"/g, '""')}"`,
+          item.invoiceDate || "",
+          `"${String(item.expenseCategory || "").replace(/"/g, '""')}"`,
+          `"${String(item.assetType || "").replace(/"/g, '""')}"`,
+          Number(item.grossPaid || 0).toFixed(2),
+          `${Math.round((item.inputVatRate || 0) * 100)}%`,
+          Number(item.netExpense || 0).toFixed(2),
+          `"${String(item.taxDeductibility || "").replace(/"/g, '""')}"`,
+          norm.vat.toFixed(2),
+          norm.deduct.toFixed(2),
+          item.taxLedger || "2026"
+        ].join(",");
+      });
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `nordic-crm-expenses-${filter}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
     async function submitExpense() {
       const transactionName = document.getElementById("transactionName").value.trim();
       const grossPaid = parseFloat(document.getElementById("grossPaid").value);
-      const expenseCategory = document.getElementById("expenseCategory").value;
       if (!transactionName || isNaN(grossPaid) || grossPaid <= 0) {
-        alert("Please enter valid transaction name and gross paid amount!");
-        return;
-      }
-      if (!expenseCategory) {
-        alert("Please select an expense category!");
+        alert("Please enter a valid merchant/transaction name and gross amount.");
         return;
       }
       const saveBtn = document.getElementById("saveBtn");
       saveBtn.disabled = true;
-      saveBtn.innerText = "Writing to Notion...";
+      saveBtn.innerText = "Archiving...";
       try {
+        const taxDeductibility = document.getElementById("taxDeductibility").value;
+        const deductRatio = taxDeductibility === "Non-deductible"
+          ? 0
+          : (taxDeductibility === "Partially Deductible" ? (parseFloat(document.getElementById("deductRatio").value) || 0) : 100);
+
         const payload = {
           uid: CURRENT_UID,
           transactionName,
@@ -605,10 +686,13 @@
           grossPaid,
           inputVatRate: parseFloat(document.getElementById("inputVatRate").value),
           assetType: document.getElementById("assetType").value,
-          taxDeductibility: document.getElementById("taxDeductibility").value,
+          taxDeductibility,
+          deductRatio,
           taxLedger: document.getElementById("taxLedger").value.trim() || "2026",
           receiptBase64: currentReceiptBase64,
           receiptName: currentReceiptName,
+          originalAmount: lastOcrMeta && lastOcrMeta.converted ? lastOcrMeta.originalAmount : undefined,
+          originalCurrency: lastOcrMeta && lastOcrMeta.converted ? lastOcrMeta.currency : undefined,
         };
         const res = await fetch(`${WORKER_URL}/api/expenses`, {
           method: "POST",
@@ -624,12 +708,13 @@
         toggleForm();
         await loadExpenses();
       } catch (err) {
-        alert("Save failed: " + err.message);
+        alert("Failed to save expense: " + err.message);
       } finally {
         saveBtn.disabled = false;
         saveBtn.innerText = "Save & Archive Receipt";
       }
     }
+
     async function viewReceipt(pageId) {
       const modal = document.getElementById("receiptModal");
       const loading = document.getElementById("modalLoading");
@@ -637,7 +722,7 @@
       const dlLink = document.getElementById("downloadReceiptLink");
       modal.classList.add("active");
       loading.style.display = "block";
-      loading.innerText = "Fetching high-resolution receipt from Notion archive...";
+      loading.innerText = "Loading receipt from cloud archive...";
       img.style.display = "none";
       dlLink.style.display = "none";
       try {
@@ -645,7 +730,7 @@
         const json = await res.json();
         if (!json.success) throw new Error(json.error);
         if (!json.receiptData) {
-          loading.innerText = "No receipt image attached to this record.";
+          loading.innerText = "No receipt attachment found for this entry.";
           return;
         }
         loading.style.display = "none";
@@ -654,14 +739,16 @@
         dlLink.href = json.receiptData;
         dlLink.style.display = "inline-flex";
       } catch (err) {
-        loading.innerText = "Failed to load receipt: " + err.message;
+        loading.innerText = "Unable to load receipt: " + err.message;
       }
     }
+
     function closeModal() {
       document.getElementById("receiptModal").classList.remove("active");
     }
+
     async function deleteExpense(id) {
-      if (!confirm("Are you sure you want to archive this expense record?")) return;
+      if (!confirm("Archive and remove this expense record?")) return;
       try {
         const res = await fetch(`${WORKER_URL}/api/expenses?id=${encodeURIComponent(id)}`, {
           method: "DELETE",
@@ -670,9 +757,10 @@
         if (!json.success) throw new Error(json.error);
         await loadExpenses();
       } catch (err) {
-        alert("Delete failed: " + err.message);
+        alert("Failed to delete expense: " + err.message);
       }
     }
+
     loadExpenses();
   </script>
 </body>
