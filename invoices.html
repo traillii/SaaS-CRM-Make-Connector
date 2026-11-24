@@ -145,6 +145,7 @@
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let activeCurrency = "SEK";
+let eurToSekRate = 11.35;
 let invoiceListCache = [];
 let clientListCache = [];
 let clientCacheTime = 0;
@@ -166,8 +167,13 @@ function escapeHtml(str){
     .replace(/'/g, "&#39;");
 }
 
-function formatMoney(amount){
-  const val = Number(amount || 0).toFixed(2);
+function convertAmountFromEur(amountInEur){
+  const num = Number(amountInEur || 0);
+  return activeCurrency === "SEK" ? (num * eurToSekRate) : num;
+}
+
+function formatMoney(amountInEur){
+  const val = convertAmountFromEur(amountInEur).toFixed(2);
   return activeCurrency === "SEK" ? `${val} kr` : `€${val}`;
 }
 
@@ -250,9 +256,11 @@ function generateSwedishOcr(invoiceNo){
 
 window.addEventListener("message", (event) => {
   const data = event.data || {};
-  if(data.type === "CURRENCY_CHANGE" && data.currency){
-    activeCurrency = data.currency;
+  if(data.type === "CURRENCY_CHANGE"){
+    if(data.currency) activeCurrency = data.currency;
+    if(data.eurToSekRate && Number(data.eurToSekRate) > 0) eurToSekRate = Number(data.eurToSekRate);
     renderInvoiceTable();
+    updateLiveInvoicePreview();
   }
 });
 
@@ -294,6 +302,8 @@ document.addEventListener("DOMContentLoaded", async function(){
 
   uid = getUrlParam("uid") || localStorage.getItem("nordic_uid") || "";
   activeCurrency = getUrlParam("currency") || localStorage.getItem("nordic_currency") || "SEK";
+  const fxParam = parseFloat(getUrlParam("fx") || localStorage.getItem("nordic_eur_to_sek") || "11.35");
+  if (fxParam > 0) eurToSekRate = fxParam;
   if(!uid){
     alert("Missing workspace UID. Please open from the dashboard.");
     return;
@@ -379,7 +389,7 @@ async function fillProjectInfo(projectId){
   });
   const ret = await res.json();
   if(ret.success){
-    invNetInput.value = Number(ret.netAmount || 0).toFixed(2);
+    invNetInput.value = convertAmountFromEur(ret.netAmount || 0).toFixed(2);
   }else{
     invNetInput.value = "";
   }
