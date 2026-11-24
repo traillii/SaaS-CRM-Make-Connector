@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice Management</title>
+<title>Invoices | Nordic CRM</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body {
@@ -15,67 +15,61 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
     z-index: 99;
     align-items: center;
     justify-content: center;
+    padding: 16px;
   }
   .modal.active { display: flex; }
-  /* 子页面内缺少开票资料提示弹窗样式 */
-  .local‑reminder‑modal {
-    display: none;
-    position: fixed;
-    inset:0;
-    background:rgba(15,23,42,0.5);
-    z-index:100;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-  }
-  .local‑reminder‑modal.active {
-    display:flex;
+  @media print {
+    body * { visibility: hidden; }
+    #printableFaktura, #printableFaktura * { visibility: visible; }
+    #printableFaktura { position: fixed; inset: 0; background: #fff; padding: 24px; }
   }
 </style>
 </head>
-<body class="p-1 min-h-[700px] overflow-auto">
-<div class="w-full min-h-[650px]">
+<body class="p-1 min-h-[720px] overflow-auto">
+<div class="w-full min-h-[680px]">
   
-  <!-- Header & Action Bar -->
+  <!-- 顶部标题与操作栏 -->
   <div class="flex justify-between items-center gap-4 mb-5 flex-wrap">
     <div>
-      <h2 class="text-lg font-bold text-gray-900">Invoice Management (Invoices)</h2>
-      <p class="text-xs text-gray-500 mt-0.5">Automatically apply client‑country tax rates and track accounts‑receivable status</p>
+      <h2 class="text-lg font-bold text-gray-900">Invoices & Receivables</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Match Swedish and cross-border VAT rules automatically, track payment status, and preview compliant invoices</p>
     </div>
     <button id="btnAddInv" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700 flex-shrink-0">
-      + New Invoice
+      + Create Invoice
     </button>
   </div>
-  <!-- Table Card -->
+
+  <!-- 发票数据表格 -->
   <div class="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm">
     <table class="w-full text-sm text-left border-collapse">
       <thead class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs font-semibold">
         <tr>
-          <th class="p-3">Invoice No.</th>
+          <th class="p-3">Invoice #</th>
           <th class="p-3">Client</th>
           <th class="p-3">Project</th>
           <th class="p-3 text-right">Net Amount</th>
-          <th class="p-3 text-center">VAT Rate</th>
+          <th class="p-3 text-center">VAT %</th>
           <th class="p-3 text-right">Total Due</th>
-          <th class="p-3">Payment Status</th>
+          <th class="p-3">Status</th>
           <th class="p-3">Due Date</th>
           <th class="p-3 text-center">Actions</th>
         </tr>
       </thead>
       <tbody id="invTableBody" class="divide-y divide-gray-100">
-        <tr><td colspan="9" class="p-8 text-center text-gray-400">Loading…</td></tr>
+        <tr><td colspan="9" class="p-8 text-center text-gray-400">Loading invoices...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
-<!-- New / Edit Invoice Modal -->
+
+<!-- 新增 / 编辑发票弹窗 -->
 <div class="modal" id="invModal">
-  <div class="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-6 mx-4 shadow-xl">
-    <h3 class="text-base font-bold text-gray-900 mb-4" id="modalTitle">New Invoice</h3>
+  <div class="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-6 shadow-xl max-h-[92vh] overflow-y-auto">
+    <h3 class="text-base font-bold text-gray-900 mb-4" id="modalTitle">Create Invoice</h3>
     <input type="hidden" id="editPageId">
     <div class="grid gap-3.5">
       <div>
@@ -83,24 +77,33 @@
         <input class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" id="invId" placeholder="INV-2026-001">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">Select Client <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Client <span class="text-red-500">*</span></label>
         <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invClientSel">
-          <option value="">-- Select Client --</option>
+          <option value="">-- Select Client First --</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">Select Project <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Project <span class="text-red-500">*</span></label>
         <select class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500" id="invProjectSel">
-          <option value="">-- Select Client first --</option>
+          <option value="">-- Select Project --</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">Net Amount € (auto‑filled from project, read‑only)</label>
-        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invNet" readonly placeholder="Will populate after selecting project">
+        <label id="lblInvNet" class="block text-xs font-medium text-gray-700 mb-1">Net Amount (Synced from Project)</label>
+        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-700 font-medium" id="invNet" readonly placeholder="Auto-populated from project">
       </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">VAT Rate % (automatically calculated by Notion based on client country)</label>
-        <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500" id="invVatRate" readonly placeholder="Tax rate will apply on save">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">VAT Rate (%)</label>
+          <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-700 font-medium" id="invVatRate" readonly placeholder="Auto-matched">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Estimated Gross Total</label>
+          <input class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-emerald-50/70 text-emerald-700 font-bold" id="invGrossPreview" readonly placeholder="-">
+        </div>
+      </div>
+      <div id="taxRuleHint" class="text-[11px] text-slate-500 bg-slate-50 border border-slate-200/80 rounded-md px-3 py-2">
+        Select a client to preview tax treatment (25% Swedish MOMS, 0% EU B2B Reverse Charge, or 0% Export).
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">Due Date <span class="text-red-500">*</span></label>
@@ -118,144 +121,230 @@
     </div>
     <div class="flex justify-end gap-2 mt-6">
       <button id="btnCloseModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Save</button>
+      <button id="btnSaveInv" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Save Invoice</button>
     </div>
   </div>
 </div>
 
-<!--【新增】iframe内部：开票前检查收款资料弹窗（复制自dashboard，样式完全对齐） -->
-<div id="localBillingReminderModal" class="local‑reminder‑modal">
-  <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-xl border border-slate-100">
-    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
+<!-- 瑞典合规发票预览与打印弹窗 -->
+<div class="modal" id="previewModal" onclick="if(event.target===this) closePreviewModal()">
+  <div class="bg-white rounded-xl border border-gray-200 w-full max-w-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+    <div class="flex justify-between items-center pb-3 mb-4 border-b border-gray-200">
+      <span class="text-sm font-bold text-gray-800">Invoice Preview (Faktura)</span>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="window.print()" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg hover:bg-slate-800">🖨 Print / Save PDF</button>
+        <button type="button" onclick="closePreviewModal()" class="px-2.5 py-1.5 border border-gray-300 text-xs rounded-lg hover:bg-gray-50">Close</button>
+      </div>
     </div>
-    <h3 class="text-lg font-bold text-slate-900">Complete Your Invoicing & Payout Details</h3>
-    <p class="text-sm text-slate-500 mt-2 leading-relaxed">
-      Before generating client invoices, please provide your <strong>legal entity name, VAT ID and IBAN / Bankgiro payout account</strong>. These will be automatically printed on invoice payment instructions.
-    </p>
-    <div class="mt-6 flex flex-col sm:flex-row gap-2.5 justify-end">
-      <button type="button" onclick="closeLocalReminderModal()" class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-        Remind Me Later
-      </button>
-      <button type="button" onclick="sendJumpToAccount()" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
-        Go to Account Settings →
-      </button>
-    </div>
+    <div id="printableFaktura" class="space-y-6 text-sm text-slate-800"></div>
   </div>
 </div>
 
 <script>
+// ==================== 发票管理状态与初始化 ====================
 const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
+let activeCurrency = "SEK";
 let invoiceListCache = [];
+let clientListCache = [];
+let clientCacheTime = 0;
+
 let invProjectSel, invClientSel, invNetInput;
 let modal, modalTitle, btnAddInv, btnCloseModal, btnSaveInv;
 
-// =========【新增】iframe内部本地校验函数，完全复制dashboard逻辑 =========
-function getLocalBillingProfile(){
-  return JSON.parse(localStorage.getItem(`nordic_billing_${uid}`) || "null");
-}
-function openLocalReminderModal(){
-  const modalEl = document.getElementById("localBillingReminderModal");
-  modalEl.classList.add("active");
-}
-function closeLocalReminderModal(){
-  const modalEl = document.getElementById("localBillingReminderModal");
-  modalEl.classList.remove("active");
-}
-  function sendJumpToAccount(){
-  // 发消息给父页面dashboard，让父页面自己跳转
-  parent.postMessage({
-    type: "jumpToAccountBilling",
-    uid: uid
-  }, "*");
-}
-
-/**
- * 点击新增发票入口：先校验收款资料
- * 返回true=资料齐全，可以打开新增弹窗；false=资料缺失，弹出提示
- */
-function checkBillingBeforeOpenInvoice(){
-  const savedProfile = getLocalBillingProfile();
-  if(!savedProfile || !savedProfile.iban || !savedProfile.legalName){
-    openLocalReminderModal();
-    return false;
-  }
-  return true;
-}
-
 function getUrlParam(name){
-  const params = new URLSearchParams(location.search);
-  return params.get(name);
+  return new URLSearchParams(location.search).get(name);
 }
+
+function escapeHtml(str){
+  if(str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatMoney(amount){
+  const val = Number(amount || 0).toFixed(2);
+  return activeCurrency === "SEK" ? `${val} kr` : `€${val}`;
+}
+
+function getBillingProfile(){
+  try {
+    return JSON.parse(localStorage.getItem(`nordic_billing_${uid}`) || "null");
+  } catch (e) {
+    return null;
+  }
+}
+
+function ensureBillingReady(){
+  const profile = getBillingProfile();
+  if(profile && profile.legalName && profile.iban) return true;
+  if(window.parent && window.parent !== window){
+    window.parent.postMessage({ type: "CHECK_BILLING_PROFILE" }, "*");
+  } else {
+    alert("Please configure your legal entity name and payout account in Account & Billing first.");
+  }
+  return false;
+}
+
+function notifyParentHeight(){
+  if(window.parent && window.parent !== window){
+    window.parent.postMessage({
+      type: "IFRAME_HEIGHT",
+      frameId: "invoiceIframe",
+      height: document.documentElement.scrollHeight
+    }, "*");
+  }
+}
+
+// 根据客户所在地区与税号推断增值税规则
+function inferTaxRule(client){
+  if(!client) return { rate: 25, desc: "Default Swedish standard VAT rate: 25% MOMS" };
+  const region = (client.countryRegion || "").trim();
+  const hasVat = Boolean((client.vatNo || "").trim());
+  if(region === "Sweden"){
+    return { rate: 25, desc: "Swedish domestic client: 25% MOMS applies" };
+  }
+  if(["Denmark", "Finland", "EU(Non-nordic)"].includes(region)){
+    if(hasVat){
+      return { rate: 0, desc: "Cross-border EU B2B with VAT ID: 0% VAT under Reverse Charge" };
+    }
+    return { rate: 25, desc: "EU client without VAT ID: standard 25% VAT typically applies" };
+  }
+  if(["Norway", "Outside EU"].includes(region)){
+    return { rate: 0, desc: `${region} cross-border export: 0% VAT typically applies` };
+  }
+  return { rate: 25, desc: "Region unassigned; defaulting to 25% until server evaluation" };
+}
+
+function updateLiveInvoicePreview(){
+  const net = parseFloat(invNetInput.value) || 0;
+  const rateText = document.getElementById("invVatRate").value.replace("%", "");
+  const rate = parseFloat(rateText) || 0;
+  const gross = net * (1 + rate / 100);
+  document.getElementById("invGrossPreview").value = net > 0 ? formatMoney(gross) : "-";
+}
+
+// 生成瑞典网银常用带模10校验位 OCR 参考号
+function generateSwedishOcr(invoiceNo){
+  const digits = (String(invoiceNo).replace(/\D/g, "") || String(Date.now()).slice(-6));
+  const lengthDigit = (digits.length + 2) % 10;
+  const base = digits + String(lengthDigit);
+  let sum = 0;
+  let alt = true;
+  for(let i = base.length - 1; i >= 0; i--){
+    let n = parseInt(base[i], 10);
+    if(alt){
+      n *= 2;
+      if(n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return base + String(checkDigit);
+}
+
+window.addEventListener("message", (event) => {
+  const data = event.data || {};
+  if(data.type === "CURRENCY_CHANGE" && data.currency){
+    activeCurrency = data.currency;
+    renderInvoiceTable();
+  }
+});
+
 document.addEventListener("DOMContentLoaded", async function(){
   invProjectSel = document.getElementById("invProjectSel");
   invClientSel = document.getElementById("invClientSel");
   invNetInput = document.getElementById("invNet");
+
   modal = document.getElementById("invModal");
   modalTitle = document.getElementById("modalTitle");
   btnAddInv = document.getElementById("btnAddInv");
   btnCloseModal = document.getElementById("btnCloseModal");
   btnSaveInv = document.getElementById("btnSaveInv");
 
-  //【修改】新增发票按钮点击：先走校验，通过才打开弹窗
-  btnAddInv.onclick = function(){
-    const ok = checkBillingBeforeOpenInvoice();
-    if(ok){
-      openAddModal();
-    }
-  };
-
   invClientSel.onchange = async function(){
     const clientId = this.value;
-    invProjectSel.innerHTML = `<option value="">-- Select Client first --</option>`;
+    invProjectSel.innerHTML = `<option value="">-- Select Project --</option>`;
     invNetInput.value = "";
+    const clientObj = clientListCache.find(c => c.id === clientId);
+    const rule = inferTaxRule(clientObj);
+    document.getElementById("invVatRate").value = `${rule.rate.toFixed(2)}%`;
+    document.getElementById("taxRuleHint").innerText = rule.desc;
+    updateLiveInvoicePreview();
     if(clientId){
       await loadProjectByClient(clientId);
     }
   };
+
   invProjectSel.onchange = async function(){
     await fillProjectInfo(this.value);
   };
 
+  btnAddInv.onclick = () => {
+    if(!ensureBillingReady()) return;
+    openAddModal();
+  };
   btnCloseModal.onclick = closeModal;
   btnSaveInv.onclick = saveInvoice;
-  uid = getUrlParam("uid");
+
+  uid = getUrlParam("uid") || localStorage.getItem("nordic_uid") || "";
+  activeCurrency = getUrlParam("currency") || localStorage.getItem("nordic_currency") || "SEK";
   if(!uid){
-    alert("uid missing, please open from workspace dashboard");
+    alert("Missing workspace UID. Please open from the dashboard.");
     return;
   }
+
   try{
     await loadInvoiceList();
+    // 支持从项目管理带预填参数直接打开新建发票弹窗
+    const prefillClient = getUrlParam("prefillClient");
+    const prefillProject = getUrlParam("prefillProject");
+    if(prefillClient){
+      await openAddModal(prefillClient, prefillProject || "");
+    }
   }catch(e){
     alert("Initialization error: " + e.message);
   }
 });
+
 async function loadClientOptions(selectedClientId = ""){
-  invClientSel.innerHTML = `<option value="">-- Loading clients…--</option>`;
-  const res = await fetch(WORKER_B_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ uid, action: "getClientList" })
-  });
-  const json = await res.json();
-  invClientSel.innerHTML = `<option value="">-- Select Client --</option>`;
-  if(json.success){
-    json.clients.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value = c.id;
-      opt.innerText = c.name;
-      invClientSel.appendChild(opt);
+  const now = Date.now();
+  if(clientListCache.length === 0 || (now - clientCacheTime > 45000)){
+    invClientSel.innerHTML = `<option value="">-- Loading clients... --</option>`;
+    const res = await fetch(WORKER_B_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid, action: "getClientList" })
     });
+    const json = await res.json();
+    clientListCache = json.success ? (json.clients || []) : [];
+    clientCacheTime = Date.now();
   }
+
+  invClientSel.innerHTML = `<option value="">-- Select Client First --</option>`;
+  clientListCache.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.innerText = c.countryRegion ? `${c.name} (${c.countryRegion})` : c.name;
+    invClientSel.appendChild(opt);
+  });
+
   if(selectedClientId){
     invClientSel.value = selectedClientId;
+    const clientObj = clientListCache.find(c => c.id === selectedClientId);
+    const rule = inferTaxRule(clientObj);
+    document.getElementById("invVatRate").value = `${rule.rate.toFixed(2)}%`;
+    document.getElementById("taxRuleHint").innerText = rule.desc;
   }
 }
+
 async function loadProjectByClient(clientId, selectedProjectId = ""){
-  invProjectSel.innerHTML = `<option value="">-- Loading projects…--</option>`;
+  invProjectSel.innerHTML = `<option value="">-- Loading projects... --</option>`;
   const res = await fetch(WORKER_B_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -264,7 +353,7 @@ async function loadProjectByClient(clientId, selectedProjectId = ""){
   const json = await res.json();
   invProjectSel.innerHTML = `<option value="">-- Select Project --</option>`;
   if(json.success){
-    json.projects.forEach(p => {
+    (json.projects || []).forEach(p => {
       const opt = document.createElement("option");
       opt.value = p.id;
       opt.innerText = p.projectName;
@@ -276,9 +365,11 @@ async function loadProjectByClient(clientId, selectedProjectId = ""){
     await fillProjectInfo(selectedProjectId);
   }
 }
+
 async function fillProjectInfo(projectId){
   if(!projectId){
     invNetInput.value = "";
+    updateLiveInvoicePreview();
     return;
   }
   const res = await fetch(WORKER_B_URL, {
@@ -292,10 +383,193 @@ async function fillProjectInfo(projectId){
   }else{
     invNetInput.value = "";
   }
+  updateLiveInvoicePreview();
 }
+
+function renderInvoiceTable(){
+  const tbody = document.getElementById("invTableBody");
+  tbody.innerHTML = "";
+  if(invoiceListCache.length === 0){
+    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">No invoices yet. Click "+ Create Invoice" to issue your first bill.</td></tr>`;
+    notifyParentHeight();
+    return;
+  }
+
+  invoiceListCache.forEach(inv => {
+    let statusColor = "bg-gray-100 text-gray-700";
+    if(inv.paymentStatus === "Sent") statusColor = "bg-amber-50 text-amber-700 border border-amber-200";
+    if(inv.paymentStatus === "Paid") statusColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+    if(inv.paymentStatus === "Overdue") statusColor = "bg-red-50 text-red-700 border border-red-200";
+
+    const quickActionBtn = inv.paymentStatus === "Draft"
+      ? `<button class="quickStatusBtn text-amber-600 hover:underline text-xs font-medium mr-2.5" data-id="${escapeHtml(inv.id)}" data-next="Sent">Mark Sent</button>`
+      : (inv.paymentStatus === "Sent" || inv.paymentStatus === "Overdue"
+          ? `<button class="quickStatusBtn text-emerald-600 hover:underline text-xs font-medium mr-2.5" data-id="${escapeHtml(inv.id)}" data-next="Paid">Mark Paid</button>`
+          : "");
+
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-gray-50/70";
+    tr.innerHTML = `
+      <td class="p-3 font-medium text-gray-900 font-mono text-xs">${escapeHtml(inv.invoiceId || '-')}</td>
+      <td class="p-3 text-gray-700 text-xs font-medium">${escapeHtml(inv.clientName || '-')}</td>
+      <td class="p-3 text-gray-600 text-xs">${escapeHtml(inv.projectName || '-')}</td>
+      <td class="p-3 text-right text-gray-700">${formatMoney(inv.netAmount)}</td>
+      <td class="p-3 text-center text-gray-600">${Number(inv.vatRate || 0).toFixed(0)}%</td>
+      <td class="p-3 text-right font-semibold text-emerald-600">${formatMoney(inv.grossTotal)}</td>
+      <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${escapeHtml(inv.paymentStatus)}</span></td>
+      <td class="p-3 text-gray-500 text-xs">${escapeHtml(inv.dueDate || "")}</td>
+      <td class="p-3 text-center whitespace-nowrap">
+        <button class="previewBtn text-slate-700 hover:underline text-xs font-medium mr-2.5" data-id="${escapeHtml(inv.id)}">Preview</button>
+        ${quickActionBtn}
+        <button class="editBtn text-blue-600 hover:underline text-xs font-medium" data-id="${escapeHtml(inv.id)}">Edit</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.querySelectorAll(".previewBtn").forEach(btn => {
+    btn.onclick = () => {
+      const invData = invoiceListCache.find(x => x.id === btn.dataset.id);
+      if(invData) openFakturaPreview(invData);
+    };
+  });
+
+  document.querySelectorAll(".quickStatusBtn").forEach(btn => {
+    btn.onclick = async () => {
+      const invData = invoiceListCache.find(x => x.id === btn.dataset.id);
+      if(!invData) return;
+      await quickUpdateInvoiceStatus(invData, btn.dataset.next);
+    };
+  });
+
+  document.querySelectorAll(".editBtn").forEach(btn => {
+    btn.onclick = () => {
+      const pid = btn.dataset.id;
+      const invData = invoiceListCache.find(x => x.id === pid);
+      if(!invData) return;
+      openEditModal(invData, pid);
+    };
+  });
+
+  notifyParentHeight();
+}
+
+async function quickUpdateInvoiceStatus(inv, nextStatus){
+  try {
+    const res = await fetch(WORKER_B_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "editInvoice",
+        uid,
+        pageId: inv.id,
+        invoiceId: inv.invoiceId,
+        clientPageId: inv.clientPageId,
+        projectPageId: inv.projectPageId,
+        dueDate: inv.dueDate,
+        paymentStatus: nextStatus
+      })
+    });
+    const ret = await res.json();
+    if(ret.success){
+      await loadInvoiceList();
+    } else {
+      alert(ret.error || "Unable to update invoice status");
+    }
+  } catch (err) {
+    alert("Status update error: " + err.message);
+  }
+}
+
+function openFakturaPreview(inv){
+  const seller = getBillingProfile() || {};
+  const ocrRef = generateSwedishOcr(inv.invoiceId);
+  const net = Number(inv.netAmount || 0);
+  const gross = Number(inv.grossTotal || 0);
+  const vatAmt = Math.max(0, gross - net);
+  const isReverseCharge = Number(inv.vatRate || 0) === 0;
+
+  document.getElementById("printableFaktura").innerHTML = `
+    <div class="flex justify-between items-start border-b border-slate-200 pb-5">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">INVOICE / FAKTURA</div>
+        <h2 class="text-xl font-bold text-slate-900 mt-1">${escapeHtml(seller.legalName || "Nordic Consulting AB")}</h2>
+        <div class="text-xs text-slate-500 mt-1">${escapeHtml(seller.address || "Stockholm, Sweden")}</div>
+      </div>
+      <div class="text-right text-xs space-y-1">
+        <div><span class="text-slate-400">Invoice No:</span> <strong class="font-mono">${escapeHtml(inv.invoiceId)}</strong></div>
+        <div><span class="text-slate-400">OCR Reference:</span> <strong class="font-mono text-blue-700">${escapeHtml(ocrRef)}</strong></div>
+        <div><span class="text-slate-400">Due Date:</span> <strong>${escapeHtml(inv.dueDate || "-")}</strong></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs">
+      <div>
+        <div class="text-slate-400 font-medium mb-1">Billed To</div>
+        <div class="font-bold text-slate-900 text-sm">${escapeHtml(inv.clientName || "-")}</div>
+      </div>
+      <div>
+        <div class="text-slate-400 font-medium mb-1">Engagement / Line Item</div>
+        <div class="font-semibold text-slate-800">${escapeHtml(inv.projectName || "-")}</div>
+      </div>
+    </div>
+
+    <table class="w-full text-xs border-collapse">
+      <thead>
+        <tr class="border-b border-slate-200 text-slate-500">
+          <th class="py-2 text-left">Description</th>
+          <th class="py-2 text-right">Net (${escapeHtml(activeCurrency)})</th>
+          <th class="py-2 text-center">VAT %</th>
+          <th class="py-2 text-right">Total (${escapeHtml(activeCurrency)})</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-slate-100">
+          <td class="py-3 font-medium">${escapeHtml(inv.projectName || "Professional Services")}</td>
+          <td class="py-3 text-right">${formatMoney(net)}</td>
+          <td class="py-3 text-center">${Number(inv.vatRate || 0).toFixed(0)}%</td>
+          <td class="py-3 text-right font-semibold">${formatMoney(gross)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="flex justify-end">
+      <div class="w-64 space-y-1.5 text-xs">
+        <div class="flex justify-between text-slate-500"><span>Net Subtotal:</span><span>${formatMoney(net)}</span></div>
+        <div class="flex justify-between text-slate-500"><span>VAT (${Number(inv.vatRate || 0).toFixed(0)}%):</span><span>${formatMoney(vatAmt)}</span></div>
+        <div class="flex justify-between text-sm font-bold text-slate-900 pt-1.5 border-t border-slate-200">
+          <span>Amount Due:</span><span>${formatMoney(gross)}</span>
+        </div>
+      </div>
+    </div>
+
+    ${isReverseCharge ? `<div class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded border border-slate-200">Reverse charge / Omvänd skattskyldighet applies for cross-border B2B services.</div>` : ""}
+
+    <div class="border-t border-slate-200 pt-4 grid grid-cols-2 gap-4 text-[11px] text-slate-600">
+      <div class="space-y-1">
+        <div><strong>Payee:</strong> ${escapeHtml(seller.legalName || "-")}</div>
+        <div><strong>Bank (${escapeHtml(seller.bankName || "-")}):</strong> <span class="font-mono">${escapeHtml(seller.iban || "-")}</span></div>
+        ${seller.swish ? `<div><strong>Swish:</strong> <span class="font-mono">${escapeHtml(seller.swish)}</span></div>` : ""}
+        ${seller.swift ? `<div><strong>BIC / SWIFT:</strong> <span class="font-mono">${escapeHtml(seller.swift)}</span></div>` : ""}
+      </div>
+      <div class="text-right space-y-1">
+        <div><strong>Org.nr / VAT ID:</strong> <span class="font-mono">${escapeHtml(seller.vatNumber || "-")}</span></div>
+        <div>${seller.fSkatt !== false ? "<strong>Godkänd för F-skatt</strong>" : ""}</div>
+        <div class="text-slate-400">Include OCR reference <strong>${escapeHtml(ocrRef)}</strong> on payment</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("previewModal").classList.add("active");
+}
+
+function closePreviewModal(){
+  document.getElementById("previewModal").classList.remove("active");
+}
+
 async function loadInvoiceList(){
   const tbody = document.getElementById("invTableBody");
-  tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">Loading…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">Loading invoices...</td></tr>`;
   try{
     const res = await fetch(WORKER_B_URL, {
       method: "POST",
@@ -303,63 +577,39 @@ async function loadInvoiceList(){
       body: JSON.stringify({ action: "listInvoices", uid })
     });
     const ret = await res.json();
-    tbody.innerHTML = "";
     if(!ret.success){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">${ret.error || "Load failed"}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">${escapeHtml(ret.error || "Failed to load invoices")}</td></tr>`;
       return;
     }
     invoiceListCache = ret.invoices || [];
-    if(invoiceListCache.length === 0){
-      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400">No invoices yet, click New Invoice in top‑right corner</td></tr>`;
-      return;
-    }
-    invoiceListCache.forEach(inv => {
-      let statusColor = "bg-gray-100 text-gray-700";
-      if(inv.paymentStatus === "Sent") statusColor = "bg-amber-50 text-amber-700 border border-amber-200";
-      if(inv.paymentStatus === "Paid") statusColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
-      if(inv.paymentStatus === "Overdue") statusColor = "bg-red-50 text-red-700 border border-red-200";
-      const tr = document.createElement("tr");
-      tr.className = "hover:bg-gray-50/70";
-      tr.innerHTML = `
-        <td class="p-3 font-medium text-gray-900">${inv.invoiceId || '-'}</td>
-        <td class="p-3 text-gray-600 text-xs">${inv.clientName || '-'}</td>
-        <td class="p-3 text-gray-600 text-xs">${inv.projectName || '-'}</td>
-        <td class="p-3 text-right text-gray-700">€${Number(inv.netAmount).toFixed(2)}</td>
-        <td class="p-3 text-center text-gray-600">${Number(inv.vatRate).toFixed(2)}%</td>
-        <td class="p-3 text-right font-semibold text-emerald-600">€${Number(inv.grossTotal).toFixed(2)}</td>
-        <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${inv.paymentStatus}</span></td>
-        <td class="p-3 text-gray-500 text-xs">${inv.dueDate || ""}</td>
-        <td class="p-3 text-center">
-          <button class="editBtn text-blue-600 hover:underline text-xs font-medium" data-id="${inv.id}">Edit</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-    document.querySelectorAll(".editBtn").forEach(btn => {
-      btn.onclick = () => {
-        const pid = btn.dataset.id;
-        const invData = invoiceListCache.find(x => x.id === pid);
-        if(!invData) return;
-        openEditModal(invData, pid);
-      };
-    });
+    renderInvoiceTable();
   }catch(err){
-    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">Network error: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500">Network error: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
-async function openAddModal(){
-  modalTitle.innerText = "New Invoice";
+
+async function openAddModal(prefillClientId = "", prefillProjectId = ""){
+  modalTitle.innerText = "Create Invoice";
   document.getElementById("editPageId").value = "";
-  document.getElementById("invId").value = "";
+  const defaultNo = `INV-${new Date().getFullYear()}-${String(invoiceListCache.length + 1).padStart(3, "0")}`;
+  document.getElementById("invId").value = defaultNo;
   invNetInput.value = "";
   document.getElementById("invVatRate").value = "";
-  document.getElementById("invDue").value = "";
+  document.getElementById("invGrossPreview").value = "-";
+  // 默认设置 30 天账期
+  const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  document.getElementById("invDue").value = due;
   document.getElementById("invStatus").value = "Draft";
-  invClientSel.innerHTML = `<option value="">-- Select Client --</option>`;
-  invProjectSel.innerHTML = `<option value="">-- Select Client first --</option>`;
+
+  invClientSel.innerHTML = `<option value="">-- Select Client First --</option>`;
+  invProjectSel.innerHTML = `<option value="">-- Select Project --</option>`;
   modal.classList.add("active");
-  await loadClientOptions();
+  await loadClientOptions(prefillClientId);
+  if(prefillClientId){
+    await loadProjectByClient(prefillClientId, prefillProjectId);
+  }
 }
+
 async function openEditModal(inv, pageId){
   modalTitle.innerText = "Edit Invoice";
   document.getElementById("editPageId").value = pageId;
@@ -368,35 +618,41 @@ async function openEditModal(inv, pageId){
   document.getElementById("invVatRate").value = `${Number(inv.vatRate || 0).toFixed(2)}%`;
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;
+  updateLiveInvoicePreview();
+
   modal.classList.add("active");
   await loadClientOptions(inv.clientPageId);
   if(inv.clientPageId){
     await loadProjectByClient(inv.clientPageId, inv.projectPageId);
   }
 }
+
 function closeModal(){
   modal.classList.remove("active");
 }
+
 async function saveInvoice(){
   const editPageId = document.getElementById("editPageId").value.trim();
   const clientId = invClientSel.value;
   const projectPageId = invProjectSel.value;
   if(!clientId){
-    alert("Please select a client");
+    alert("Please select a client.");
     return;
   }
   if(!projectPageId){
-    alert("Please select a project");
+    alert("Please select a project.");
     return;
   }
   const invIdVal = document.getElementById("invId").value.trim();
   const invDueVal = document.getElementById("invDue").value;
   if(!invIdVal || !invDueVal){
-    alert("Invoice number and due date cannot be empty");
+    alert("Invoice number and due date are required.");
     return;
   }
+
   btnSaveInv.disabled = true;
-  btnSaveInv.innerText = "Saving…";
+  btnSaveInv.innerText = "Saving...";
+
   const payload = {
     uid,
     pageId: editPageId,
@@ -415,17 +671,16 @@ async function saveInvoice(){
     });
     const ret = await res.json();
     if(ret.success){
-      alert("Saved successfully");
       closeModal();
       await loadInvoiceList();
     }else{
-      alert(ret.error);
+      alert(ret.error || "Unable to save invoice");
     }
   }catch(e){
-    alert("Request error: " + e.message);
+    alert("Request failed: " + e.message);
   }finally{
     btnSaveInv.disabled = false;
-    btnSaveInv.innerText = "Save";
+    btnSaveInv.innerText = "Save Invoice";
   }
 }
 </script>
