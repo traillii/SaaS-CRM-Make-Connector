@@ -91,13 +91,22 @@
                     <div id="planBadge" class="mt-1.5 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-100"></div>
                 </div>
 
-                <!-- 主显示币种切换器（SEK / EUR） -->
-                <div class="mb-5 p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                    <span class="text-xs font-medium text-slate-600">Display Currency</span>
-                    <select id="currencySelector" class="text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500">
-                        <option value="SEK">SEK (kr)</option>
-                        <option value="EUR">EUR (€)</option>
-                    </select>
+                <!-- 主显示币种切换器与汇率设置（SEK / EUR） -->
+                <div class="mb-5 p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-600">Display Currency</span>
+                        <select id="currencySelector" class="text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500">
+                            <option value="SEK">SEK (kr)</option>
+                            <option value="EUR">EUR (€)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/70">
+                        <span title="1 EUR equals how many SEK">1 EUR =</span>
+                        <div class="flex items-center gap-1">
+                            <input id="fxRateInput" type="number" step="0.01" min="0.01" class="w-16 text-right font-mono text-xs text-slate-800 bg-white border border-slate-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-blue-500">
+                            <span>SEK</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 侧边栏一级导航菜单 -->
@@ -397,6 +406,10 @@
         let cachedProjectList = [];
         let lastClientFetchTime = 0;
         let activeCurrency = localStorage.getItem("nordic_currency") || "SEK";
+        // 默认汇率：1 EUR = 11.35 SEK（库内项目/发票金额基准默认为 SEK）
+        const DEFAULT_EUR_TO_SEK = 11.35;
+        let eurToSekRate = parseFloat(localStorage.getItem("nordic_eur_to_sek") || String(DEFAULT_EUR_TO_SEK));
+        if (!eurToSekRate || eurToSekRate <= 0) eurToSekRate = DEFAULT_EUR_TO_SEK;
 
         if (!uid) {
             location.href = "login.html";
@@ -428,14 +441,48 @@
             }, 3200);
         }
 
-        // ==================== 币种格式化与联动 ====================
-        function formatMoney(amount) {
-            const val = Number(amount || 0).toFixed(2);
+        // ==================== 币种换算、格式化与联动 ====================
+        // Notion 项目/发票库基准币种为 EUR（€）；切换 SEK 时按汇率乘以 eurToSekRate 换算
+        function convertFromEurBase(amountInEur) {
+            const num = Number(amountInEur || 0);
+            if (activeCurrency === "SEK") {
+                return num * eurToSekRate;
+            }
+            return num;
+        }
+
+        // 将当前显示币种输入的金额反算为 EUR 基准金额用于写入 Notion
+        function convertToEurBase(amountInDisplayCurrency) {
+            const num = Number(amountInDisplayCurrency || 0);
+            if (activeCurrency === "SEK") {
+                return num / eurToSekRate;
+            }
+            return num;
+        }
+
+        function formatMoney(amountInEur) {
+            const converted = convertFromEurBase(amountInEur);
+            const val = converted.toFixed(2);
             return activeCurrency === "SEK" ? `${val} kr` : `€${val}`;
+        }
+
+        function broadcastCurrencyState() {
+            ["invoiceIframe", "expenseIframe"].forEach(id => {
+                const frame = document.getElementById(id);
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage({
+                        type: "CURRENCY_CHANGE",
+                        currency: activeCurrency,
+                        eurToSekRate: eurToSekRate
+                    }, "*");
+                }
+            });
         }
 
         function applyCurrencyLabels() {
             document.getElementById("currencySelector").value = activeCurrency;
+            const fxInput = document.getElementById("fxRateInput");
+            if (fxInput) fxInput.value = Number(eurToSekRate).toFixed(2);
             document.getElementById("thUnitPrice").innerText = `Rate (${activeCurrency})`;
             document.getElementById("thProjectTotal").innerText = `Pre-Tax Total (${activeCurrency})`;
             document.getElementById("lblAddRate").innerHTML = `Rate (${activeCurrency}) <span class="text-red-500">*</span>`;
@@ -448,14 +495,23 @@
             localStorage.setItem("nordic_currency", activeCurrency);
             applyCurrencyLabels();
             if (cachedProjectList.length > 0) renderProjectRows(cachedProjectList);
-            // 通知子 iframe 同步切换显示币种
-            ["invoiceIframe", "expenseIframe"].forEach(id => {
-                const frame = document.getElementById(id);
-                if (frame && frame.contentWindow) {
-                    frame.contentWindow.postMessage({ type: "CURRENCY_CHANGE", currency: activeCurrency }, "*");
-                }
-            });
-            showToast(`Display currency switched to ${activeCurrency}`, "info");
+            broadcastCurrencyState();
+            showToast(`Switched to ${activeCurrency} (1 EUR = ${eurToSekRate.toFixed(2)} SEK)`, "info");
+        });
+
+        document.getElementById("fxRateInput").addEventListener("change", (e) => {
+            const nextRate = parseFloat(e.target.value);
+            if (!nextRate || nextRate <= 0) {
+                e.target.value = eurToSekRate.toFixed(2);
+                showToast("FX rate must be greater than 0", "warning");
+                return;
+            }
+            eurToSekRate = nextRate;
+            localStorage.setItem("nordic_eur_to_sek", String(eurToSekRate));
+            applyCurrencyLabels();
+            if (cachedProjectList.length > 0) renderProjectRows(cachedProjectList);
+            broadcastCurrencyState();
+            showToast(`Updated FX rate: 1 EUR = ${eurToSekRate.toFixed(2)} SEK`, "success");
         });
 
         // ==================== 通用工具函数 ====================
@@ -614,7 +670,7 @@
         tabs.invoice.btn.onclick = () => {
             switchTab("invoice");
             if (!invoiceIframeLoaded) {
-                document.getElementById("invoiceIframe").src = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}`;
+                document.getElementById("invoiceIframe").src = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}`;
                 invoiceIframeLoaded = true;
             }
         };
@@ -622,7 +678,7 @@
         tabs.expense.btn.onclick = () => {
             switchTab("expense");
             if (!expenseIframeLoaded) {
-                document.getElementById("expenseIframe").src = `expenses.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}`;
+                document.getElementById("expenseIframe").src = `expenses.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}`;
                 expenseIframeLoaded = true;
             }
         };
@@ -836,7 +892,7 @@
         function quickCreateInvoiceFromProject(proj) {
             checkBillingBeforeInvoice(() => {
                 switchTab("invoice");
-                const targetUrl = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&prefillClient=${encodeURIComponent(proj.clientPageId || "")}&prefillProject=${encodeURIComponent(proj.id || "")}`;
+                const targetUrl = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}&prefillClient=${encodeURIComponent(proj.clientPageId || "")}&prefillProject=${encodeURIComponent(proj.id || "")}`;
                 document.getElementById("invoiceIframe").src = targetUrl;
                 invoiceIframeLoaded = true;
             });
@@ -937,7 +993,7 @@
             const projectName = document.getElementById("inpProjectName").value.trim();
             const clientPageId = document.getElementById("selProjectClient").value;
             const billingType = document.getElementById("selBillingType").value;
-            const rateAmount = Number(document.getElementById("inpRateAmount").value);
+            const rateAmount = convertToEurBase(Number(document.getElementById("inpRateAmount").value));
             const totalHours = Number(document.getElementById("inpTotalHours").value);
 
             if (!projectName || !clientPageId) {
@@ -971,7 +1027,7 @@
             document.getElementById("editProjectName").value = proj.projectName;
             document.getElementById("editProjectClient").value = proj.clientPageId;
             document.getElementById("editBillingType").value = proj.billingType;
-            document.getElementById("editRateAmount").value = proj.rateAmount;
+            document.getElementById("editRateAmount").value = convertFromEurBase(proj.rateAmount).toFixed(2);
             document.getElementById("editTotalHours").value = proj.totalHours;
 
             editProjectModal.classList.remove("hidden");
@@ -988,7 +1044,7 @@
             const projectName = document.getElementById("editProjectName").value.trim();
             const clientPageId = document.getElementById("editProjectClient").value;
             const billingType = document.getElementById("editBillingType").value;
-            const rateAmount = document.getElementById("editRateAmount").value;
+            const rateAmount = convertToEurBase(Number(document.getElementById("editRateAmount").value));
             const totalHours = document.getElementById("editTotalHours").value;
 
             if (!projectName || !clientPageId) {
