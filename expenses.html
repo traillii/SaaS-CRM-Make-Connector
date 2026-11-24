@@ -367,7 +367,29 @@
     const WORKER_URL = "https://workerc.qq596337481.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
+    let activeCurrency = urlParams.get("currency") || localStorage.getItem("nordic_currency") || "EUR";
+    let eurToSekRate = parseFloat(urlParams.get("fx") || localStorage.getItem("nordic_eur_to_sek") || "11.35");
+    if (!eurToSekRate || eurToSekRate <= 0) eurToSekRate = 11.35;
     let allExpenses = [];
+
+    // 支出接口返回金额以 EUR 为基准；切换 SEK 时乘以汇率换算为 kr
+    function formatExpenseMoney(amountInEur) {
+      const num = Number(amountInEur || 0);
+      if (activeCurrency === "SEK") {
+        return (num * eurToSekRate).toFixed(2) + " kr";
+      }
+      return "€" + num.toFixed(2);
+    }
+
+    window.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (data.type === "CURRENCY_CHANGE") {
+        if (data.currency) activeCurrency = data.currency;
+        if (data.eurToSekRate && Number(data.eurToSekRate) > 0) eurToSekRate = Number(data.eurToSekRate);
+        recalcPreview();
+        renderTable();
+      }
+    });
     let currentReceiptBase64 = "";
     let currentReceiptName = "";
     let lastOcrMeta = null;
@@ -435,9 +457,9 @@
       const ratio = status === "Non-deductible" ? 0 : (status === "Partially Deductible" ? customRatio : 1);
       const net = gross / (1 + vatRate);
       const totalVat = gross - net;
-      document.getElementById("prevNet").innerText = "€" + net.toFixed(2);
-      document.getElementById("prevVat").innerText = "€" + (totalVat * ratio).toFixed(2);
-      document.getElementById("prevDeduct").innerText = "€" + (net * ratio).toFixed(2);
+      document.getElementById("prevNet").innerText = formatExpenseMoney(net);
+      document.getElementById("prevVat").innerText = formatExpenseMoney(totalVat * ratio);
+      document.getElementById("prevDeduct").innerText = formatExpenseMoney(net * ratio);
     }
 
     // ==================== 票据压缩与 AI OCR 识别 ====================
@@ -584,10 +606,10 @@
         sumDeduct += norm.deduct;
         if (item.assetType === "Capital Asset") sumAssets += Number(item.netExpense || 0);
       });
-      document.getElementById("kpiGross").innerText = "€" + sumGross.toFixed(2);
-      document.getElementById("kpiVat").innerText = "€" + sumVat.toFixed(2);
-      document.getElementById("kpiDeductible").innerText = "€" + sumDeduct.toFixed(2);
-      document.getElementById("kpiAssets").innerText = "€" + sumAssets.toFixed(2);
+      document.getElementById("kpiGross").innerText = formatExpenseMoney(sumGross);
+      document.getElementById("kpiVat").innerText = formatExpenseMoney(sumVat);
+      document.getElementById("kpiDeductible").innerText = formatExpenseMoney(sumDeduct);
+      document.getElementById("kpiAssets").innerText = formatExpenseMoney(sumAssets);
 
       const tbody = document.getElementById("expenseTableBody");
       if (list.length === 0) {
@@ -614,12 +636,12 @@
             <div>${escapeHtml(item.expenseCategory)}</div>
             <span class="badge">${escapeHtml(item.assetType)}</span>
           </td>
-          <td>€${Number(item.grossPaid || 0).toFixed(2)}</td>
+          <td>${formatExpenseMoney(item.grossPaid || 0)}</td>
           <td>${Math.round((item.inputVatRate || 0) * 100)}%</td>
-          <td>€${Number(item.netExpense || 0).toFixed(2)}</td>
+          <td>${formatExpenseMoney(item.netExpense || 0)}</td>
           <td>${escapeHtml(item.taxDeductibility)}</td>
-          <td style="color:var(--success); font-weight:600;">€${norm.vat.toFixed(2)}</td>
-          <td style="color:var(--primary); font-weight:600;">€${norm.deduct.toFixed(2)}</td>
+          <td style="color:var(--success); font-weight:600;">${formatExpenseMoney(norm.vat)}</td>
+          <td style="color:var(--primary); font-weight:600;">${formatExpenseMoney(norm.deduct)}</td>
           <td>${escapeHtml(item.taxLedger || "2026")}</td>
           <td><button class="btn btn-sm btn-danger" onclick="deleteExpense('${escapeHtml(item.id)}')">Delete</button></td>
         </tr>`;
