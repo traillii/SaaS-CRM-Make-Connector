@@ -695,7 +695,7 @@
         tabs.taxLedger.btn.onclick = () => {
             switchTab("taxLedger");
             if (!taxLedgerIframeLoaded) {
-                document.getElementById("taxLedgerIframe").src = `tax-ledger.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}`;
+                document.getElementById("taxLedgerIframe").src = `taxledger.html?uid=${uid}`;
                 taxLedgerIframeLoaded = true;
             }
         };
