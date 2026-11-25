@@ -162,7 +162,7 @@
   <div class="container">
     <div class="header-bar">
       <div>
-        <h2>Nordic Tax Ledger (DB5)</h2>
+        <h2>Tax & VAT Overview</h2>
         <div class="header-sub">Real-time rollup of paid invoices, deductible expenses, Swedish MOMS, and statutory tax reserve buffer</div>
       </div>
       <div class="actions">
@@ -230,7 +230,7 @@
 
     <div class="table-card">
       <div class="table-header-bar">
-        <h3>Annual Tax Ledger Breakdown (Synced with Notion DB5)</h3>
+        <h3>Annual Tax Ledger Breakdown</h3>
         <span id="syncStatusBadge" class="badge">Connecting...</span>
       </div>
       <div class="table-wrap">
@@ -444,7 +444,7 @@
         });
 
         ledgerRows = Object.values(yearMap).sort((a, b) => b.taxYear.localeCompare(a.taxYear));
-        badge.innerText = "✓ Live Rollup (DB3 + DB4)";
+        badge.innerText = "✓ Live Rollup";
         renderView();
       } catch (err) {
         console.error(err);
