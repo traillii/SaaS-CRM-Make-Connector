@@ -79,14 +79,11 @@
                     <label for="eurToSekRateInput" class="text-[11px] text-slate-400">1 EUR =</label>
                     <div class="flex items-center gap-1">
                         <input type="number" id="eurToSekRateInput" value="11.35" step="0.01" min="0.01" onchange="onCurrencySettingsChange()" oninput="onCurrencySettingsChange()"
-                            class="w-16 text-right text-xs font-mono font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg px-1.5 py-1 focus:outline-none focus:border-blue-500">
+                            class="w-20 text-right text-xs font-mono font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500">
                         <span class="text-[11px] text-slate-500 font-medium">SEK</span>
-                        <button type="button" id="syncFxBtn" onclick="fetchLiveFxRate(false)" title="Sync live ECB EUR/SEK rate" class="px-1.5 py-1 text-[10px] font-semibold bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-700">
-                            Sync
-                        </button>
                     </div>
                 </div>
-                <div id="fxStatusHint" class="text-[10px] text-slate-400 leading-tight">Cached rate · Base EUR</div>
+                <div id="fxStatusHint" class="text-[10px] text-slate-400 leading-tight">Editable FX rate · Base EUR</div>
             </div>
 
             <!-- Navigation Menu -->
@@ -118,7 +115,7 @@
 
     <!-- Main Workspace Area -->
     <main class="flex-1 p-5 sm:p-8 overflow-y-auto">
-        <div class="mx-auto">
+        <div class="max-w-7xl mx-auto">
 
             <!-- Top Blue Executive Summary Banner -->
             <div class="mb-6 rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#1d4ed8] to-[#2563eb] p-5 sm:p-6 text-white shadow-md border border-blue-500/30">
@@ -303,19 +300,19 @@
 
             <!-- ==================== 3. Invoices Panel ==================== -->
             <div id="panelInvoice" class="hidden">
-                <iframe id="invoiceIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
+                <iframe id="invoiceIframe"
                     style="width:100%; min-height:1100px; border:0; background:transparent;"></iframe>
             </div>
 
             <!-- ==================== 4. Expenses & Assets Panel ==================== -->
             <div id="panelExpense" class="hidden">
-                <iframe id="expenseIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
+                <iframe id="expenseIframe"
                     style="width:100%; min-height:1150px; border:0; background:transparent;"></iframe>
             </div>
 
             <!-- ==================== 5. Nordic Tax Ledger Panel ==================== -->
             <div id="panelTaxLedger" class="hidden">
-                <iframe id="taxLedgerIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
+                <iframe id="taxLedgerIframe"
                     style="width:100%; min-height:1150px; border:0; background:transparent;"></iframe>
             </div>
 
@@ -449,39 +446,7 @@
             broadcastCurrencyToIframes(currency, rate);
         }
 
-        async function fetchLiveFxRate(silent = false) {
-            const btn = document.getElementById("syncFxBtn");
-            const hint = document.getElementById("fxStatusHint");
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = "...";
-            }
-            try {
-                const res = await fetch("https://https://frankfurter.dev/latest?from=EUR&to=SEK");
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                const liveRate = Number(data?.rates?.SEK || 0);
-                if (!liveRate || liveRate <= 0) throw new Error("Invalid rate");
-                document.getElementById("eurToSekRateInput").value = liveRate.toFixed(2);
-                const currency = document.getElementById("displayCurrencySelect").value;
-                persistCurrencySettings(currency, liveRate);
-                updateTopKpis();
-                renderProjects();
-                broadcastCurrencyToIframes(currency, liveRate);
-                if (hint) {
-                    hint.innerText = `Live ECB rate · 1 EUR = ${liveRate.toFixed(4)} SEK`;
-                }
-            } catch (err) {
-                if (hint && !silent) {
-                    hint.innerText = "Sync unavailable · Using cached rate";
-                }
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerText = "Sync";
-                }
-            }
-        }
+
 
         // ==================== Navigation & Tabs ====================
         const tabs = {
@@ -810,7 +775,6 @@
 
         // Init
         initCurrencyControls();
-        fetchLiveFxRate(true);
         loadWorkspaceData();
     </script>
 </body>
