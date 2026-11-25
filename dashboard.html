@@ -3,672 +3,403 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workspace Dashboard | Nordic CRM</title>
+    <title>Nordic CRM & Tax Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2563eb',
-                        neutral: '#f8fafc',
-                    },
-                    fontFamily: {
-                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'Segoe UI', 'Roboto', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
     <style>
-        body { background-color: #f8fafc; color: #111827; margin: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
         .nav-item {
+            width: 100%;
             display: flex;
             align-items: center;
             gap: 10px;
-            width: 100%;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            color: #4b5563;
+            color: #475569;
             transition: all 0.15s ease;
             text-align: left;
             cursor: pointer;
         }
-        .nav-item:hover { background-color: #f3f4f6; color: #111827; }
+        .nav-item:hover {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
         .nav-item.active {
             background-color: #eff6ff;
-            color: #2563eb;
+            color: #1d4ed8;
             font-weight: 600;
         }
-        .card-box {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        }
-        .table-header {
-            background-color: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            color: #4b5563;
-            font-size: 13px;
-            font-weight: 600;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .toast-item { animation: slideIn 0.2s ease-out; }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col md:flex-row">
 
-    <!-- 全局轻提示容器 -->
-    <div id="toastContainer" class="fixed top-4 right-4 z-[120] space-y-2 max-w-sm w-full pointer-events-none"></div>
-
-    <!-- 账户验证加载遮罩 -->
-    <div id="loadingBox" class="py-32 text-center text-slate-500 text-sm">
-        Verifying your workspace credentials...
-    </div>
-
-    <!-- 主布局容器（左侧边栏 + 右侧工作区） -->
-    <div id="mainBox" class="hidden flex min-h-screen">
-        
-        <!-- ==================== 左侧导航边栏 ==================== -->
-        <aside class="w-60 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
-            <div class="p-5">
-                <!-- 品牌标识 -->
-                <div class="pb-5 mb-5 border-b border-gray-100">
-                    <h1 class="text-lg font-bold text-gray-900 tracking-tight">Nordic CRM</h1>
-                    <p class="text-xs text-gray-500 mt-0.5">Nordic Client & Tax Portal</p>
+    <!-- Left Sidebar -->
+    <aside class="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-between shrink-0">
+        <div class="p-5">
+            <!-- Brand -->
+            <div class="flex items-center gap-2.5 mb-5">
+                <div class="w-8 h-8 rounded-lg bg-[#364B59] text-white flex items-center justify-center font-bold text-sm">
+                    N
                 </div>
-
-                <!-- 登录账号与套餐卡片 -->
-                <div class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200/80">
-                    <div class="text-xs text-gray-500">Signed-in Account</div>
-                    <div id="userEmail" class="text-xs font-semibold text-gray-800 truncate mt-0.5"></div>
-                    <div id="planBadge" class="mt-1.5 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-100"></div>
+                <div>
+                    <div class="font-bold text-slate-900 leading-tight">Nordic CRM</div>
+                    <div class="text-[11px] text-slate-400">Nordic Client & Tax Portal</div>
                 </div>
+            </div>
 
-                <!-- 主显示币种切换器与汇率设置（SEK / EUR） -->
-                <div class="mb-5 p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-medium text-slate-600">Display Currency</span>
-                        <select id="currencySelector" class="text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500">
-                            <option value="SEK">SEK (kr)</option>
-                            <option value="EUR">EUR (€)</option>
-                        </select>
+            <!-- Account Status Card -->
+            <div class="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div class="text-[11px] text-slate-400">Signed-in Account</div>
+                <div id="userEmail" class="text-xs font-semibold text-slate-800 truncate mt-0.5">Loading...</div>
+                <div class="mt-2 flex items-center justify-between gap-2">
+                    <span id="userPlanBadge" class="inline-block px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-medium truncate">
+                        Standard Plan
+                    </span>
+                    <a id="accountLink" href="account.html" class="text-[11px] font-medium text-slate-500 hover:text-slate-900 shrink-0">
+                        Manage →
+                    </a>
+                </div>
+            </div>
+
+            <!-- Display Currency & Live FX Switcher -->
+            <div class="mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                    <label for="displayCurrencySelect" class="text-[11px] font-medium text-slate-500">Display Currency</label>
+                    <select id="displayCurrencySelect" onchange="onCurrencySettingsChange()" class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500">
+                        <option value="SEK" selected>SEK (kr)</option>
+                        <option value="EUR">EUR (€)</option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <label for="eurToSekRateInput" class="text-[11px] text-slate-400">1 EUR =</label>
+                    <div class="flex items-center gap-1">
+                        <input type="number" id="eurToSekRateInput" value="11.35" step="0.01" min="0.01" onchange="onCurrencySettingsChange()" oninput="onCurrencySettingsChange()"
+                            class="w-16 text-right text-xs font-mono font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg px-1.5 py-1 focus:outline-none focus:border-blue-500">
+                        <span class="text-[11px] text-slate-500 font-medium">SEK</span>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/70">
-                        <span title="1 EUR equals how many SEK">1 EUR =</span>
-                        <div class="flex items-center gap-1">
-                            <input id="fxRateInput" type="number" step="0.01" min="0.01" class="w-16 text-right font-mono text-xs text-slate-800 bg-white border border-slate-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-blue-500">
-                            <span>SEK</span>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="space-y-1">
+                <button id="tabClient" class="nav-item active">
+                    <span>👥</span> Clients
+                </button>
+                <button id="tabProject" class="nav-item">
+                    <span>📁</span> Projects
+                </button>
+                <button id="tabInvoice" class="nav-item">
+                    <span>🧾</span> Invoices
+                </button>
+                <button id="tabExpense" class="nav-item">
+                    <span>💳</span> Expenses & Assets
+                </button>
+                <button id="tabTaxLedger" class="nav-item">
+                    <span>📊</span> Tax Ledger
+                </button>
+            </nav>
+        </div>
+
+        <!-- Bottom Quick Links -->
+        <div class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <a id="billingSettingsNav" href="account.html#billing" class="hover:text-slate-900 font-medium">⚙️ Billing & Payouts</a>
+            <a href="login.html" onclick="localStorage.removeItem('nordic_uid')" class="text-rose-600 hover:text-rose-700 font-medium">Sign Out</a>
+        </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="flex-1 p-5 sm:p-8 overflow-y-auto">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Top Blue Executive Summary Banner (Aligned edge-to-edge with child panels) -->
+            <div class="mb-6 rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#1d4ed8] to-[#2563eb] p-5 sm:p-6 text-white shadow-md border border-blue-500/30">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                    
+                    <!-- Card 1: Active Client Quota -->
+                    <div class="rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 px-4 py-3.5 flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-blue-100 uppercase tracking-wider">Active Client Quota</span>
+                            <span class="text-blue-200 text-sm">👥</span>
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-1.5">
+                            <span id="activeClientCount" class="text-2xl font-bold text-white tracking-tight">0</span>
+                            <span class="text-xs text-blue-200 font-medium">/ <span id="maxClientQuota">-</span> quota</span>
                         </div>
                     </div>
-                </div>
 
-                <!-- 侧边栏一级导航菜单 -->
-                <nav class="space-y-1.5">
-                    <button id="tabClient" class="nav-item active">
-                        <span>👥</span> Clients
-                    </button>
-                    <button id="tabProject" class="nav-item">
-                        <span>📁</span> Projects
-                    </button>
-                    <button id="tabInvoice" class="nav-item">
-                        <span>🧾</span> Invoices
-                    </button>
-                    <button id="tabExpense" class="nav-item">
-                        <span>💳</span> Expenses & Assets
-                    </button>
-                    <button id="tabTaxLedger" class="nav-item">
-                        <span>📊</span> Tax Ledger
-                    </button>
-                </nav>
-            </div>
+                    <!-- Card 2: Pipeline Pre-Tax Value -->
+                    <div class="rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 px-4 py-3.5 flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-blue-100 uppercase tracking-wider">Pipeline Pre-Tax Value</span>
+                            <span class="text-blue-200 text-sm">📈</span>
+                        </div>
+                        <div class="mt-2">
+                            <div id="pipelineTotalValue" class="text-2xl font-bold text-emerald-300 tracking-tight">0.00 kr</div>
+                        </div>
+                    </div>
 
-            <!-- 侧边栏底部快捷入口 -->
-            <div class="p-4 border-t border-gray-200 space-y-2">
-                <a id="accountLink" href="#" class="block w-full text-center px-3 py-2 border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
-                    ⚙️ Account & Billing
-                </a>
-                <a href="index.html" class="block w-full text-center px-3 py-1.5 text-xs text-gray-500 hover:text-gray-800">
-                    &larr; Back to Home
-                </a>
-            </div>
-        </aside>
+                    <!-- Card 3: Invoicing & Payout Setup -->
+                    <div class="rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 px-4 py-3.5 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-blue-100 uppercase tracking-wider">Invoicing & Payout Setup</div>
+                            <div id="billingSetupStatus" class="mt-2 text-sm font-semibold text-white truncate">
+                                Checking setup...
+                            </div>
+                        </div>
+                        <a id="billingSetupEditLink" href="account.html#billing" class="shrink-0 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-semibold text-white border border-white/20 transition">
+                            Edit →
+                        </a>
+                    </div>
 
-        <!-- ==================== 右侧主工作区 ==================== -->
-        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
-            <div class="mx-auto">
-
-                <!-- 顶部经营指标概览卡片 -->
-<!-- 顶部蓝色商务概览横幅（保持原有 ID 不变，自动同步数据） -->
-<div class="mb-6 rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-5 sm:p-6 text-white shadow-md border border-blue-500/30">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-        
-        <!-- 卡片 1：活跃客户配额 -->
-        <div class="rounded-lg bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3.5 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium text-blue-100 uppercase tracking-wider">Active Client Quota</span>
-                <span class="text-blue-200 text-sm">👥</span>
-            </div>
-            <div class="mt-2 flex items-baseline gap-1.5">
-                <!-- 保留你原有的数字容器或整体替换，确保内部 id 不变 -->
-                <div id="kpiClientQuota" class="text-2xl font-bold text-white tracking-tight">0 / -</div>
-            </div>
-        </div>
-
-        <!-- 卡片 2：项目税前总价值 -->
-        <div class="rounded-lg bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3.5 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium text-blue-100 uppercase tracking-wider">Pipeline Pre-Tax Value</span>
-                <span class="text-blue-200 text-sm">📈</span>
-            </div>
-            <div class="mt-2">
-                <div id="kpiPipelineValue" class="text-2xl font-bold text-emerald-300 tracking-tight">-</div>
-            </div>
-        </div>
-
-        <!-- 卡片 3：开票与收款设置状态 -->
-        <div class="rounded-lg bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3.5 flex items-center justify-between gap-3">
-            <div>
-                <div class="text-xs font-medium text-blue-100 uppercase tracking-wider">Invoicing & Payout Setup</div>
-                <div id="kpiBillingStatus" class="mt-2 text-sm font-semibold text-white flex items-center gap-1.5">
-                    Checking status...
                 </div>
             </div>
-            <a id="kpiBillingLink" href="account.html#billing" class="shrink-0 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-medium text-white border border-white/20 transition">
-                Edit →
-            </a>
-        </div>
 
-    </div>
-</div>
+            <!-- ==================== 1. Clients Panel ==================== -->
+            <div id="panelClient">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Clients & Tax Profiles</h1>
+                        <p class="text-xs text-slate-500 mt-0.5">Manage client entities, EU VAT numbers, and cross-border Reverse Charge eligibility</p>
+                    </div>
+                    <button onclick="openClientModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl shadow-xs transition">
+                        + Add Client
+                    </button>
+                </div>
 
-
-                <!-- ==================== 1. Client Management Panel ==================== -->
-                <div id="panelClient">
-                    <div class="flex justify-between items-center mb-5 flex-wrap gap-3">
+                <!-- Client Form Modal / Inline Panel -->
+                <div id="clientFormCard" class="hidden mb-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <h3 class="text-base font-bold text-slate-900 mb-4">Add New Client</h3>
+                    <form onsubmit="createClient(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                            <h2 class="text-lg font-bold text-gray-900">Client Directory</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">Manage Nordic and cross-border clients, Org.nr / VAT IDs, and tax regions</p>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Client / Company Name *</label>
+                            <input type="text" id="clientName" required placeholder="e.g., Acme Nordic AB" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
                         </div>
-                        <div class="flex gap-2.5">
-                            <button id="openBatchBtn" class="px-4 py-2 border border-gray-300 bg-white text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
-                                Batch Import
-                            </button>
-                            <button id="openAddBtn" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700">
-                                + Add Client
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 客户列表容器 -->
-                    <div id="clientListBox" class="card-box overflow-x-auto">
-                        <div class="p-10 text-center text-gray-400 text-sm">Loading clients...</div>
-                    </div>
-
-                    <!-- 批量导入弹窗 -->
-                    <div id="batchModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                        <div class="bg-white w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-xl">
-                            <h3 class="text-base font-bold text-gray-900 mb-2">Batch Import Clients</h3>
-                            <p class="text-xs text-gray-500 mb-3 leading-relaxed">
-                                Format: Name,Email,Phone,Notes (one client per line)<br>
-                                <span class="text-amber-600">Tip: Assign Country Region and Org.nr / VAT ID after import for accurate MOMS & reverse-charge rules.</span>
-                            </p>
-                            <textarea id="batchTextarea" rows="8" class="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:border-blue-500" placeholder="Nordic Tech AB,billing@nordictech.se,+46701234567,Monthly retainer"></textarea>
-                            <div class="flex justify-end gap-2 mt-4">
-                                <button id="closeBatchBtn" type="button" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                                <button id="submitBatchBtn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Import Clients</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 新增 / 编辑客户弹窗 -->
-                    <div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                        <div class="bg-white w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-xl">
-                            <h3 id="modalTitle" class="text-base font-bold text-gray-900 mb-4">Add New Client</h3>
-                            <form id="addForm">
-                                <input type="hidden" id="editPageId" name="editPageId" value="">
-                                <div class="mb-3">
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Client / Legal Name <span class="text-red-500">*</span></label>
-                                    <input required name="clientName" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="e.g. Svea Digital AB">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Billing Email</label>
-                                    <input type="email" name="contactEmail" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="finance@company.se">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Phone</label>
-                                    <input name="phone" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="+46 70 000 00 00">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Country / Tax Region <span class="text-red-500">*</span></label>
-                                    <select required name="countryRegion" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-500">
-                                        <option value="">-- Select Region --</option>
-                                        <option value="Sweden">Sweden (25% MOMS)</option>
-                                        <option value="Norway">Norway (Nordic Non-EU)</option>
-                                        <option value="Denmark">Denmark (Nordic EU)</option>
-                                        <option value="Finland">Finland (Nordic EU)</option>
-                                        <option value="EU(Non-nordic)">EU (Non-Nordic)</option>
-                                        <option value="Outside EU">Outside EU</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">VAT / CVR / Org.nr</label>
-                                    <input name="vatNo" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500" placeholder="e.g. 556677-8899 or SE556677889901">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-                                    <textarea name="notes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Payment terms, reference contact, or contract notes"></textarea>
-                                </div>
-                                <div class="flex justify-end gap-2">
-                                    <button type="button" id="closeModalBtn" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ==================== 2. Project Management Panel ==================== -->
-                <div id="panelProject" class="hidden">
-                    <div class="mb-5 flex justify-between items-center flex-wrap gap-3">
                         <div>
-                            <h2 class="text-lg font-bold text-gray-900">Projects & Retainers</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">Track pre-tax value for hourly consulting and monthly retainers, or generate invoices in one click</p>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Contact Email</label>
+                            <input type="email" id="clientEmail" placeholder="billing@company.se" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
                         </div>
-                        <button id="btnAddProject" class="bg-blue-600 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-blue-700">+ New Project</button>
-                    </div>
-
-                    <div class="card-box overflow-x-auto">
-                        <table class="w-full border-collapse text-sm">
-                            <thead class="table-header">
-                                <tr>
-                                    <th class="p-3 text-left">Project Name</th>
-                                    <th class="p-3 text-left">Client</th>
-                                    <th class="p-3 text-left">Billing Model</th>
-                                    <th id="thUnitPrice" class="p-3 text-right">Rate (SEK)</th>
-                                    <th class="p-3 text-right">Hours</th>
-                                    <th id="thProjectTotal" class="p-3 text-right">Pre-Tax Total (SEK)</th>
-                                    <th class="p-3 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="projectTableBody" class="divide-y divide-gray-100">
-                                <tr><td colspan="7" class="p-8 text-center text-gray-400">Loading projects...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- 新增项目弹窗 -->
-                    <div id="modalAddProject" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
-                        <div class="bg-white p-6 rounded-lg border border-gray-200 w-full max-w-md shadow-xl">
-                            <h3 class="text-base font-bold text-gray-900 mb-4">New Project</h3>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Project Name <span class="text-red-500">*</span></label>
-                                    <input type="text" id="inpProjectName" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="e.g. Q4 Product Architecture Advisory">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Client <span class="text-red-500">*</span></label>
-                                    <select id="selProjectClient" class="w-full border border-gray-300 p-2 rounded-md text-sm bg-white"></select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Billing Model <span class="text-red-500">*</span></label>
-                                    <select id="selBillingType" class="w-full border border-gray-300 p-2 rounded-md text-sm bg-white">
-                                        <option value="Hourly Rate">Hourly Rate</option>
-                                        <option value="Retainer">Retainer (Fixed Monthly)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label id="lblAddRate" class="block text-xs font-medium text-gray-700 mb-1">Rate (SEK) <span class="text-red-500">*</span></label>
-                                    <input type="number" step="0.01" id="inpRateAmount" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="0.00">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Total Hours</label>
-                                    <input type="number" step="0.01" id="inpTotalHours" class="w-full border border-gray-300 p-2 rounded-md text-sm" placeholder="0">
-                                </div>
-                            </div>
-                            <div class="flex justify-end gap-2 mt-6">
-                                <button id="closeProjectModal" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                                <button id="submitAddProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Create Project</button>
-                            </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Country / Tax Region *</label>
+                            <select id="clientCountry" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white">
+                                <option value="Sweden">Sweden (25% Standard MOMS)</option>
+                                <option value="EU">EU Member State (0% Reverse Charge with VAT ID)</option>
+                                <option value="Non-EU">Outside EU (0% Export Exempt)</option>
+                            </select>
                         </div>
-                    </div>
-
-                    <!-- 编辑项目弹窗 -->
-                    <div id="editProjectModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
-                        <div class="bg-white p-6 rounded-lg border border-gray-200 w-full max-w-md shadow-xl">
-                            <h3 class="text-base font-bold text-gray-900 mb-4">Edit Project</h3>
-                            <input type="hidden" id="editProjectId">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Project Name <span class="text-red-500">*</span></label>
-                                    <input type="text" id="editProjectName" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Client <span class="text-red-500">*</span></label>
-                                    <select id="editProjectClient" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm bg-white"></select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Billing Model <span class="text-red-500">*</span></label>
-                                    <select id="editBillingType" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm bg-white">
-                                        <option value="Hourly Rate">Hourly Rate</option>
-                                        <option value="Retainer">Retainer</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label id="lblEditRate" class="block text-xs font-medium text-gray-700 mb-1">Rate (SEK)</label>
-                                    <input type="number" step="0.01" id="editRateAmount" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Total Hours</label>
-                                    <input type="number" step="0.01" id="editTotalHours" class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm">
-                                </div>
-                            </div>
-                            <div class="flex gap-2 justify-end mt-6">
-                                <button id="btnCancelEditProject" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                                <button id="btnSaveEditProject" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Changes</button>
-                            </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">EU VAT / Org.nr</label>
+                            <input type="text" id="clientVat" placeholder="e.g., SE556677889901 or DE123456789" class="w-full px-3 py-2 text-sm font-mono border border-slate-200 rounded-xl">
                         </div>
-                    </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Billing Address</label>
+                            <input type="text" id="clientAddress" placeholder="Street, Postal Code, City, Country" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-3 flex justify-end gap-2 pt-2">
+                            <button type="button" onclick="closeClientModal()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Cancel</button>
+                            <button type="submit" id="saveClientBtn" class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-medium">Save Client</button>
+                        </div>
+                    </form>
                 </div>
 
-                <!-- ==================== 3. Invoice Management Panel ==================== -->
-                <div id="panelInvoice" class="hidden">
-                    <iframe id="invoiceIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
-                        style="width:100%; min-height:850px; border:0; background:transparent;"></iframe>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
+                                <th class="py-3 px-4">Client Name</th>
+                                <th class="py-3 px-4">Country / Tax Rule</th>
+                                <th class="py-3 px-4">VAT / Org.nr</th>
+                                <th class="py-3 px-4">Email</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientTableBody" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="py-8 text-center text-slate-400">Loading clients...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <!-- ==================== 4. Expenses & Capital Assets Panel ==================== -->
-                <div id="panelExpense" class="hidden">
-                    <iframe id="expenseIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
-                        style="width:100%; min-height:850px; border:0; background:transparent;"></iframe>
-                </div>
-                <!-- ==================== 5. Nordic Tax Ledger Panel ==================== -->
-                <div id="panelTaxLedger" class="hidden">
-                    <iframe id="taxLedgerIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"
-                        style="width:100%; min-height:1210px; border:0; background:transparent;"></iframe>
-                </div>
-
             </div>
-        </main>
-    </div>
 
-    <!-- 开票前收款资料缺失引导弹窗 -->
-    <div id="billingGuideModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-xl border border-slate-100">
-        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-          </svg>
+            <!-- ==================== 2. Projects Panel ==================== -->
+            <div id="panelProject" class="hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Projects & Engagements</h1>
+                        <p class="text-xs text-slate-500 mt-0.5">Track billable scopes and pre-tax contract values</p>
+                    </div>
+                    <button onclick="openProjectModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl shadow-xs transition">
+                        + New Project
+                    </button>
+                </div>
+
+                <div id="projectFormCard" class="hidden mb-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <h3 class="text-base font-bold text-slate-900 mb-4">Create New Project</h3>
+                    <form onsubmit="createProject(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Project Name *</label>
+                            <input type="text" id="projectName" required placeholder="e.g., Q4 Web Platform" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Client *</label>
+                            <select id="projectClientSelect" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white">
+                                <option value="">-- Select Client --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pre-Tax Budget (EUR) *</label>
+                            <input type="number" id="projectBudgetEur" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Status</label>
+                            <select id="projectStatus" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white">
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="On Hold">On Hold</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-4 flex justify-end gap-2 pt-2">
+                            <button type="button" onclick="closeProjectModal()" class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Cancel</button>
+                            <button type="submit" id="saveProjectBtn" class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-medium">Create Project</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500">
+                                <th class="py-3 px-4">Project</th>
+                                <th class="py-3 px-4">Client</th>
+                                <th class="py-3 px-4">Pre-Tax Value</th>
+                                <th class="py-3 px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectTableBody" class="divide-y divide-slate-100">
+                            <tr><td colspan="4" class="py-8 text-center text-slate-400">Loading projects...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ==================== 3. Invoices Panel ==================== -->
+            <div id="panelInvoice" class="hidden">
+                <iframe id="invoiceIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
+                    style="width:100%; min-height:1100px; border:0; background:transparent;"></iframe>
+            </div>
+
+            <!-- ==================== 4. Expenses & Assets Panel ==================== -->
+            <div id="panelExpense" class="hidden">
+                <iframe id="expenseIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
+                    style="width:100%; min-height:1150px; border:0; background:transparent;"></iframe>
+            </div>
+
+            <!-- ==================== 5. Nordic Tax Ledger Panel ==================== -->
+            <div id="panelTaxLedger" class="hidden">
+                <iframe id="taxLedgerIframe" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups"
+                    style="width:100%; min-height:1150px; border:0; background:transparent;"></iframe>
+            </div>
+
         </div>
-        <h3 class="text-lg font-bold text-slate-900">Complete Your Invoicing & Payout Details</h3>
-        <p class="text-sm text-slate-500 mt-2 leading-relaxed">
-          Before issuing client invoices, please add your <strong>legal entity name, Org.nr / VAT ID, and Bankgiro / IBAN payout account</strong> so payment instructions render automatically.
-        </p>
-        <div class="mt-6 flex flex-col sm:flex-row gap-2.5 justify-end">
-          <button type="button" onclick="closeBillingGuideModal()" class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-            Later
-          </button>
-          <a id="goToAccountBillingBtn" href="account.html#billing" class="px-4 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl text-center transition">
-            Go to Billing Settings &rarr;
-          </a>
+    </main>
+
+    <!-- Missing Billing Details Warning Modal -->
+    <div id="billingWarningModal" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-4">
+                ⚠️
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Complete Your Invoicing & Payout Details</h3>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">
+                Before creating client invoices, please configure your legal entity name, Swedish VAT / Org.nr, and IBAN / Bankgiro payout account so they appear automatically on your PDF invoices.
+            </p>
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button onclick="document.getElementById('billingWarningModal').classList.add('hidden')" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                    Later
+                </button>
+                <a id="goBillingSetupBtn" href="account.html#billing" class="px-4 py-2 text-sm font-semibold text-white bg-[#364B59] hover:bg-[#2a3b47] rounded-xl transition">
+                    Configure Now →
+                </a>
+            </div>
         </div>
-      </div>
     </div>
 
     <script>
-        // ==================== 全局配置与状态 ====================
-        const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
-        const urlParams = new URLSearchParams(location.search);
+        const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev/";
+        const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
 
-        let currentPlanKey = "";
-        let maxClientLimit = 0;
-        let invoiceIframeLoaded = false;
-        let expenseIframeLoaded = false;
-        let taxLedgerIframeLoaded = false;
-        let cachedClientList = [];
-        let cachedProjectList = [];
-        let lastClientFetchTime = 0;
-        let activeCurrency = localStorage.getItem("nordic_currency") || "SEK";
-        // 默认汇率：1 EUR = 11.35 SEK（库内项目/发票金额基准默认为 SEK）
-        const DEFAULT_EUR_TO_SEK = 11.35;
-        let eurToSekRate = parseFloat(localStorage.getItem("nordic_eur_to_sek") || String(DEFAULT_EUR_TO_SEK));
-        if (!eurToSekRate || eurToSekRate <= 0) eurToSekRate = DEFAULT_EUR_TO_SEK;
-
         if (!uid) {
-            location.href = "login.html";
+            window.location.href = "login.html";
         } else {
             localStorage.setItem("nordic_uid", uid);
         }
 
-        const accountUrl = `account.html?uid=${encodeURIComponent(uid)}`;
-        document.getElementById("accountLink").href = accountUrl;
-        document.getElementById("statBillingAction").href = `${accountUrl}#billing`;
+        // Update links with uid
+        document.getElementById("accountLink").href = `account.html?uid=${encodeURIComponent(uid)}`;
+        document.getElementById("billingSettingsNav").href = `account.html?uid=${encodeURIComponent(uid)}#billing`;
+        document.getElementById("billingSetupEditLink").href = `account.html?uid=${encodeURIComponent(uid)}#billing`;
+        document.getElementById("goBillingSetupBtn").href = `account.html?uid=${encodeURIComponent(uid)}#billing`;
 
-        // ==================== 轻提示组件 ====================
-        function showToast(msg, type = "info") {
-            const container = document.getElementById("toastContainer");
-            const el = document.createElement("div");
-            const colorMap = {
-                success: "bg-emerald-600 text-white",
-                error: "bg-rose-600 text-white",
-                warning: "bg-amber-600 text-white",
-                info: "bg-slate-800 text-white"
-            };
-            el.className = `toast-item pointer-events-auto px-4 py-3 rounded-lg shadow-lg text-xs font-medium flex items-center justify-between gap-3 ${colorMap[type] || colorMap.info}`;
-            el.innerHTML = `<span>${escapeHtml(msg)}</span>`;
-            container.appendChild(el);
-            setTimeout(() => {
-                el.style.opacity = "0";
-                el.style.transition = "opacity 0.2s";
-                setTimeout(() => el.remove(), 220);
-            }, 3200);
+        // Global State
+        let userProfile = null;
+        let clientList = [];
+        let projectList = [];
+        let invoiceIframeLoaded = false;
+        let expenseIframeLoaded = false;
+        let taxLedgerIframeLoaded = false;
+
+        // ==================== Currency & FX Helpers ====================
+        function getCurrencySettings() {
+            const savedCurrency = localStorage.getItem("nordic_display_currency") || "SEK";
+            const savedRate = parseFloat(localStorage.getItem("nordic_eur_sek_rate")) || 11.35;
+            return { currency: savedCurrency, rate: savedRate };
         }
 
-        // ==================== 币种换算、格式化与联动 ====================
-        // Notion 项目/发票库基准币种为 EUR（€）；切换 SEK 时按汇率乘以 eurToSekRate 换算
-        function convertFromEurBase(amountInEur) {
-            const num = Number(amountInEur || 0);
-            if (activeCurrency === "SEK") {
-                return num * eurToSekRate;
+        function initCurrencyControls() {
+            const { currency, rate } = getCurrencySettings();
+            document.getElementById("displayCurrencySelect").value = currency;
+            document.getElementById("eurToSekRateInput").value = rate.toFixed(2);
+        }
+
+        function formatMoneyFromEur(eurAmount) {
+            const num = Number(eurAmount || 0);
+            const { currency, rate } = getCurrencySettings();
+            if (currency === "SEK") {
+                return `${(num * rate).toFixed(2)} kr`;
             }
-            return num;
+            return `€${num.toFixed(2)}`;
         }
 
-        // 将当前显示币种输入的金额反算为 EUR 基准金额用于写入 Notion
-        function convertToEurBase(amountInDisplayCurrency) {
-            const num = Number(amountInDisplayCurrency || 0);
-            if (activeCurrency === "SEK") {
-                return num / eurToSekRate;
-            }
-            return num;
-        }
+        function onCurrencySettingsChange() {
+            const currency = document.getElementById("displayCurrencySelect").value;
+            const rate = parseFloat(document.getElementById("eurToSekRateInput").value) || 11.35;
 
-        function formatMoney(amountInEur) {
-            const converted = convertFromEurBase(amountInEur);
-            const val = converted.toFixed(2);
-            return activeCurrency === "SEK" ? `${val} kr` : `€${val}`;
-        }
+            localStorage.setItem("nordic_display_currency", currency);
+            localStorage.setItem("nordic_eur_sek_rate", String(rate));
 
-        function broadcastCurrencyState() {
-            ["invoiceIframe", "expenseIframe"].forEach(id => {
-                const frame = document.getElementById(id);
+            // Re-render top pipeline KPI & projects table
+            updateTopKpis();
+            renderProjects();
+
+            // Notify active iframes so they immediately re-render currency
+            ["invoiceIframe", "expenseIframe", "taxLedgerIframe"].forEach(frameId => {
+                const frame = document.getElementById(frameId);
                 if (frame && frame.contentWindow) {
-                    frame.contentWindow.postMessage({
-                        type: "CURRENCY_CHANGE",
-                        currency: activeCurrency,
-                        eurToSekRate: eurToSekRate
-                    }, "*");
+                    try {
+                        frame.contentWindow.postMessage({ type: "NORDIC_CURRENCY_CHANGE", currency, rate }, "*");
+                        if (typeof frame.contentWindow.renderView === "function") {
+                            frame.contentWindow.renderView();
+                        }
+                    } catch (e) {}
                 }
             });
         }
 
-        function applyCurrencyLabels() {
-            document.getElementById("currencySelector").value = activeCurrency;
-            const fxInput = document.getElementById("fxRateInput");
-            if (fxInput) fxInput.value = Number(eurToSekRate).toFixed(2);
-            document.getElementById("thUnitPrice").innerText = `Rate (${activeCurrency})`;
-            document.getElementById("thProjectTotal").innerText = `Pre-Tax Total (${activeCurrency})`;
-            document.getElementById("lblAddRate").innerHTML = `Rate (${activeCurrency}) <span class="text-red-500">*</span>`;
-            document.getElementById("lblEditRate").innerText = `Rate (${activeCurrency})`;
-            updateDashboardStats();
-        }
-
-        document.getElementById("currencySelector").addEventListener("change", (e) => {
-            activeCurrency = e.target.value;
-            localStorage.setItem("nordic_currency", activeCurrency);
-            applyCurrencyLabels();
-            if (cachedProjectList.length > 0) renderProjectRows(cachedProjectList);
-            broadcastCurrencyState();
-            showToast(`Switched to ${activeCurrency} (1 EUR = ${eurToSekRate.toFixed(2)} SEK)`, "info");
-        });
-
-        document.getElementById("fxRateInput").addEventListener("change", (e) => {
-            const nextRate = parseFloat(e.target.value);
-            if (!nextRate || nextRate <= 0) {
-                e.target.value = eurToSekRate.toFixed(2);
-                showToast("FX rate must be greater than 0", "warning");
-                return;
-            }
-            eurToSekRate = nextRate;
-            localStorage.setItem("nordic_eur_to_sek", String(eurToSekRate));
-            applyCurrencyLabels();
-            if (cachedProjectList.length > 0) renderProjectRows(cachedProjectList);
-            broadcastCurrencyState();
-            showToast(`Updated FX rate: 1 EUR = ${eurToSekRate.toFixed(2)} SEK`, "success");
-        });
-
-        // ==================== 通用工具函数 ====================
-        async function postWorker(payload) {
-            const res = await fetch(WORKER_B_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ uid, ...payload })
-            });
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
-            }
-            return await res.json();
-        }
-
-        function escapeHtml(str) {
-            if (str === null || str === undefined) return "";
-            return String(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;");
-        }
-
-        function getBillingProfile() {
-            try {
-                return JSON.parse(localStorage.getItem(`nordic_billing_${uid}`) || "null");
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function updateDashboardStats() {
-            document.getElementById("statClientCount").innerText = cachedClientList.length;
-            document.getElementById("statClientLimit").innerText = `/ ${maxClientLimit || "-"} quota`;
-
-            const projectSum = cachedProjectList.reduce((acc, p) => acc + Number(p.projectValue || 0), 0);
-            document.getElementById("statProjectTotal").innerText = formatMoney(projectSum);
-
-            const profile = getBillingProfile();
-            const statusEl = document.getElementById("statBillingStatus");
-            const actionEl = document.getElementById("statBillingAction");
-            if (profile && profile.legalName && profile.iban) {
-                statusEl.className = "mt-1 text-sm font-semibold text-emerald-600";
-                statusEl.innerText = `✓ Ready (${profile.bankName || "Payout Configured"})`;
-                actionEl.innerText = "Edit →";
-            } else {
-                statusEl.className = "mt-1 text-sm font-semibold text-amber-600";
-                statusEl.innerText = "⚠ Payout Details Missing";
-                actionEl.innerText = "Set Up →";
-            }
-        }
-
-        // ==================== 开票前置校验与 iframe 通信 ====================
-        function checkBillingBeforeInvoice(onReadyCallback) {
-            const savedProfile = getBillingProfile();
-            if (!savedProfile || !savedProfile.iban || !savedProfile.legalName) {
-                const linkBtn = document.getElementById("goToAccountBillingBtn");
-                if (linkBtn && uid) {
-                    linkBtn.href = `account.html?uid=${encodeURIComponent(uid)}#billing`;
-                }
-                const modal = document.getElementById("billingGuideModal");
-                modal.classList.remove("hidden");
-                modal.classList.add("flex");
-                return false;
-            }
-            if (typeof onReadyCallback === "function") {
-                onReadyCallback(savedProfile);
-            }
-            return true;
-        }
-
-        function closeBillingGuideModal() {
-            const modal = document.getElementById("billingGuideModal");
-            modal.classList.add("hidden");
-            modal.classList.remove("flex");
-        }
-
-        window.addEventListener("message", (event) => {
-            const data = event.data || {};
-            if (data.type === "IFRAME_HEIGHT" && data.frameId && data.height) {
-                const iframe = document.getElementById(data.frameId);
-                if (iframe) {
-                    iframe.style.height = Math.max(760, Number(data.height) + 40) + "px";
-                }
-            } else if (data.type === "CHECK_BILLING_PROFILE") {
-                const ok = checkBillingBeforeInvoice();
-                if (event.source) {
-                    event.source.postMessage({ type: "BILLING_PROFILE_RESULT", ready: ok, profile: getBillingProfile() }, "*");
-                }
-            }
-        });
-
-        // ==================== 1. 账户验证与初始化 ====================
-        async function verifyUser() {
-            try {
-                applyCurrencyLabels();
-                const data = await postWorker({});
-                if (!data.success) {
-                    location.href = "error.html";
-                    return;
-                }
-
-                currentPlanKey = data.planKey;
-                maxClientLimit = data.maxClients;
-
-                if (data.billingProfile && (data.billingProfile.legalName || data.billingProfile.iban)) {
-                    localStorage.setItem(`nordic_billing_${uid}`, JSON.stringify(data.billingProfile));
-                }
-
-                document.getElementById("openBatchBtn").style.display = (currentPlanKey === "Trial") ? "none" : "inline-block";
-                document.getElementById("userEmail").innerText = data.email;
-                document.getElementById("planBadge").innerText = `${data.planName} · Up to ${data.maxClients} clients`;
-
-                document.getElementById("loadingBox").classList.add("hidden");
-                document.getElementById("mainBox").classList.remove("hidden");
-
-                await loadClientList(true);
-                loadProjects(true);
-            } catch (err) {
-                console.error("Verify user failed", err);
-                location.href = "error.html";
-            }
-        }
-
-        // ==================== 2. 侧边栏页签切换 ====================
+        // ==================== Navigation & Tabs ====================
         const tabs = {
             client: { btn: document.getElementById("tabClient"), panel: document.getElementById("panelClient") },
             project: { btn: document.getElementById("tabProject"), panel: document.getElementById("panelProject") },
@@ -678,30 +409,28 @@
         };
 
         function switchTab(activeKey) {
-            Object.entries(tabs).forEach(([key, { btn, panel }]) => {
+            Object.keys(tabs).forEach(key => {
                 if (key === activeKey) {
-                    btn.classList.add("active");
-                    panel.classList.remove("hidden");
+                    tabs[key].btn.classList.add("active");
+                    tabs[key].panel.classList.remove("hidden");
                 } else {
-                    btn.classList.remove("active");
-                    panel.classList.add("hidden");
+                    tabs[key].btn.classList.remove("active");
+                    tabs[key].panel.classList.add("hidden");
                 }
             });
         }
 
         tabs.client.btn.onclick = () => switchTab("client");
-
-        tabs.project.btn.onclick = async () => {
-            switchTab("project");
-            await loadClientList(false);
-            fillClientDropdowns();
-            await loadProjects(false);
-        };
+        tabs.project.btn.onclick = () => switchTab("project");
 
         tabs.invoice.btn.onclick = () => {
+            const billing = getBillingProfile();
+            if (!billing || !billing.iban) {
+                document.getElementById("billingWarningModal").classList.remove("hidden");
+            }
             switchTab("invoice");
             if (!invoiceIframeLoaded) {
-                document.getElementById("invoiceIframe").src = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}`;
+                document.getElementById("invoiceIframe").src = `invoices.html?uid=${encodeURIComponent(uid)}`;
                 invoiceIframeLoaded = true;
             }
         };
@@ -709,419 +438,263 @@
         tabs.expense.btn.onclick = () => {
             switchTab("expense");
             if (!expenseIframeLoaded) {
-                document.getElementById("expenseIframe").src = `expenses.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}`;
+                document.getElementById("expenseIframe").src = `expenses.html?uid=${encodeURIComponent(uid)}`;
                 expenseIframeLoaded = true;
             }
         };
+
         tabs.taxLedger.btn.onclick = () => {
             switchTab("taxLedger");
             if (!taxLedgerIframeLoaded) {
-                document.getElementById("taxLedgerIframe").src = `taxledger.html?uid=${uid}`;
+                document.getElementById("taxLedgerIframe").src = `taxledger.html?uid=${encodeURIComponent(uid)}`;
                 taxLedgerIframeLoaded = true;
             }
         };
-        // ==================== 3. 客户管理逻辑 ====================
-        const clientListBox = document.getElementById("clientListBox");
-        const addModal = document.getElementById("addModal");
-        const addForm = document.getElementById("addForm");
-        const modalTitle = document.getElementById("modalTitle");
-        const editPageIdInput = document.getElementById("editPageId");
 
-        async function loadClientList(force = false) {
-            const now = Date.now();
-            if (!force && cachedClientList.length > 0 && (now - lastClientFetchTime < 45000)) {
-                updateDashboardStats();
-                return;
-            }
+        // ==================== Billing Setup Check ====================
+        function getBillingProfile() {
+            if (userProfile && userProfile.billingProfile) return userProfile.billingProfile;
             try {
-                const data = await postWorker({ action: "listClients" });
-                cachedClientList = data.list || [];
-                lastClientFetchTime = Date.now();
-                updateDashboardStats();
-
-                if (!data.success || cachedClientList.length === 0) {
-                    clientListBox.innerHTML = `<div class="p-10 text-center text-gray-400 text-sm">No clients yet. Click "+ Add Client" to create your first record.</div>`;
-                    return;
-                }
-
-                const isTrial = currentPlanKey === "Trial";
-                let html = `
-                <table class="w-full text-sm">
-                    <thead class="table-header">
-                        <tr class="text-left">
-                            <th class="px-4 py-3">Client Name</th>
-                            <th class="px-4 py-3">Email</th>
-                            <th class="px-4 py-3">Phone</th>
-                            <th class="px-4 py-3">Region</th>
-                            <th class="px-4 py-3">VAT / Org.nr</th>
-                            <th class="px-4 py-3">Notes</th>
-                            <th class="px-4 py-3">Created</th>
-                            <th class="px-4 py-3 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">`;
-
-                cachedClientList.forEach((item, index) => {
-                    const formattedDate = item.createdTime ? item.createdTime.split("T")[0] : "-";
-                    html += `
-                    <tr class="hover:bg-gray-50/70">
-                        <td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(item.clientName)}</td>
-                        <td class="px-4 py-3 text-gray-600">${escapeHtml(item.contactEmail) || "-"}</td>
-                        <td class="px-4 py-3 text-gray-600">${escapeHtml(item.phone) || "-"}</td>
-                        <td class="px-4 py-3">
-                            ${item.countryRegion ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">${escapeHtml(item.countryRegion)}</span>` : `<span class="text-xs text-amber-600">Unassigned</span>`}
-                        </td>
-                        <td class="px-4 py-3 text-gray-600 font-mono text-xs">${escapeHtml(item.vatNo) || "-"}</td>
-                        <td class="px-4 py-3 max-w-xs truncate text-gray-500">${escapeHtml(item.notes) || "-"}</td>
-                        <td class="px-4 py-3 text-xs text-gray-500">${formattedDate}</td>
-                        <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <button data-index="${index}" class="editClientBtn text-blue-600 hover:underline mr-3 text-xs font-medium">Edit</button>
-                            ${!isTrial ? `<button data-pageid="${escapeHtml(item.pageId)}" class="delClientBtn text-red-500 hover:underline text-xs font-medium">Delete</button>` : ""}
-                        </td>
-                    </tr>`;
-                });
-
-                html += `</tbody></table>`;
-                clientListBox.innerHTML = html;
-
-                document.querySelectorAll(".editClientBtn").forEach(btn => {
-                    btn.onclick = function() {
-                        const item = cachedClientList[Number(this.dataset.index)];
-                        if (!item) return;
-
-                        addForm.reset();
-                        editPageIdInput.value = item.pageId;
-                        modalTitle.innerText = "Edit Client";
-                        addForm.clientName.value = item.clientName || "";
-                        addForm.contactEmail.value = item.contactEmail || "";
-                        addForm.phone.value = item.phone || "";
-                        addForm.countryRegion.value = item.countryRegion || "";
-                        addForm.vatNo.value = item.vatNo || "";
-                        addForm.notes.value = item.notes || "";
-                        addModal.classList.remove("hidden");
-                    };
-                });
-
-                document.querySelectorAll(".delClientBtn").forEach(btn => {
-                    btn.onclick = function() {
-                        delClient(this.dataset.pageid);
-                    };
-                });
-            } catch (err) {
-                console.error(err);
-                clientListBox.innerHTML = `<div class="p-10 text-center text-red-500 text-sm">Failed to load client directory</div>`;
-            }
-        }
-
-        addForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = new FormData(addForm);
-            const editPageId = editPageIdInput.value.trim();
-
-            const payload = {
-                clientName: formData.get("clientName"),
-                contactEmail: formData.get("contactEmail"),
-                phone: formData.get("phone"),
-                countryRegion: formData.get("countryRegion"),
-                vatNo: formData.get("vatNo"),
-                notes: formData.get("notes")
-            };
-
-            try {
-                let data;
-                if (editPageId) {
-                    payload.pageId = editPageId;
-                    data = await postWorker({ action: "editClient", payload });
-                } else {
-                    data = await postWorker({ action: "addClient", payload });
-                }
-
-                if (data.success) {
-                    addModal.classList.add("hidden");
-                    addForm.reset();
-                    editPageIdInput.value = "";
-                    showToast(editPageId ? "Client record updated" : "Client added to directory", "success");
-                    await loadClientList(true);
-                } else {
-                    showToast(data.error || "Unable to save client", "error");
-                }
-            } catch (err) {
-                console.error(err);
-                showToast("Network error while saving client", "error");
-            }
-        });
-
-        async function delClient(pageId) {
-            if (!confirm("Delete this client record? Existing linked projects and invoices will remain archived.")) return;
-            try {
-                const data = await postWorker({ action: "deleteClient", payload: { pageId } });
-                if (!data.success) {
-                    showToast(data.error || "Failed to delete client", "error");
-                    return;
-                }
-                showToast("Client deleted", "success");
-                await loadClientList(true);
-            } catch (err) {
-                console.error(err);
-                showToast("Delete request failed", "error");
-            }
-        }
-
-        document.getElementById("openAddBtn").onclick = () => {
-            addForm.reset();
-            editPageIdInput.value = "";
-            modalTitle.innerText = "Add New Client";
-            addModal.classList.remove("hidden");
-        };
-        document.getElementById("closeModalBtn").onclick = () => {
-            addModal.classList.add("hidden");
-        };
-
-        const batchModal = document.getElementById("batchModal");
-        const batchTextarea = document.getElementById("batchTextarea");
-
-        document.getElementById("openBatchBtn").onclick = () => {
-            batchTextarea.value = "";
-            batchModal.classList.remove("hidden");
-        };
-        document.getElementById("closeBatchBtn").onclick = () => {
-            batchModal.classList.add("hidden");
-        };
-        document.getElementById("submitBatchBtn").onclick = async () => {
-            const raw = batchTextarea.value.trim();
-            if (!raw) {
-                showToast("Please paste at least one client row to import", "warning");
-                return;
-            }
-            const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
-            try {
-                const data = await postWorker({ action: "batchAddClient", payload: { lines } });
-                if (!data.success) {
-                    showToast(data.error || "Batch import failed", "error");
-                    return;
-                }
-                showToast(data.message || "Clients imported successfully", "success");
-                batchModal.classList.add("hidden");
-                await loadClientList(true);
+                return JSON.parse(localStorage.getItem(`nordic_billing_${uid}`) || "null");
             } catch (e) {
-                console.error(e);
-                showToast("Batch import request failed", "error");
+                return null;
             }
-        };
-
-        // ==================== 4. 项目管理逻辑 ====================
-        function fillClientDropdowns() {
-            const selects = [
-                document.getElementById("selProjectClient"),
-                document.getElementById("editProjectClient")
-            ];
-            selects.forEach(sel => {
-                sel.innerHTML = `<option value="">-- Select Client --</option>`;
-                cachedClientList.forEach(c => {
-                    const opt = document.createElement("option");
-                    opt.value = c.pageId;
-                    opt.innerText = c.countryRegion ? `${c.clientName} (${c.countryRegion})` : c.clientName;
-                    sel.appendChild(opt);
-                });
-            });
         }
 
-        function quickCreateInvoiceFromProject(proj) {
-            checkBillingBeforeInvoice(() => {
-                switchTab("invoice");
-                const targetUrl = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(activeCurrency)}&fx=${encodeURIComponent(eurToSekRate)}&prefillClient=${encodeURIComponent(proj.clientPageId || "")}&prefillProject=${encodeURIComponent(proj.id || "")}`;
-                document.getElementById("invoiceIframe").src = targetUrl;
-                invoiceIframeLoaded = true;
-            });
+        function refreshBillingBannerStatus() {
+            const billing = getBillingProfile();
+            const statusEl = document.getElementById("billingSetupStatus");
+            if (billing && (billing.legalName || billing.iban)) {
+                const bankLabel = billing.bankName ? ` (${billing.bankName})` : "";
+                statusEl.innerHTML = `<span class="text-emerald-300">✓ Ready${bankLabel}</span>`;
+            } else {
+                statusEl.innerHTML = `<span class="text-amber-300">⚠ Action Required</span>`;
+            }
         }
 
-        function renderProjectRows(projects) {
-            const tbody = document.getElementById("projectTableBody");
-            if (projects.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">No projects yet. Click "+ New Project" to start tracking billable work.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = "";
-            projects.forEach((p, index) => {
-                const foundClient = cachedClientList.find(c => c.pageId === p.clientPageId);
-                const clientName = foundClient ? foundClient.clientName : "-";
-
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-gray-50/70";
-                tr.innerHTML = `
-                    <td class="p-3 font-medium text-gray-900">${escapeHtml(p.projectName)}</td>
-                    <td class="p-3 text-gray-600">${escapeHtml(clientName)}</td>
-                    <td class="p-3">
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">${escapeHtml(p.billingType)}</span>
-                    </td>
-                    <td class="p-3 text-right text-gray-700">${formatMoney(p.rateAmount)}</td>
-                    <td class="p-3 text-right text-gray-700">${p.totalHours}</td>
-                    <td class="p-3 text-right font-semibold text-emerald-600">${formatMoney(p.projectValue)}</td>
-                    <td class="p-3 text-center whitespace-nowrap">
-                        <button data-index="${index}" class="invoiceProjBtn text-emerald-600 hover:underline mr-3 text-xs font-semibold">Bill Invoice</button>
-                        <button data-index="${index}" class="editProjBtn text-blue-600 hover:underline mr-3 text-xs font-medium">Edit</button>
-                        <button data-id="${escapeHtml(p.id)}" class="delProjBtn text-red-500 hover:underline text-xs font-medium">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.querySelectorAll(".invoiceProjBtn").forEach(btn => {
-                btn.onclick = function() {
-                    const proj = cachedProjectList[Number(this.dataset.index)];
-                    if (proj) quickCreateInvoiceFromProject(proj);
-                };
-            });
-
-            document.querySelectorAll(".editProjBtn").forEach(btn => {
-                btn.onclick = function() {
-                    const proj = cachedProjectList[Number(this.dataset.index)];
-                    if (proj) openEditProject(proj);
-                };
-            });
-
-            document.querySelectorAll(".delProjBtn").forEach(btn => {
-                btn.onclick = function() {
-                    delProject(this.dataset.id);
-                };
-            });
-        }
-
-        async function loadProjects(silent = false) {
-            const tbody = document.getElementById("projectTableBody");
-            if (!silent) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400">Loading projects...</td></tr>`;
-            }
-
+        // ==================== Data Loading ====================
+        async function loadWorkspaceData() {
             try {
-                const json = await postWorker({ action: "getProjects" });
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ uid })
+                });
+                const json = await res.json();
                 if (!json.success) {
-                    if (!silent) {
-                        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">${escapeHtml(json.error || json.msg)}</td></tr>`;
-                    }
-                    return;
+                    throw new Error(json.error || "Session expired");
                 }
 
-                cachedProjectList = json.projects || [];
-                updateDashboardStats();
-                renderProjectRows(cachedProjectList);
+                userProfile = json;
+                document.getElementById("userEmail").innerText = json.email || uid;
+                document.getElementById("userPlanBadge").innerText = `${json.planName || "Standard"} · Up to ${json.maxClients || 10} clients`;
+                document.getElementById("maxClientQuota").innerText = json.maxClients || 10;
+
+                refreshBillingBannerStatus();
+                await Promise.all([loadClients(), loadProjects()]);
+            } catch (err) {
+                console.error("Workspace load error:", err);
+                document.getElementById("userEmail").innerText = "Connection Error";
+            }
+        }
+
+        async function loadClients() {
+            try {
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ uid, action: "listClients" })
+                });
+                const json = await res.json();
+                clientList = json.clients || json.list || [];
+                renderClients();
+                updateTopKpis();
             } catch (e) {
-                console.error(e);
-                if (!silent) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">Failed to load projects</td></tr>`;
+                console.error("Failed to load clients:", e);
+            }
+        }
+
+        function renderClients() {
+            const tbody = document.getElementById("clientTableBody");
+            const select = document.getElementById("projectClientSelect");
+
+            select.innerHTML = `<option value="">-- Select Client --</option>` +
+                clientList.map(c => `<option value="${c.id || c.name}">${c.name}</option>`).join("");
+
+            if (clientList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No clients yet. Click "+ Add Client" to get started.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = clientList.map(c => {
+                const country = c.country || "Sweden";
+                const vat = c.vatNumber || c.vat || "";
+                let ruleBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">SE · 25% MOMS</span>`;
+                if (country === "EU") {
+                    ruleBadge = vat
+                        ? `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">EU · 0% Reverse Charge</span>`
+                        : `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">EU · Missing VAT ID (25%)</span>`;
+                } else if (country === "Non-EU") {
+                    ruleBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Export · 0% Exempt</span>`;
                 }
+
+                return `
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="py-3.5 px-4 font-semibold text-slate-900">${c.name || "-"}</td>
+                        <td class="py-3.5 px-4">${ruleBadge}</td>
+                        <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${vat || "-"}</td>
+                        <td class="py-3.5 px-4 text-slate-600">${c.email || "-"}</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <button onclick="tabs.invoice.btn.click()" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                Create Invoice →
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        async function loadProjects() {
+            try {
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ uid, action: "listProjects" })
+                });
+                const json = await res.json();
+                projectList = json.projects || json.list || [];
+                renderProjects();
+                updateTopKpis();
+            } catch (e) {
+                console.error("Failed to load projects:", e);
             }
         }
 
-        const modalAddProject = document.getElementById("modalAddProject");
-        document.getElementById("btnAddProject").onclick = () => {
-            document.getElementById("inpProjectName").value = "";
-            document.getElementById("inpRateAmount").value = "";
-            document.getElementById("inpTotalHours").value = "";
-            modalAddProject.classList.remove("hidden");
-            modalAddProject.classList.add("flex");
-        };
-        document.getElementById("closeProjectModal").onclick = () => {
-            modalAddProject.classList.add("hidden");
-            modalAddProject.classList.remove("flex");
-        };
-        document.getElementById("submitAddProject").onclick = async () => {
-            const projectName = document.getElementById("inpProjectName").value.trim();
-            const clientPageId = document.getElementById("selProjectClient").value;
-            const billingType = document.getElementById("selBillingType").value;
-            const rateAmount = convertToEurBase(Number(document.getElementById("inpRateAmount").value));
-            const totalHours = Number(document.getElementById("inpTotalHours").value);
-
-            if (!projectName || !clientPageId) {
-                showToast("Please enter a project name and select a client", "warning");
+        function renderProjects() {
+            const tbody = document.getElementById("projectTableBody");
+            if (projectList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">No projects recorded yet.</td></tr>`;
                 return;
             }
 
-            const json = await postWorker({
-                action: "addProject",
-                projectName,
-                clientPageId,
-                billingType,
-                rateAmount,
-                totalHours
-            });
-
-            if (json.success) {
-                showToast(json.msg || "Project created", "success");
-                modalAddProject.classList.add("hidden");
-                modalAddProject.classList.remove("flex");
-                await loadProjects(false);
-            } else {
-                showToast(json.error || "Unable to create project", "error");
-            }
-        };
-
-        const editProjectModal = document.getElementById("editProjectModal");
-        function openEditProject(proj) {
-            fillClientDropdowns();
-            document.getElementById("editProjectId").value = proj.id;
-            document.getElementById("editProjectName").value = proj.projectName;
-            document.getElementById("editProjectClient").value = proj.clientPageId;
-            document.getElementById("editBillingType").value = proj.billingType;
-            document.getElementById("editRateAmount").value = convertFromEurBase(proj.rateAmount).toFixed(2);
-            document.getElementById("editTotalHours").value = proj.totalHours;
-
-            editProjectModal.classList.remove("hidden");
-            editProjectModal.classList.add("flex");
+            tbody.innerHTML = projectList.map(p => {
+                const budgetEur = Number(p.budget || p.value || p.amount || 0);
+                return `
+                    <tr class="hover:bg-slate-50/80">
+                        <td class="py-3.5 px-4 font-semibold text-slate-900">${p.name || p.title || "-"}</td>
+                        <td class="py-3.5 px-4 text-slate-600">${p.clientName || p.client || "-"}</td>
+                        <td class="py-3.5 px-4 font-semibold text-slate-800">${formatMoneyFromEur(budgetEur)}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                                ${p.status || "In Progress"}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
         }
 
-        document.getElementById("btnCancelEditProject").onclick = () => {
-            editProjectModal.classList.add("hidden");
-            editProjectModal.classList.remove("flex");
-        };
+        function updateTopKpis() {
+            document.getElementById("activeClientCount").innerText = clientList.length;
+            const totalPipelineEur = projectList.reduce((sum, p) => sum + Number(p.budget || p.value || p.amount || 0), 0);
+            document.getElementById("pipelineTotalValue").innerText = formatMoneyFromEur(totalPipelineEur);
+        }
 
-        document.getElementById("btnSaveEditProject").onclick = async () => {
-            const projectId = document.getElementById("editProjectId").value;
-            const projectName = document.getElementById("editProjectName").value.trim();
-            const clientPageId = document.getElementById("editProjectClient").value;
-            const billingType = document.getElementById("editBillingType").value;
-            const rateAmount = convertToEurBase(Number(document.getElementById("editRateAmount").value));
-            const totalHours = document.getElementById("editTotalHours").value;
-
-            if (!projectName || !clientPageId) {
-                showToast("Project name and client are required", "warning");
+        // ==================== Form Actions ====================
+        function openClientModal() {
+            const max = Number(userProfile?.maxClients || 10);
+            if (clientList.length >= max) {
+                alert(`Client quota reached (${max} clients). Please upgrade your subscription plan in Account & Billing.`);
                 return;
             }
+            document.getElementById("clientFormCard").classList.remove("hidden");
+        }
+        function closeClientModal() {
+            document.getElementById("clientFormCard").classList.add("hidden");
+        }
 
-            const json = await postWorker({
-                action: "editProject",
-                projectId,
-                projectName,
-                clientPageId,
-                billingType,
-                rateAmount,
-                totalHours
-            });
+        async function createClient(e) {
+            e.preventDefault();
+            const btn = document.getElementById("saveClientBtn");
+            btn.disabled = true;
+            btn.innerText = "Saving...";
 
-            if (json.success) {
-                showToast(json.msg || "Project updated", "success");
-                editProjectModal.classList.add("hidden");
-                editProjectModal.classList.remove("flex");
-                await loadProjects(false);
-            } else {
-                showToast(json.error || "Failed to update project", "error");
-            }
-        };
+            try {
+                const payload = {
+                    uid,
+                    action: "createClient",
+                    name: document.getElementById("clientName").value.trim(),
+                    email: document.getElementById("clientEmail").value.trim(),
+                    country: document.getElementById("clientCountry").value,
+                    vatNumber: document.getElementById("clientVat").value.trim(),
+                    address: document.getElementById("clientAddress").value.trim()
+                };
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (!json.success) throw new Error(json.error || "Failed to save client");
 
-        async function delProject(projectId) {
-            if (!confirm("Delete this project?")) return;
-            const delJson = await postWorker({ action: "deleteProject", projectId });
-            if (delJson.success) {
-                showToast(delJson.msg || "Project deleted", "success");
-                await loadProjects(false);
-            } else {
-                showToast(delJson.error || "Failed to delete project", "error");
+                e.target.reset();
+                closeClientModal();
+                await loadClients();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Client";
             }
         }
 
-        // ==================== 应用入口 ====================
-        verifyUser();
+        function openProjectModal() {
+            document.getElementById("projectFormCard").classList.remove("hidden");
+        }
+        function closeProjectModal() {
+            document.getElementById("projectFormCard").classList.add("hidden");
+        }
+
+        async function createProject(e) {
+            e.preventDefault();
+            const btn = document.getElementById("saveProjectBtn");
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                const sel = document.getElementById("projectClientSelect");
+                const clientName = sel.options[sel.selectedIndex]?.text || "";
+                const payload = {
+                    uid,
+                    action: "createProject",
+                    name: document.getElementById("projectName").value.trim(),
+                    clientId: sel.value,
+                    clientName,
+                    budget: parseFloat(document.getElementById("projectBudgetEur").value) || 0,
+                    status: document.getElementById("projectStatus").value
+                };
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (!json.success) throw new Error(json.error || "Failed to create project");
+
+                e.target.reset();
+                closeProjectModal();
+                await loadProjects();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Create Project";
+            }
+        }
+
+        // Init
+        initCurrencyControls();
+        loadWorkspaceData();
     </script>
 </body>
 </html>
