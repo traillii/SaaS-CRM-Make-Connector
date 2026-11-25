@@ -367,20 +367,18 @@
       try {
         const query = CURRENT_UID ? `?uid=${encodeURIComponent(CURRENT_UID)}` : "";
 
-        const [expRes, invBRes, invCRes] = await Promise.all([
+        const [expRes, invBRes] = await Promise.all([
           fetch(`${WORKER_C_URL}/api/expenses${query}`).then(r => r.json()).catch(() => ({ data: [] })),
           fetch(WORKER_B_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ uid: CURRENT_UID, action: "listInvoices" })
-          }).then(r => r.json()).catch(() => ({ list: [] })),
-          fetch(`${WORKER_C_URL}/api/invoices${query}`).then(r => r.ok ? r.json() : ({ data: [] })).catch(() => ({ data: [] }))
+          }).then(r => r.json()).catch(() => ({}))
         ]);
-
+        
         const expenses = expRes.data || [];
-        const invoices = (invBRes.list && invBRes.list.length)
-          ? invBRes.list
-          : (invBRes.invoices && invBRes.invoices.length ? invBRes.invoices : (invCRes.data || []));
+        const invoices = invBRes.list || invBRes.invoices || invBRes.data || [];
+
 
         const yearMap = {};
         const ensureYear = (yr) => {
