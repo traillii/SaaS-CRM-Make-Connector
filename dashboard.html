@@ -457,7 +457,7 @@
                 btn.innerText = "...";
             }
             try {
-                const res = await fetch("https://api.frankfurter.app/latest?from=EUR&to=SEK");
+                const res = await fetch("https://https://frankfurter.dev/latest?from=EUR&to=SEK");
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 const liveRate = Number(data?.rates?.SEK || 0);
