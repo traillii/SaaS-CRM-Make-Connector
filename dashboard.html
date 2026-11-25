@@ -145,28 +145,49 @@
             <div class="mx-auto">
 
                 <!-- 顶部经营指标概览卡片 -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div class="card-box p-4">
-                        <div class="text-xs text-gray-500 font-medium">Active Client Quota</div>
-                        <div class="mt-1 flex items-baseline gap-2">
-                            <span id="statClientCount" class="text-xl font-bold text-gray-900">0</span>
-                            <span id="statClientLimit" class="text-xs text-gray-500">/ -</span>
-                        </div>
-                    </div>
-                    <div class="card-box p-4">
-                        <div class="text-xs text-gray-500 font-medium">Pipeline Pre-Tax Value</div>
-                        <div class="mt-1">
-                            <span id="statProjectTotal" class="text-xl font-bold text-emerald-600">-</span>
-                        </div>
-                    </div>
-                    <div class="card-box p-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-gray-500 font-medium">Invoicing & Payout Setup</div>
-                            <div id="statBillingStatus" class="mt-1 text-sm font-semibold text-amber-600">Checking status...</div>
-                        </div>
-                        <a id="statBillingAction" href="#" class="text-xs font-medium text-blue-600 hover:underline">Configure &rarr;</a>
-                    </div>
+<!-- 顶部蓝色商务概览横幅（保持原有 ID 不变，自动同步数据） -->
+<div class="mb-6 rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-5 sm:p-6 text-white shadow-md border border-blue-500/30">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        
+        <!-- 卡片 1：活跃客户配额 -->
+        <div class="rounded-lg bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3.5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-blue-100 uppercase tracking-wider">Active Client Quota</span>
+                <span class="text-blue-200 text-sm">👥</span>
+            </div>
+            <div class="mt-2 flex items-baseline gap-1.5">
+                <!-- 保留你原有的数字容器或整体替换，确保内部 id 不变 -->
+                <div id="kpiClientQuota" class="text-2xl font-bold text-white tracking-tight">0 / -</div>
+            </div>
+        </div>
+
+        <!-- 卡片 2：项目税前总价值 -->
+        <div class="rounded-lg bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3.5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-blue-100 uppercase tracking-wider">Pipeline Pre-Tax Value</span>
+                <span class="text-blue-200 text-sm">📈</span>
+            </div>
+            <div class="mt-2">
+                <div id="kpiPipelineValue" class="text-2xl font-bold text-emerald-300 tracking-tight">-</div>
+            </div>
+        </div>
+
+        <!-- 卡片 3：开票与收款设置状态 -->
+        <div class="rounded-lg bg-white/10 backdrop-blur-xs border border-white/15 px-4 py-3.5 flex items-center justify-between gap-3">
+            <div>
+                <div class="text-xs font-medium text-blue-100 uppercase tracking-wider">Invoicing & Payout Setup</div>
+                <div id="kpiBillingStatus" class="mt-2 text-sm font-semibold text-white flex items-center gap-1.5">
+                    Checking status...
                 </div>
+            </div>
+            <a id="kpiBillingLink" href="account.html#billing" class="shrink-0 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-medium text-white border border-white/20 transition">
+                Edit →
+            </a>
+        </div>
+
+    </div>
+</div>
+
 
                 <!-- ==================== 1. Client Management Panel ==================== -->
                 <div id="panelClient">
