@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nordic Tax Ledger | Nordic CRM</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { margin: 0 auto; }
+
+    /* Header */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .header-bar h2 { font-size: 20px; font-weight: 700; }
+    .header-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .actions { display: flex; gap: 10px; align-items: center; }
+
+    select, .btn {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+    .btn {
+      cursor: pointer;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { background: #f1f5f9; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    /* Hero Tax Reserve Banner */
+    .reserve-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+    .reserve-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; font-weight: 600; }
+    .reserve-main { font-size: 32px; font-weight: 800; color: #38bdf8; margin-top: 4px; }
+    .reserve-sub { font-size: 12px; color: #cbd5e1; margin-top: 4px; }
+    .reserve-breakdown {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .reserve-breakdown .val { font-size: 20px; font-weight: 700; margin-top: 2px; }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .kpi-title { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .kpi-value { font-size: 22px; font-weight: 700; color: var(--text); }
+    .kpi-foot { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .text-green { color: var(--success); }
+    .text-blue { color: var(--primary); }
+    .text-amber { color: var(--warning); }
+    .text-red { color: var(--danger); }
+
+    /* Table */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .table-header-bar {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .table-header-bar h3 { font-size: 15px; font-weight: 700; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 12px 14px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f8fafc; font-weight: 600; color: var(--muted); }
+    tr:hover td { background: #f8fafc; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .disclaimer {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      background: #f1f5f9;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Header -->
+    <div class="header-bar">
+      <div>
+        <h2>Nordic Tax Ledger (DB5)</h2>
+        <div class="header-sub">Real-time rollup of paid invoices, deductible expenses, Swedish MOMS, and statutory tax reserve buffer</div>
+      </div>
+      <div class="actions">
+        <select id="yearFilter" onchange="renderView()">
+          <option value="ALL">All Tax Years</option>
+          <option value="2026" selected>2026 Tax Year</option>
+          <option value="2025">2025 Tax Year</option>
+        </select>
+        <button class="btn" onclick="exportLedgerCsv()">⬇ Export Summary CSV</button>
+        <button class="btn btn-primary" onclick="loadTaxLedger()">↻ Sync Ledger</button>
+      </div>
+    </div>
+
+    <!-- Hero Tax Reserve Buffer -->
+    <div class="reserve-banner">
+      <div>
+        <div class="reserve-label">Total Tax Reserve Buffer</div>
+        <div class="reserve-main" id="heroReserve">€0.00</div>
+        <div class="reserve-sub">Recommended cash set-aside for Skatteverket (MOMS + Egenavgifter + Income Tax)</div>
+      </div>
+      <div class="reserve-breakdown">
+        <div class="reserve-label">Net VAT Owed to Gov (MOMS)</div>
+        <div class="val" id="heroVatOwed" style="color:#fbbf24;">€0.00</div>
+        <div class="reserve-sub">Output VAT − Reclaimable Input VAT</div>
+      </div>
+      <div class="reserve-breakdown">
+        <div class="reserve-label">Nordic Social Security (~28.97%)</div>
+        <div class="val" id="heroSocial">€0.00</div>
+        <div class="reserve-sub">Estimated Swedish Egenavgifter on Net Profit</div>
+      </div>
+      <div class="reserve-breakdown">
+        <div class="reserve-label">Municipal & State Tax (~32%)</div>
+        <div class="val" id="heroIncomeTax">€0.00</div>
+        <div class="reserve-sub">Estimated Kommunalskatt after standard deduction</div>
+      </div>
+    </div>
+
+    <!-- P&L and VAT KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">Total Revenue (Paid Net)</div>
+        <div class="kpi-value text-green" id="kpiRevenue">€0.00</div>
+        <div class="kpi-foot">Rolled up from DB3 Paid Invoices</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Total Allowed Expenses</div>
+        <div class="kpi-value" id="kpiExpenses">€0.00</div>
+        <div class="kpi-foot">Rolled up from DB4 Deductible Expenses</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Net Business Profit</div>
+        <div class="kpi-value text-blue" id="kpiProfit">€0.00</div>
+        <div class="kpi-foot">Total Revenue − Allowed Expenses</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Output VAT Generated</div>
+        <div class="kpi-value text-amber" id="kpiOutputVat">€0.00</div>
+        <div class="kpi-foot">Collected on Swedish 25% MOMS Invoices</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Input VAT Paid (Reclaimable)</div>
+        <div class="kpi-value text-green" id="kpiInputVat">€0.00</div>
+        <div class="kpi-foot">Deductible MOMS from Business Purchases</div>
+      </div>
+    </div>
+
+    <!-- Annual Tax Ledger Table (Mirrors Notion DB5) -->
+    <div class="table-card">
+      <div class="table-header-bar">
+        <h3>Annual Tax Ledger Breakdown (Synced with Notion DB5)</h3>
+        <span id="syncStatusBadge" class="badge">Connecting to Notion...</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tax Year</th>
+              <th>Total Revenue (Paid)</th>
+              <th>Allowed Expenses</th>
+              <th>Output VAT</th>
+              <th>Input VAT</th>
+              <th>Net Business Profit</th>
+              <th>Net VAT Owed</th>
+              <th>Social Security</th>
+              <th>Municipal & State Tax</th>
+              <th>Total Tax Reserve</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody">
+            <tr><td colspan="10" style="text-align:center; padding:28px; color:var(--muted);">Loading tax ledger data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Tax Estimation Notice:</strong> Figures mirror your Notion <em>DB5: Nordic Tax Ledger</em> rollups and formulas. For live client-side calculations, Swedish self-employed social security (<em>Egenavgifter</em>) is estimated at 28.97% and average municipal income tax (<em>Kommunalskatt</em>) at ~32% on taxable net business profit after standard schablonavdrag. Always verify final filings with Skatteverket.
+    </div>
+  </div>
+
+  <script>
+    const WORKER_C_URL = "https://workerc.qq596337481.workers.dev";
+    const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
+    const urlParams = new URLSearchParams(window.location.search);
+    const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
+
+    let ledgerRows = [];
+
+    function fmtEur(val) {
+      return "€" + Number(val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    async function loadTaxLedger() {
+      const badge = document.getElementById("syncStatusBadge");
+      badge.innerText = "Syncing...";
+
+      try {
+        const query = CURRENT_UID ? `?uid=${encodeURIComponent(CURRENT_UID)}` : "";
+        const directRes = await fetch(`${WORKER_C_URL}/api/tax-ledger${query}`).catch(() => null);
+
+        if (directRes && directRes.ok) {
+          const json = await directRes.json();
+          if (json.success && Array.isArray(json.data)) {
+            ledgerRows = json.data;
+            badge.innerText = "✓ Synced from Notion DB5";
+            renderView();
+            return;
+          }
+        }
+
+        const [expRes, invRes] = await Promise.all([
+          fetch(`${WORKER_C_URL}/api/expenses${query}`).then(r => r.json()).catch(() => ({ data: [] })),
+          fetch(WORKER_B_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid: CURRENT_UID, action: "listInvoices" })
+          }).then(r => r.json()).catch(() => ({ list: [] }))
+        ]);
+
+        const expenses = expRes.data || [];
+        const invoices = invRes.list || invRes.invoices || [];
+
+        const yearMap = {};
+        const ensureYear = (yr) => {
+          const key = String(yr || "2026");
+          if (!yearMap[key]) {
+            yearMap[key] = {
+              taxYear: key,
+              totalRevenue: 0,
+              totalAllowedExpenses: 0,
+              outputVat: 0,
+              inputVat: 0,
+              netProfit: 0,
+              netVatOwed: 0,
+              socialSecurity: 0,
+              municipalStateTax: 0,
+              totalTaxReserve: 0
+            };
+          }
+          return yearMap[key];
+        };
+
+        ensureYear("2026");
+
+        invoices.forEach(inv => {
+          const status = (inv.status || inv.paymentStatus || "").toLowerCase();
+          if (status !== "paid") return;
+          const dateStr = inv.dueDate || inv.invoiceDate || inv.createdTime || "2026";
+          const yr = dateStr.slice(0, 4);
+          const row = ensureYear(yr);
+
+          const net = Number(inv.netAmount || inv.amount || 0);
+          const vatRate = Number(inv.vatRate || 0);
+          const vatAmt = inv.vatAmount !== undefined ? Number(inv.vatAmount) : net * vatRate;
+
+          row.totalRevenue += net;
+          row.outputVat += vatAmt;
+        });
+
+        expenses.forEach(exp => {
+          const row = ensureYear(exp.taxLedger || "2026");
+          row.totalAllowedExpenses += Number(exp.eligibleDeductibleAmount || 0);
+          row.inputVat += Number(exp.reclaimableInputVat || 0);
+        });
+
+        Object.values(yearMap).forEach(row => {
+          row.netProfit = Math.max(0, row.totalRevenue - row.totalAllowedExpenses);
+          row.netVatOwed = row.outputVat - row.inputVat;
+
+          row.socialSecurity = row.netProfit * 0.2173;
+          const taxableIncome = Math.max(0, row.netProfit - row.socialSecurity);
+          row.municipalStateTax = taxableIncome * 0.32;
+          row.totalTaxReserve = Math.max(0, row.netVatOwed) + row.socialSecurity + row.municipalStateTax;
+        });
+
+        ledgerRows = Object.values(yearMap).sort((a, b) => b.taxYear.localeCompare(a.taxYear));
+        badge.innerText = "✓ Live Rollup (DB3 + DB4)";
+        renderView();
+      } catch (err) {
+        console.error(err);
+        badge.innerText = "⚠ Sync Error";
+      }
+    }
+
+    function renderView() {
+      const selectedYear = document.getElementById("yearFilter").value;
+      const filtered = selectedYear === "ALL"
+        ? ledgerRows
+        : ledgerRows.filter(r => r.taxYear === selectedYear);
+
+      const totals = filtered.reduce((acc, r) => {
+        acc.totalRevenue += r.totalRevenue || 0;
+        acc.totalAllowedExpenses += r.totalAllowedExpenses || 0;
+        acc.outputVat += r.outputVat || 0;
+        acc.inputVat += r.inputVat || 0;
+        acc.netProfit += r.netProfit || 0;
+        acc.netVatOwed += r.netVatOwed || 0;
+        acc.socialSecurity += r.socialSecurity || 0;
+        acc.municipalStateTax += r.municipalStateTax || 0;
+        acc.totalTaxReserve += r.totalTaxReserve || 0;
+        return acc;
+      }, {
+        totalRevenue: 0, totalAllowedExpenses: 0, outputVat: 0, inputVat: 0,
+        netProfit: 0, netVatOwed: 0, socialSecurity: 0, municipalStateTax: 0, totalTaxReserve: 0
+      });
+
+      document.getElementById("heroReserve").innerText = fmtEur(totals.totalTaxReserve);
+      document.getElementById("heroVatOwed").innerText = fmtEur(totals.netVatOwed);
+      document.getElementById("heroSocial").innerText = fmtEur(totals.socialSecurity);
+      document.getElementById("heroIncomeTax").innerText = fmtEur(totals.municipalStateTax);
+
+      document.getElementById("kpiRevenue").innerText = fmtEur(totals.totalRevenue);
+      document.getElementById("kpiExpenses").innerText = fmtEur(totals.totalAllowedExpenses);
+      document.getElementById("kpiProfit").innerText = fmtEur(totals.netProfit);
+      document.getElementById("kpiOutputVat").innerText = fmtEur(totals.outputVat);
+      document.getElementById("kpiInputVat").innerText = fmtEur(totals.inputVat);
+
+      const tbody = document.getElementById("ledgerTableBody");
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--muted);">No ledger records for selected year.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => `
+        <tr>
+          <td><strong>${r.taxYear}</strong></td>
+          <td class="text-green" style="font-weight:600;">${fmtEur(r.totalRevenue)}</td>
+          <td>${fmtEur(r.totalAllowedExpenses)}</td>
+          <td>${fmtEur(r.outputVat)}</td>
+          <td class="text-green">${fmtEur(r.inputVat)}</td>
+          <td class="text-blue" style="font-weight:600;">${fmtEur(r.netProfit)}</td>
+          <td class="text-amber" style="font-weight:600;">${fmtEur(r.netVatOwed)}</td>
+          <td>${fmtEur(r.socialSecurity)}</td>
+          <td>${fmtEur(r.municipalStateTax)}</td>
+          <td style="font-weight:700; color:#0f172a;">${fmtEur(r.totalTaxReserve)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function exportLedgerCsv() {
+      if (!ledgerRows.length) return;
+      const headers = [
+        "Tax Year", "Total Revenue (Paid)", "Total Allowed Expenses", "Output VAT",
+        "Input VAT", "Net Business Profit", "Net VAT Owed", "Social Security",
+        "Municipal & State Tax", "Total Tax Reserve Buffer"
+      ];
+      const csvLines = [headers.join(",")];
+      ledgerRows.forEach(r => {
+        csvLines.push([
+          r.taxYear,
+          r.totalRevenue.toFixed(2),
+          r.totalAllowedExpenses.toFixed(2),
+          r.outputVat.toFixed(2),
+          r.inputVat.toFixed(2),
+          r.netProfit.toFixed(2),
+          r.netVatOwed.toFixed(2),
+          r.socialSecurity.toFixed(2),
+          r.municipalStateTax.toFixed(2),
+          r.totalTaxReserve.toFixed(2)
+        ].join(","));
+      });
+
+      const blob = new Blob([csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Nordic_Tax_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    loadTaxLedger();
+  </script>
+</body>
+</html>
