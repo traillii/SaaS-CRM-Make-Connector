@@ -104,7 +104,6 @@
     .text-green { color: var(--success); }
     .text-blue { color: var(--primary); }
     .text-amber { color: var(--warning); }
-    .text-red { color: var(--danger); }
 
     /* Table */
     .table-card {
@@ -251,7 +250,7 @@
     </div>
 
     <div class="disclaimer">
-      <strong>Tax Estimation Notice:</strong> Figures mirror your Notion <em>DB5: Nordic Tax Ledger</em> rollups and formulas. For live client-side calculations, Swedish self-employed social security (<em>Egenavgifter</em>) is estimated at 28.97% and average municipal income tax (<em>Kommunalskatt</em>) at ~32% on taxable net business profit after standard schablonavdrag. Always verify final filings with Skatteverket.
+      <strong>Tax Estimation Notice:</strong> Figures mirror your Notion <em>DB5: Nordic Tax Ledger</em> rollups and formulas. For live client-side calculations, Swedish self-employed social security (<em>Egenavgifter</em>) is estimated at 28.97% (with 25% standard deduction) and average municipal income tax (<em>Kommunalskatt</em>) at ~32% on taxable net business profit. Always verify final filings with Skatteverket.
     </div>
   </div>
 
@@ -267,35 +266,61 @@
       return "€" + Number(val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    async function fetchInvoicesCompatible(query) {
+      // Try Worker B (listInvoices) first
+      try {
+        const resB = await fetch(WORKER_B_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: CURRENT_UID, action: "listInvoices" })
+        });
+        if (resB.ok) {
+          const jsonB = await resB.json();
+          const listB = jsonB.list || jsonB.invoices || jsonB.data;
+          if (Array.isArray(listB) && listB.length > 0) return listB;
+        }
+      } catch (e) {}
+
+      // Try Worker B (getInvoices)
+      try {
+        const resB2 = await fetch(WORKER_B_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: CURRENT_UID, action: "getInvoices" })
+        });
+        if (resB2.ok) {
+          const jsonB2 = await resB2.json();
+          const listB2 = jsonB2.list || jsonB2.invoices || jsonB2.data;
+          if (Array.isArray(listB2) && listB2.length > 0) return listB2;
+        }
+      } catch (e) {}
+
+      // Fallback to Worker C (/api/invoices)
+      try {
+        const resC = await fetch(`${WORKER_C_URL}/api/invoices${query}`);
+        if (resC.ok) {
+          const jsonC = await resC.json();
+          const listC = jsonC.data || jsonC.list || jsonC.invoices;
+          if (Array.isArray(listC)) return listC;
+        }
+      } catch (e) {}
+
+      return [];
+    }
+
     async function loadTaxLedger() {
       const badge = document.getElementById("syncStatusBadge");
       badge.innerText = "Syncing...";
 
       try {
         const query = CURRENT_UID ? `?uid=${encodeURIComponent(CURRENT_UID)}` : "";
-        const directRes = await fetch(`${WORKER_C_URL}/api/tax-ledger${query}`).catch(() => null);
 
-        if (directRes && directRes.ok) {
-          const json = await directRes.json();
-          if (json.success && Array.isArray(json.data)) {
-            ledgerRows = json.data;
-            badge.innerText = "✓ Synced from Notion DB5";
-            renderView();
-            return;
-          }
-        }
-
-        const [expRes, invRes] = await Promise.all([
+        const [expRes, invoices] = await Promise.all([
           fetch(`${WORKER_C_URL}/api/expenses${query}`).then(r => r.json()).catch(() => ({ data: [] })),
-          fetch(WORKER_B_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uid: CURRENT_UID, action: "listInvoices" })
-          }).then(r => r.json()).catch(() => ({ list: [] }))
+          fetchInvoicesCompatible(query)
         ]);
 
         const expenses = expRes.data || [];
-        const invoices = invRes.list || invRes.invoices || [];
 
         const yearMap = {};
         const ensureYear = (yr) => {
@@ -319,6 +344,7 @@
 
         ensureYear("2026");
 
+        // Rollup Paid Invoices (DB3)
         invoices.forEach(inv => {
           const status = (inv.status || inv.paymentStatus || "").toLowerCase();
           if (status !== "paid") return;
@@ -326,24 +352,28 @@
           const yr = dateStr.slice(0, 4);
           const row = ensureYear(yr);
 
-          const net = Number(inv.netAmount || inv.amount || 0);
-          const vatRate = Number(inv.vatRate || 0);
+          const net = Number(inv.netAmount ?? inv.amount ?? 0);
+          let vatRate = Number(inv.vatRate ?? 0);
+          if (vatRate > 1) vatRate = vatRate / 100;
           const vatAmt = inv.vatAmount !== undefined ? Number(inv.vatAmount) : net * vatRate;
 
           row.totalRevenue += net;
           row.outputVat += vatAmt;
         });
 
+        // Rollup Allowed Expenses (DB4)
         expenses.forEach(exp => {
           const row = ensureYear(exp.taxLedger || "2026");
           row.totalAllowedExpenses += Number(exp.eligibleDeductibleAmount || 0);
           row.inputVat += Number(exp.reclaimableInputVat || 0);
         });
 
+        // Apply Swedish Tax Reserve Formulas
         Object.values(yearMap).forEach(row => {
           row.netProfit = Math.max(0, row.totalRevenue - row.totalAllowedExpenses);
           row.netVatOwed = row.outputVat - row.inputVat;
 
+          // Swedish Egenavgifter (~28.97% after 25% standard deduction = ~21.73% effective on net profit)
           row.socialSecurity = row.netProfit * 0.2173;
           const taxableIncome = Math.max(0, row.netProfit - row.socialSecurity);
           row.municipalStateTax = taxableIncome * 0.32;
