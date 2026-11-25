@@ -269,18 +269,32 @@
 
     let ledgerRows = [];
 
+    // 统一读取并兼容所有历史与当前的币种和汇率存储键名及父页面控件 ID
     function getActiveCurrencyState() {
-      let currency = localStorage.getItem("nordic_currency") || "SEK";
-      let rate = parseFloat(localStorage.getItem("nordic_fx_rate") || "11.35");
+      let currency =
+        localStorage.getItem("nordic_display_currency") ||
+        localStorage.getItem("nordic_currency") ||
+        "SEK";
+      let rate = parseFloat(
+        localStorage.getItem("nordic_eur_sek_rate") ||
+        localStorage.getItem("nordic_eur_to_sek") ||
+        localStorage.getItem("nordic_fx_rate") ||
+        "11.35"
+      );
 
       try {
         if (window.parent && window.parent !== window) {
           const parentDoc = window.parent.document;
-          const sel = parentDoc.getElementById("currencySelect") || parentDoc.querySelector("select");
+          const sel =
+            parentDoc.getElementById("displayCurrencySelect") ||
+            parentDoc.getElementById("currencySelect") ||
+            parentDoc.getElementById("currencySelector");
           if (sel && (sel.value === "SEK" || sel.value === "EUR")) {
             currency = sel.value;
           }
-          const rateInput = parentDoc.getElementById("fxRateInput") || parentDoc.querySelector("input[type='number']");
+          const rateInput =
+            parentDoc.getElementById("eurToSekRateInput") ||
+            parentDoc.getElementById("fxRateInput");
           if (rateInput && parseFloat(rateInput.value) > 0) {
             rate = parseFloat(rateInput.value);
           }
@@ -305,14 +319,20 @@
       try {
         if (window.parent && window.parent !== window) {
           const parentDoc = window.parent.document;
-          const sel = parentDoc.getElementById("currencySelect") || parentDoc.querySelector("select");
-          const rateInput = parentDoc.getElementById("fxRateInput") || parentDoc.querySelector("input[type='number']");
+          const sel =
+            parentDoc.getElementById("displayCurrencySelect") ||
+            parentDoc.getElementById("currencySelect") ||
+            parentDoc.getElementById("currencySelector");
+          const rateInput =
+            parentDoc.getElementById("eurToSekRateInput") ||
+            parentDoc.getElementById("fxRateInput");
           if (sel && !sel.dataset.taxLedgerBound) {
             sel.addEventListener("change", () => renderView());
             sel.dataset.taxLedgerBound = "1";
           }
           if (rateInput && !rateInput.dataset.taxLedgerBound) {
             rateInput.addEventListener("input", () => renderView());
+            rateInput.addEventListener("change", () => renderView());
             rateInput.dataset.taxLedgerBound = "1";
           }
         }
@@ -321,7 +341,21 @@
 
     window.addEventListener("storage", () => renderView());
     window.addEventListener("message", (event) => {
-      if (event.data && (event.data.type === "CURRENCY_CHANGE" || event.data.currency)) {
+      const d = event.data || {};
+      if (
+        d.type === "NORDIC_CURRENCY_CHANGE" ||
+        d.type === "CURRENCY_CHANGE" ||
+        d.currency
+      ) {
+        if (d.currency) {
+          localStorage.setItem("nordic_display_currency", d.currency);
+          localStorage.setItem("nordic_currency", d.currency);
+        }
+        const incomingRate = Number(d.rate || d.eurToSekRate || 0);
+        if (incomingRate > 0) {
+          localStorage.setItem("nordic_eur_sek_rate", String(incomingRate));
+          localStorage.setItem("nordic_eur_to_sek", String(incomingRate));
+        }
         renderView();
       }
     });
@@ -378,8 +412,16 @@
           const row = ensureYear(yr);
 
           const net = Number(inv.netAmount ?? inv.amount ?? 0);
-          const vatRate = Number(inv.vatRate ?? 0);
-          const vatAmt = inv.vatAmount !== undefined ? Number(inv.vatAmount) : net * vatRate;
+          // 兼容 Worker B 返回的百分数（如 25）与小数（如 0.25）两种税率格式
+          let rawVatRate = Number(inv.vatRate ?? 0);
+          if (rawVatRate > 1) {
+            rawVatRate = rawVatRate / 100;
+          }
+          const vatAmt = inv.vatAmount !== undefined
+            ? Number(inv.vatAmount)
+            : (inv.grossTotal !== undefined && Number(inv.grossTotal) >= net
+                ? Number(inv.grossTotal) - net
+                : net * rawVatRate);
 
           row.totalRevenue += net;
           row.outputVat += vatAmt;
@@ -387,8 +429,11 @@
 
         expenses.forEach(exp => {
           const row = ensureYear(exp.taxLedger || "2026");
-          row.totalAllowedExpenses += Number(exp.eligibleDeductibleAmount || 0);
-          row.inputVat += Number(exp.reclaimableInputVat || 0);
+          const isNonDeductible = (exp.taxDeductibility || "").toLowerCase() === "non-deductible";
+          if (!isNonDeductible) {
+            row.totalAllowedExpenses += Number(exp.eligibleDeductibleAmount || 0);
+            row.inputVat += Number(exp.reclaimableInputVat || 0);
+          }
         });
 
         Object.values(yearMap).forEach(row => {
@@ -503,8 +548,7 @@
         ].join(","));
       });
 
-      const blob = new Blob([csvLines.join("
-")], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob(["\uFEFF" + csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
