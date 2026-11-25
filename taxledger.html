@@ -38,7 +38,7 @@
     }
     .header-bar h2 { font-size: 20px; font-weight: 700; }
     .header-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
-    .actions { display: flex; gap: 10px; align-items: center; }
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
     select, .btn {
       padding: 8px 14px;
@@ -59,6 +59,16 @@
     .btn:hover { background: #f1f5f9; }
     .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
     .btn-primary:hover { background: var(--primary-hover); }
+
+    .fx-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e40af;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
 
     /* Hero Tax Reserve Banner */
     .reserve-banner {
@@ -104,6 +114,7 @@
     .text-green { color: var(--success); }
     .text-blue { color: var(--primary); }
     .text-amber { color: var(--warning); }
+    .text-red { color: var(--danger); }
 
     /* Table */
     .table-card {
@@ -157,6 +168,7 @@
         <div class="header-sub">Real-time rollup of paid invoices, deductible expenses, Swedish MOMS, and statutory tax reserve buffer</div>
       </div>
       <div class="actions">
+        <span id="currencyBadge" class="fx-pill">SEK (kr) · 1 EUR = 11.35 SEK</span>
         <select id="yearFilter" onchange="renderView()">
           <option value="ALL">All Tax Years</option>
           <option value="2026" selected>2026 Tax Year</option>
@@ -171,22 +183,22 @@
     <div class="reserve-banner">
       <div>
         <div class="reserve-label">Total Tax Reserve Buffer</div>
-        <div class="reserve-main" id="heroReserve">€0.00</div>
+        <div class="reserve-main" id="heroReserve">0.00 kr</div>
         <div class="reserve-sub">Recommended cash set-aside for Skatteverket (MOMS + Egenavgifter + Income Tax)</div>
       </div>
       <div class="reserve-breakdown">
         <div class="reserve-label">Net VAT Owed to Gov (MOMS)</div>
-        <div class="val" id="heroVatOwed" style="color:#fbbf24;">€0.00</div>
+        <div class="val" id="heroVatOwed" style="color:#fbbf24;">0.00 kr</div>
         <div class="reserve-sub">Output VAT − Reclaimable Input VAT</div>
       </div>
       <div class="reserve-breakdown">
         <div class="reserve-label">Nordic Social Security (~28.97%)</div>
-        <div class="val" id="heroSocial">€0.00</div>
+        <div class="val" id="heroSocial">0.00 kr</div>
         <div class="reserve-sub">Estimated Swedish Egenavgifter on Net Profit</div>
       </div>
       <div class="reserve-breakdown">
         <div class="reserve-label">Municipal & State Tax (~32%)</div>
-        <div class="val" id="heroIncomeTax">€0.00</div>
+        <div class="val" id="heroIncomeTax">0.00 kr</div>
         <div class="reserve-sub">Estimated Kommunalskatt after standard deduction</div>
       </div>
     </div>
@@ -195,27 +207,27 @@
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-title">Total Revenue (Paid Net)</div>
-        <div class="kpi-value text-green" id="kpiRevenue">€0.00</div>
+        <div class="kpi-value text-green" id="kpiRevenue">0.00 kr</div>
         <div class="kpi-foot">Rolled up from DB3 Paid Invoices</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">Total Allowed Expenses</div>
-        <div class="kpi-value" id="kpiExpenses">€0.00</div>
+        <div class="kpi-value" id="kpiExpenses">0.00 kr</div>
         <div class="kpi-foot">Rolled up from DB4 Deductible Expenses</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">Net Business Profit</div>
-        <div class="kpi-value text-blue" id="kpiProfit">€0.00</div>
+        <div class="kpi-value text-blue" id="kpiProfit">0.00 kr</div>
         <div class="kpi-foot">Total Revenue − Allowed Expenses</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">Output VAT Generated</div>
-        <div class="kpi-value text-amber" id="kpiOutputVat">€0.00</div>
+        <div class="kpi-value text-amber" id="kpiOutputVat">0.00 kr</div>
         <div class="kpi-foot">Collected on Swedish 25% MOMS Invoices</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">Input VAT Paid (Reclaimable)</div>
-        <div class="kpi-value text-green" id="kpiInputVat">€0.00</div>
+        <div class="kpi-value text-green" id="kpiInputVat">0.00 kr</div>
         <div class="kpi-foot">Deductible MOMS from Business Purchases</div>
       </div>
     </div>
@@ -250,7 +262,7 @@
     </div>
 
     <div class="disclaimer">
-      <strong>Tax Estimation Notice:</strong> Figures mirror your Notion <em>DB5: Nordic Tax Ledger</em> rollups and formulas. For live client-side calculations, Swedish self-employed social security (<em>Egenavgifter</em>) is estimated at 28.97% (with 25% standard deduction) and average municipal income tax (<em>Kommunalskatt</em>) at ~32% on taxable net business profit. Always verify final filings with Skatteverket.
+      <strong>Tax Estimation Notice:</strong> Base records are stored in EUR and converted dynamically using your workspace display currency & exchange rate. Swedish self-employed social security (<em>Egenavgifter</em>) is estimated at 28.97% after standard deduction (~21.73% effective) and average municipal income tax (<em>Kommunalskatt</em>) at ~32%. Always verify final filings with Skatteverket.
     </div>
   </div>
 
@@ -261,66 +273,93 @@
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
 
     let ledgerRows = [];
+    let displayCurrency = "SEK";
+    let eurToSekRate = 11.35;
 
-    function fmtEur(val) {
-      return "€" + Number(val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function detectWorkspaceCurrency() {
+      let cur = urlParams.get("currency")
+        || localStorage.getItem("nordic_currency")
+        || localStorage.getItem("displayCurrency")
+        || localStorage.getItem("currency");
+
+      let rate = parseFloat(
+        urlParams.get("rate")
+        || localStorage.getItem("nordic_fx_rate")
+        || localStorage.getItem("eurToSek")
+        || localStorage.getItem("exchangeRate")
+      );
+
+      // Inspect parent dashboard sidebar controls if same-origin
+      try {
+        if (window.parent && window.parent !== window && window.parent.document) {
+          const pDoc = window.parent.document;
+          const selects = pDoc.querySelectorAll("select");
+          selects.forEach(sel => {
+            const val = (sel.value || "").toUpperCase();
+            if (val === "SEK" || val === "EUR") {
+              cur = val;
+            }
+          });
+          const numInputs = pDoc.querySelectorAll('input[type="number"]');
+          numInputs.forEach(inp => {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v) && v > 5 && v < 25) {
+              rate = v;
+            }
+          });
+        }
+      } catch (e) {
+        // Ignore cross-origin frame restrictions
+      }
+
+      displayCurrency = (cur && cur.toUpperCase() === "EUR") ? "EUR" : "SEK";
+      if (!isNaN(rate) && rate > 0) {
+        eurToSekRate = rate;
+      }
+
+      const badge = document.getElementById("currencyBadge");
+      if (badge) {
+        badge.innerText = displayCurrency === "SEK"
+          ? `SEK (kr) · 1 EUR = ${eurToSekRate.toFixed(2)} SEK`
+          : `EUR (€) · Base Ledger Currency`;
+      }
     }
 
-    async function fetchInvoicesCompatible(query) {
-      // Try Worker B (listInvoices) first
-      try {
-        const resB = await fetch(WORKER_B_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: CURRENT_UID, action: "listInvoices" })
-        });
-        if (resB.ok) {
-          const jsonB = await resB.json();
-          const listB = jsonB.list || jsonB.invoices || jsonB.data;
-          if (Array.isArray(listB) && listB.length > 0) return listB;
-        }
-      } catch (e) {}
+    function convertAmount(eurVal) {
+      const base = Number(eurVal || 0);
+      return displayCurrency === "SEK" ? base * eurToSekRate : base;
+    }
 
-      // Try Worker B (getInvoices)
-      try {
-        const resB2 = await fetch(WORKER_B_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: CURRENT_UID, action: "getInvoices" })
-        });
-        if (resB2.ok) {
-          const jsonB2 = await resB2.json();
-          const listB2 = jsonB2.list || jsonB2.invoices || jsonB2.data;
-          if (Array.isArray(listB2) && listB2.length > 0) return listB2;
-        }
-      } catch (e) {}
-
-      // Fallback to Worker C (/api/invoices)
-      try {
-        const resC = await fetch(`${WORKER_C_URL}/api/invoices${query}`);
-        if (resC.ok) {
-          const jsonC = await resC.json();
-          const listC = jsonC.data || jsonC.list || jsonC.invoices;
-          if (Array.isArray(listC)) return listC;
-        }
-      } catch (e) {}
-
-      return [];
+    function fmtMoney(eurVal) {
+      const converted = convertAmount(eurVal);
+      const formatted = converted.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      return displayCurrency === "SEK" ? `${formatted} kr` : `€${formatted}`;
     }
 
     async function loadTaxLedger() {
+      detectWorkspaceCurrency();
       const badge = document.getElementById("syncStatusBadge");
       badge.innerText = "Syncing...";
 
       try {
         const query = CURRENT_UID ? `?uid=${encodeURIComponent(CURRENT_UID)}` : "";
 
-        const [expRes, invoices] = await Promise.all([
+        // Fetch DB4 Expenses and DB3 Invoices concurrently
+        const [expRes, invBRes, invCRes] = await Promise.all([
           fetch(`${WORKER_C_URL}/api/expenses${query}`).then(r => r.json()).catch(() => ({ data: [] })),
-          fetchInvoicesCompatible(query)
+          fetch(WORKER_B_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid: CURRENT_UID, action: "listInvoices" })
+          }).then(r => r.json()).catch(() => ({})),
+          fetch(`${WORKER_C_URL}/api/invoices${query}`).then(r => r.json()).catch(() => ({}))
         ]);
 
         const expenses = expRes.data || [];
+        const invoices = invBRes.list || invBRes.invoices || invBRes.data || invCRes.data || invCRes.invoices || [];
 
         const yearMap = {};
         const ensureYear = (yr) => {
@@ -344,7 +383,7 @@
 
         ensureYear("2026");
 
-        // Rollup Paid Invoices (DB3)
+        // Rollup Paid Invoices (DB3 - stored in EUR)
         invoices.forEach(inv => {
           const status = (inv.status || inv.paymentStatus || "").toLowerCase();
           if (status !== "paid") return;
@@ -353,22 +392,21 @@
           const row = ensureYear(yr);
 
           const net = Number(inv.netAmount ?? inv.amount ?? 0);
-          let vatRate = Number(inv.vatRate ?? 0);
-          if (vatRate > 1) vatRate = vatRate / 100;
+          const vatRate = Number(inv.vatRate ?? 0);
           const vatAmt = inv.vatAmount !== undefined ? Number(inv.vatAmount) : net * vatRate;
 
           row.totalRevenue += net;
           row.outputVat += vatAmt;
         });
 
-        // Rollup Allowed Expenses (DB4)
+        // Rollup Allowed Expenses (DB4 - stored in EUR)
         expenses.forEach(exp => {
           const row = ensureYear(exp.taxLedger || "2026");
           row.totalAllowedExpenses += Number(exp.eligibleDeductibleAmount || 0);
           row.inputVat += Number(exp.reclaimableInputVat || 0);
         });
 
-        // Apply Swedish Tax Reserve Formulas
+        // Apply Swedish Tax Reserve Formulas in EUR
         Object.values(yearMap).forEach(row => {
           row.netProfit = Math.max(0, row.totalRevenue - row.totalAllowedExpenses);
           row.netVatOwed = row.outputVat - row.inputVat;
@@ -390,6 +428,7 @@
     }
 
     function renderView() {
+      detectWorkspaceCurrency();
       const selectedYear = document.getElementById("yearFilter").value;
       const filtered = selectedYear === "ALL"
         ? ledgerRows
@@ -411,16 +450,16 @@
         netProfit: 0, netVatOwed: 0, socialSecurity: 0, municipalStateTax: 0, totalTaxReserve: 0
       });
 
-      document.getElementById("heroReserve").innerText = fmtEur(totals.totalTaxReserve);
-      document.getElementById("heroVatOwed").innerText = fmtEur(totals.netVatOwed);
-      document.getElementById("heroSocial").innerText = fmtEur(totals.socialSecurity);
-      document.getElementById("heroIncomeTax").innerText = fmtEur(totals.municipalStateTax);
+      document.getElementById("heroReserve").innerText = fmtMoney(totals.totalTaxReserve);
+      document.getElementById("heroVatOwed").innerText = fmtMoney(totals.netVatOwed);
+      document.getElementById("heroSocial").innerText = fmtMoney(totals.socialSecurity);
+      document.getElementById("heroIncomeTax").innerText = fmtMoney(totals.municipalStateTax);
 
-      document.getElementById("kpiRevenue").innerText = fmtEur(totals.totalRevenue);
-      document.getElementById("kpiExpenses").innerText = fmtEur(totals.totalAllowedExpenses);
-      document.getElementById("kpiProfit").innerText = fmtEur(totals.netProfit);
-      document.getElementById("kpiOutputVat").innerText = fmtEur(totals.outputVat);
-      document.getElementById("kpiInputVat").innerText = fmtEur(totals.inputVat);
+      document.getElementById("kpiRevenue").innerText = fmtMoney(totals.totalRevenue);
+      document.getElementById("kpiExpenses").innerText = fmtMoney(totals.totalAllowedExpenses);
+      document.getElementById("kpiProfit").innerText = fmtMoney(totals.netProfit);
+      document.getElementById("kpiOutputVat").innerText = fmtMoney(totals.outputVat);
+      document.getElementById("kpiInputVat").innerText = fmtMoney(totals.inputVat);
 
       const tbody = document.getElementById("ledgerTableBody");
       if (filtered.length === 0) {
@@ -431,51 +470,84 @@
       tbody.innerHTML = filtered.map(r => `
         <tr>
           <td><strong>${r.taxYear}</strong></td>
-          <td class="text-green" style="font-weight:600;">${fmtEur(r.totalRevenue)}</td>
-          <td>${fmtEur(r.totalAllowedExpenses)}</td>
-          <td>${fmtEur(r.outputVat)}</td>
-          <td class="text-green">${fmtEur(r.inputVat)}</td>
-          <td class="text-blue" style="font-weight:600;">${fmtEur(r.netProfit)}</td>
-          <td class="text-amber" style="font-weight:600;">${fmtEur(r.netVatOwed)}</td>
-          <td>${fmtEur(r.socialSecurity)}</td>
-          <td>${fmtEur(r.municipalStateTax)}</td>
-          <td style="font-weight:700; color:#0f172a;">${fmtEur(r.totalTaxReserve)}</td>
+          <td class="text-green" style="font-weight:600;">${fmtMoney(r.totalRevenue)}</td>
+          <td>${fmtMoney(r.totalAllowedExpenses)}</td>
+          <td>${fmtMoney(r.outputVat)}</td>
+          <td class="text-green">${fmtMoney(r.inputVat)}</td>
+          <td class="text-blue" style="font-weight:600;">${fmtMoney(r.netProfit)}</td>
+          <td class="text-amber" style="font-weight:600;">${fmtMoney(r.netVatOwed)}</td>
+          <td>${fmtMoney(r.socialSecurity)}</td>
+          <td>${fmtMoney(r.municipalStateTax)}</td>
+          <td style="font-weight:700; color:#0f172a;">${fmtMoney(r.totalTaxReserve)}</td>
         </tr>
       `).join("");
     }
 
     function exportLedgerCsv() {
       if (!ledgerRows.length) return;
+      detectWorkspaceCurrency();
+      const curLabel = displayCurrency;
       const headers = [
-        "Tax Year", "Total Revenue (Paid)", "Total Allowed Expenses", "Output VAT",
-        "Input VAT", "Net Business Profit", "Net VAT Owed", "Social Security",
-        "Municipal & State Tax", "Total Tax Reserve Buffer"
+        "Tax Year",
+        `Total Revenue (${curLabel})`,
+        `Allowed Expenses (${curLabel})`,
+        `Output VAT (${curLabel})`,
+        `Input VAT (${curLabel})`,
+        `Net Business Profit (${curLabel})`,
+        `Net VAT Owed (${curLabel})`,
+        `Social Security (${curLabel})`,
+        `Municipal & State Tax (${curLabel})`,
+        `Total Tax Reserve (${curLabel})`
       ];
       const csvLines = [headers.join(",")];
       ledgerRows.forEach(r => {
         csvLines.push([
           r.taxYear,
-          r.totalRevenue.toFixed(2),
-          r.totalAllowedExpenses.toFixed(2),
-          r.outputVat.toFixed(2),
-          r.inputVat.toFixed(2),
-          r.netProfit.toFixed(2),
-          r.netVatOwed.toFixed(2),
-          r.socialSecurity.toFixed(2),
-          r.municipalStateTax.toFixed(2),
-          r.totalTaxReserve.toFixed(2)
+          convertAmount(r.totalRevenue).toFixed(2),
+          convertAmount(r.totalAllowedExpenses).toFixed(2),
+          convertAmount(r.outputVat).toFixed(2),
+          convertAmount(r.inputVat).toFixed(2),
+          convertAmount(r.netProfit).toFixed(2),
+          convertAmount(r.netVatOwed).toFixed(2),
+          convertAmount(r.socialSecurity).toFixed(2),
+          convertAmount(r.municipalStateTax).toFixed(2),
+          convertAmount(r.totalTaxReserve).toFixed(2)
         ].join(","));
       });
 
-      const blob = new Blob([csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvLines.join("
+")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Nordic_Tax_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `Nordic_Tax_Ledger_${curLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
 
+    // Listen to storage updates from parent workspace when currency/rate changes
+    window.addEventListener("storage", () => {
+      if (ledgerRows.length) renderView();
+    });
+
+    // Bind live listeners to parent sidebar currency/rate controls if accessible
+    function bindParentCurrencyListeners() {
+      try {
+        if (window.parent && window.parent !== window && window.parent.document) {
+          const pDoc = window.parent.document;
+          pDoc.querySelectorAll("select, input[type='number']").forEach(el => {
+            el.addEventListener("change", () => {
+              if (ledgerRows.length) renderView();
+            });
+            el.addEventListener("input", () => {
+              if (ledgerRows.length) renderView();
+            });
+          });
+        }
+      } catch (e) {}
+    }
+
+    bindParentCurrencyListeners();
     loadTaxLedger();
   </script>
 </body>
