@@ -577,6 +577,10 @@
       currentReceiptName = (file.name || "receipt.jpg").replace(/\.[^.]+$/, ".jpg");
       const reader = new FileReader();
       reader.onload = async function (e) {
+        const panel = document.getElementById("expenseFormPanel");
+        if (panel && !panel.classList.contains("active")) {
+          panel.classList.add("active");
+        }
         const compressed = await compressReceiptImage(e.target.result, 960, 0.65);
         currentReceiptBase64 = compressed;
         const preview = document.getElementById("receiptPreview");
@@ -621,8 +625,11 @@
           document.getElementById("invoiceDate").value = info.invoiceDate;
           syncLedgerFromDate();
         }
-        if (info.grossPaid > 0) {
-          document.getElementById("grossPaid").value = Number(info.grossPaid).toFixed(2);
+        const grossVal = Number(info.grossPaid);
+        if (Number.isFinite(grossVal) && grossVal > 0) {
+          document.getElementById("grossPaid").value = grossVal.toFixed(2);
+        } else if (Number.isFinite(Number(info.originalAmount)) && Number(info.originalAmount) > 0) {
+          document.getElementById("grossPaid").value = Number(info.originalAmount).toFixed(2);
         }
         if (info.expenseCategory) {
           const catSelect = document.getElementById("expenseCategory");
@@ -943,3 +950,4 @@
   </script>
 </body>
 </html>
+
