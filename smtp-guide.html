@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMTP Setup Guide | E-postinställningar</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warn-bg: #fffbeb;
+      --warn-border: #fde68a;
+      --warn-text: #92400e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.55;
+    }
+    .container { max-width: 920px; margin: 0 auto; }
+
+    /* Header */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .header-bar h1 { font-size: 24px; }
+    .header-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+    .lang-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .lang-toggle button {
+      padding: 8px 16px;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .lang-toggle button.active { background: var(--primary); color: #fff; }
+
+    /* Intro card */
+    .intro {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .intro h2 { font-size: 16px; margin-bottom: 10px; }
+    .intro p { font-size: 14px; color: #334155; margin-bottom: 8px; }
+    .field-gloss {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .gloss-item { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .gloss-item b { display: block; font-size: 13px; margin-bottom: 4px; }
+    .gloss-item span { font-size: 13px; color: var(--muted); }
+
+    /* Provider list */
+    .provider-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+    .provider-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .provider-head {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+      background: #fff;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-size: 15px;
+    }
+    .provider-head:hover { background: #f8fafc; }
+    .provider-name { font-weight: 600; }
+    .provider-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      font-size: 12px;
+      color: var(--primary);
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-weight: 500;
+    }
+    .chip.gray { color: var(--muted); background: var(--bg); border-color: var(--border); }
+    .chevron { transition: transform .2s; color: var(--muted); font-size: 13px; }
+    .provider-card.open .chevron { transform: rotate(180deg); }
+
+    .provider-body { display: none; padding: 0 20px 20px; border-top: 1px solid var(--border); }
+    .provider-card.open .provider-body { display: block; }
+
+    .settings-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .settings-table th, .settings-table td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-table th { width: 34%; color: var(--muted); font-weight: 500; font-size: 13px; }
+    .settings-table td code {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 13px;
+    }
+    .copy-btn {
+      margin-left: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 6px;
+      font-size: 12px;
+      padding: 2px 8px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .copy-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+    .steps { margin: 14px 0; padding-left: 0; list-style: none; counter-reset: step; }
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 6px 0 6px 36px;
+      font-size: 14px;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0; top: 6px;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .note {
+      margin-top: 14px;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+    .note.warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); }
+    .note.info { background: #f1f5f9; border: 1px solid var(--border); color: #334155; }
+
+    /* Troubleshooting */
+    .trouble {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+      margin-bottom: 24px;
+    }
+    .trouble h2 { font-size: 16px; margin-bottom: 14px; }
+    .trouble-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .trouble-item:last-child { border-bottom: none; }
+    .trouble-item b { font-size: 14px; }
+    .trouble-item p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .err-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: #fef2f2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 1px 7px;
+      margin-right: 6px;
+    }
+
+    footer { text-align: center; font-size: 12px; color: var(--muted); padding: 12px 0 24px; }
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      .settings-table th { width: 42%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-bar">
+      <div>
+        <h1 data-i18n="title">SMTP Setup Guide</h1>
+        <div class="header-sub" data-i18n="subtitle">Connect your own email so invoice reminders are sent from your mailbox.</div>
+      </div>
+      <div class="lang-toggle">
+        <button id="btn-en" class="active" onclick="setLang('en')">English</button>
+        <button id="btn-sv" onclick="setLang('sv')">Svenska</button>
+      </div>
+    </div>
+
+    <div class="intro">
+      <h2 data-i18n="whatIs">What is SMTP?</h2>
+      <p data-i18n="whatIsBody">SMTP is the standard outgoing-mail protocol. Once you save your mailbox details in the <b>Personal Sender Email</b> section, the tool sends overdue-invoice reminders directly from your own address, in your name.</p>
+      <div class="field-gloss">
+        <div class="gloss-item">
+          <b data-i18n="g_host">SMTP server</b>
+          <span data-i18n="g_host_d">The outgoing mail host given by your email provider.</span>
+        </div>
+        <div class="gloss-item">
+          <b data-i18n="g_port">Port</b>
+          <span data-i18n="g_port_d">465 = SSL/TLS; 587 = STARTTLS. Must match the encryption below.</span>
+        </div>
+        <div class="gloss-item">
+          <b data-i18n="g_user">SMTP username</b>
+          <span data-i18n="g_user_d">Almost always your full email address, not just the part before @.</span>
+        </div>
+        <div class="gloss-item">
+          <b data-i18n="g_pass">SMTP password</b>
+          <span data-i18n="g_pass_d">Mailbox password, or an App Password when the provider requires one.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="provider-list" id="providerList"></div>
+
+    <div class="trouble">
+      <h2 data-i18n="troubleTitle">Common problems &amp; fixes</h2>
+      <div id="troubleList"></div>
+    </div>
+
+    <footer data-i18n="footer">Settings below follow the presets in the sender-email dropdown. If in doubt, confirm the values with your email provider's support.</footer>
+  </div>
+
+<script>
+const I18N = {
+  en: {
+    title: "SMTP Setup Guide",
+    subtitle: "Connect your own email so invoice reminders are sent from your mailbox.",
+    whatIs: "What is SMTP?",
+    whatIsBody: "SMTP is the standard outgoing-mail protocol. Once you save your mailbox details in the <b>Personal Sender Email</b> section, the tool sends overdue-invoice reminders directly from your own address, in your name.",
+    g_host: "SMTP server", g_host_d: "The outgoing mail host given by your email provider.",
+    g_port: "Port", g_port_d: "465 = SSL/TLS; 587 = STARTTLS. Must match the encryption below.",
+    g_user: "SMTP username", g_user_d: "Almost always your full email address, not just the part before @.",
+    g_pass: "SMTP password", g_pass_d: "Mailbox password, or an App Password when the provider requires one.",
+    troubleTitle: "Common problems & fixes",
+    footer: "Settings below follow the presets in the sender-email dropdown. If in doubt, confirm the values with your email provider's support.",
+    host: "SMTP server", port: "Port", security: "Encryption", username: "Username", password: "Password",
+    stepsTitle: "Setup steps", altPort: "Alternative port", copy: "Copy", copied: "Copied",
+    notAvailable: "Not available for your plan",
+    troubles: [
+      { code: "535 5.7.8 / BadCredentials", title: "Username or password rejected", body: "The password field does not match the mailbox. For Gmail you must use an App Password, not your normal Google password. Re-check the username is the full address and paste the password without spaces." },
+      { code: "535 5.7.139", title: "Microsoft blocked basic authentication", body: "Personal Outlook.com accounts now require OAuth2 and block username+password SMTP login. On business Microsoft 365, ask your admin to enable SMTP AUTH, and create an App Password if MFA is turned on." },
+      { code: "Connection timeout", title: "Cannot reach the server", body: "Wrong host or port, or the encryption does not match the port: 465 must use SSL/TLS, 587 must use STARTTLS. Try the alternative port listed in the provider card." },
+      { code: "Login rejected", title: "Username must be the full email", body: "Some providers reject a username that is only the part before the @ sign. Enter the complete address, e.g. name@yourdomain.se." },
+      { code: "Mail lands in spam", title: "Deliverability", body: "For your own domain, make sure SPF and DKIM records are published at your DNS host. This tool only sends through your mailbox; it cannot configure your domain's DNS for you." },
+      { code: "Sending limit", title: "Hourly sending caps", body: "Swedish hosts limit how many messages can go out per hour (for example Loopia allows about 200 recipients/hour). Reminders are low volume; spread large follow-up lists over time." }
+    ]
+  },
+  sv: {
+    title: "Guide för SMTP-inställningar",
+    subtitle: "Koppla din egen e-post så att fakturapåminnelser skickas från din brevlåda.",
+    whatIs: "Vad är SMTP?",
+    whatIsBody: "SMTP är standardprotokollet för utgående e-post. När du har sparat dina brevlådeuppgifter i avsnittet <b>Personal Sender Email</b> skickar verktyget påminnelser om förfallna fakturor direkt från din egen adress, i ditt namn.",
+    g_host: "SMTP-server", g_host_d: "Den utgående värdadress som din e-postleverantör anger.",
+    g_port: "Port", g_port_d: "465 = SSL/TLS; 587 = STARTTLS. Måste matcha krypteringen nedan.",
+    g_user: "SMTP-användarnamn", g_user_d: "Nästan alltid hela din e-postadress, inte bara delen före @.",
+    g_pass: "SMTP-lösenord", g_pass_d: "Brevlådelösenord, eller ett applösenord när leverantören kräver det.",
+    troubleTitle: "Vanliga problem och lösningar",
+    footer: "Inställningarna nedan matchar förvalen i listrutan för avsändaradress. Vid tveksamhet, kontrollera värdena med din e-postleverantörs support.",
+    host: "SMTP-server", port: "Port", security: "Kryptering", username: "Användarnamn", password: "Lösenord",
+    stepsTitle: "Steg-för-steg", altPort: "Alternativ port", copy: "Kopiera", copied: "Kopierat",
+    notAvailable: "Ej tillgängligt i din plan",
+    troubles: [
+      { code: "535 5.7.8 / BadCredentials", title: "Användarnamn eller lösenord godkänns inte", body: "Lösenordsfältet stämmer inte med brevlådan. För Gmail måste du använda ett applösenord, inte ditt vanliga Google-lösenord. Kontrollera att användarnamnet är hela adressen och klistra in lösenordet utan mellanslag." },
+      { code: "535 5.7.139", title: "Microsoft blockerar grundläggande inloggning", body: "Personliga Outlook.com-konton kräver nu OAuth2 och blockerar SMTP-inloggning med användarnamn+lösenord. I affärsmässiga Microsoft 365-konton be din administratör aktivera SMTP AUTH, och skapa ett applösenord om tvåfaktorsverifiering är på." },
+      { code: "Connection timeout", title: "Når inte servern", body: "Fel värd eller port, eller så matchar inte krypteringen porten: 465 måste använda SSL/TLS, 587 måste använda STARTTLS. Prova den alternativa porten som finns i leverantörskortet." },
+      { code: "Login rejected", title: "Användarnamn måste vara hela e-postadressen", body: "Vissa leverantörer godkänner inte ett användarnamn som bara är delen före @. Ange hela adressen, t.ex. namn@dinadomen.se." },
+      { code: "Mail lands in spam", title: "Leveranssäkerhet", body: "För din egen domän, se till att SPF- och DKIM-poster är publicerade hos din DNS-leverantör. Verktyget skickar bara genom din brevlåda; det kan inte konfigurera domänens DNS åt dig." },
+      { code: "Sending limit", title: "Timvis sändningsgräns", body: "Svenska leverantörer begränsar antalet meddelanden per timme (till exempel tillåter Loopia ungefär 200 mottagare/timme). Påminnelser har låg volym; sprid större uppföljningslistor över tid." }
+    ]
+  }
+};
+
+const PROVIDERS = [
+  {
+    id: "gmail",
+    en: { name: "Gmail / Google", tag: "Personal @gmail.com" },
+    sv: { name: "Gmail / Google", tag: "Privat @gmail.com" },
+    host: "smtp.gmail.com", port: "587", security: "STARTTLS", altPort: "465 · SSL/TLS",
+    username: "yourname@gmail.com",
+    password: "16-character App Password",
+    steps: {
+      en: [
+        "Turn on 2-Step Verification at myaccount.google.com/security.",
+        "Open myaccount.google.com/apppasswords, name it e.g. “Billing reminders”, create it and copy the 16-character code.",
+        "In this tool choose Gmail. SMTP username = your full Gmail address; paste the App Password and remove any spaces.",
+        "Save the settings and send a test reminder to yourself."
+      ],
+      sv: [
+        "Aktivera tvåstegsverifiering på myaccount.google.com/security.",
+        "Gå till myaccount.google.com/apppasswords, ge namnet t.ex. ”Fakturapåminnelser”, skapa det och kopiera koden på 16 tecken.",
+        "I verktyget väljer du Gmail. Användarnamn = hela din Gmail-adress; klistra in applösenordet och ta bort eventuella mellanslag.",
+        "Spara inställningarna och skicka en testpåminnelse till dig själv."
+      ]
+    },
+    note: {
+      type: "warn",
+      en: "Your regular Google account password will be rejected (error 535). An App Password only works after 2-Step Verification has been enabled.",
+      sv: "Ditt vanliga Google-lösenord godkänns inte (fel 535). Ett applösenord fungerar bara efter att tvåstegsverifiering har aktiverats."
+    }
+  },
+  {
+    id: "m365",
+    en: { name: "Microsoft 365 / Outlook.com", tag: "Work, school or personal" },
+    sv: { name: "Microsoft 365 / Outlook.com", tag: "Jobb, skola eller privat" },
+    host: "smtp.office365.com", port: "587", security: "STARTTLS", altPort: null,
+    username: "your.name@yourcompany.com",
+    password: "Account password, or App Password if MFA is on",
+    steps: {
+      en: [
+        "For a business Microsoft 365 mailbox, ask your admin to enable SMTP authentication (SMTP AUTH) for the mailbox.",
+        "If your account uses multi-factor authentication, create an App Password in the Microsoft account security settings and use it here.",
+        "Choose Microsoft 365 / Outlook.com in the dropdown. Username = your full work or school email address.",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "För ett affärsmässigt Microsoft 365-konto, be din administratör aktivera SMTP-autentisering (SMTP AUTH) för brevlådan.",
+        "Om kontot har tvåfaktorsverifiering, skapa ett applösenord i Microsoft-kontots säkerhetsinställningar och använd det här.",
+        "Välj Microsoft 365 / Outlook.com i listrutan. Användarnamn = hela din jobb- eller skoladress.",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: {
+      type: "warn",
+      en: "Personal Outlook.com accounts now require Modern Authentication (OAuth2). Username+password SMTP login can be blocked with error 5.7.139, in which case this tool cannot send through that personal mailbox.",
+      sv: "Personliga Outlook.com-konton kräver nu modern autentisering (OAuth2). SMTP-inloggning med användarnamn+lösenord kan blockeras med fel 5.7.139, och då kan verktyget inte skicka genom den personliga brevlådan."
+    }
+  },
+  {
+    id: "onecom",
+    en: { name: "One.com Sweden", tag: "Hosted on one.com" },
+    sv: { name: "One.com Sverige", tag: "Hostad hos one.com" },
+    host: "send.one.com", port: "465", security: "SSL/TLS", altPort: "587 · STARTTLS",
+    username: "mail@yourdomain.com",
+    password: "Your One.com webmail password",
+    steps: {
+      en: [
+        "Choose One.com Sweden in the dropdown.",
+        "Username = the full email address you created in the One.com Customer Zone.",
+        "Password = the mailbox password you use to log in to One.com Webmail.",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "Välj One.com Sverige i listrutan.",
+        "Användarnamn = hela e-postadressen som du skapade i One.coms kundzon.",
+        "Lösenord = brevlådelösenordet som du loggar in med i One.com Webmail.",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: {
+      type: "info",
+      en: "Port 465 with SSL/TLS is recommended; 587 with STARTTLS also works.",
+      sv: "Port 465 med SSL/TLS rekommenderas; 587 med STARTTLS fungerar också."
+    }
+  },
+  {
+    id: "loopia",
+    en: { name: "Loopia Sweden", tag: "Loopia mailbox" },
+    sv: { name: "Loopia Sverige", tag: "Loopia-brevlåda" },
+    host: "mailcluster.loopia.se", port: "587", security: "STARTTLS", altPort: "465 · SSL/TLS",
+    username: "mail@yourdomain.com",
+    password: "Your Loopia mailbox password",
+    steps: {
+      en: [
+        "Choose Loopia Sweden in the dropdown.",
+        "Username = the full email address on your Loopia domain.",
+        "Password = the password for that mailbox (same as your Loopia webmail login).",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "Välj Loopia Sverige i listrutan.",
+        "Användarnamn = hela e-postadressen på din Loopia-domän.",
+        "Lösenordet = lösenordet för den brevlådan (samma som din inloggning till Loopias webbmail).",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: {
+      type: "info",
+      en: "Loopia limits sending to about 200 messages or recipients per hour, shared across all addresses on the account.",
+      sv: "Loopia begränsar sändning till ungefär 200 meddelanden eller mottagare per timme, delat på alla adresser i kontot."
+    }
+  },
+  {
+    id: "telia",
+    en: { name: "Telia Sweden @telia.com", tag: "Telia mailbox" },
+    sv: { name: "Telia Sverige @telia.com", tag: "Telia-brevlåda" },
+    host: "mailout.telia.com", port: "465", security: "SSL/TLS", altPort: null,
+    username: "yourname@telia.com",
+    password: "Your Telia mailbox password",
+    steps: {
+      en: [
+        "Choose Telia Sweden in the dropdown.",
+        "Username = your full @telia.com address.",
+        "Password = the mailbox password from your Telia account.",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "Välj Telia Sverige i listrutan.",
+        "Användarnamn = hela din @telia.com-adress.",
+        "Lösenord = brevlådelösenordet från ditt Telia-konto.",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: { type: "info", en: "Use port 465 with SSL/TLS.", sv: "Använd port 465 med SSL/TLS." }
+  },
+  {
+    id: "oderland",
+    en: { name: "Oderland Sweden", tag: "Oderland mailbox" },
+    sv: { name: "Oderland Sverige", tag: "Oderland-brevlåda" },
+    host: "mail.oderland.com", port: "465", security: "SSL/TLS", altPort: null,
+    username: "mail@yourdomain.com",
+    password: "Your Oderland mailbox password",
+    steps: {
+      en: [
+        "Choose Oderland Sweden in the dropdown.",
+        "Username = the full email address on your Oderland-hosted domain.",
+        "Password = the mailbox password set in the Oderland customer portal.",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "Välj Oderland Sverige i listrutan.",
+        "Användarnamn = hela e-postadressen på din Oderland-hostade domän.",
+        "Lösenord = brevlådelösenordet som anges i Oderlands kundportal.",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: { type: "info", en: "Use port 465 with SSL/TLS.", sv: "Använd port 465 med SSL/TLS." }
+  },
+  {
+    id: "binero",
+    en: { name: "Binero Sweden", tag: "Binero mailbox" },
+    sv: { name: "Binero Sverige", tag: "Binero-brevlåda" },
+    host: "smtp.binero.se", port: "587", security: "STARTTLS", altPort: null,
+    username: "mail@yourdomain.com",
+    password: "Your Binero mailbox password",
+    steps: {
+      en: [
+        "Choose Binero Sweden in the dropdown.",
+        "Username = the full email address on your Binero domain.",
+        "Password = the mailbox password from your Binero account.",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "Välj Binero Sverige i listrutan.",
+        "Användarnamn = hela e-postadressen på din Binero-domän.",
+        "Lösenord = brevlådelösenordet från ditt Binero-konto.",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: { type: "info", en: "Use port 587 with STARTTLS.", sv: "Använd port 587 med STARTTLS." }
+  },
+  {
+    id: "custom",
+    en: { name: "Custom Domain SMTP", tag: "Other provider" },
+    sv: { name: "Anpassad domän-SMTP", tag: "Annan leverantör" },
+    host: "smtp.yourdomain.com", port: "587", security: "STARTTLS", altPort: null,
+    username: "mail@yourdomain.com",
+    password: "Mailbox password provided by your host",
+    steps: {
+      en: [
+        "Ask your hosting or email provider for the outgoing (SMTP) server name, port and encryption type.",
+        "Choose Custom Domain SMTP and fill in those values manually.",
+        "Username is usually your full email address; password is the mailbox password.",
+        "Save and send a test reminder."
+      ],
+      sv: [
+        "Fråga din webbhotell- eller e-postleverantör efter namn på utgående (SMTP) server, port och krypteringstyp.",
+        "Välj Anpassad domän-SMTP och fyll i värdena manuellt.",
+        "Användarnamn är oftast hela din e-postadress; lösenordet är brevlådelösenordet.",
+        "Spara och skicka en testpåminnelse."
+      ]
+    },
+    note: {
+      type: "info",
+      en: "If a connection fails, double-check that the encryption matches the port: SSL/TLS goes with 465, STARTTLS goes with 587.",
+      sv: "Om anslutningen misslyckas, kontrollera att krypteringen matchar porten: SSL/TLS hör till 465, STARTTLS hör till 587."
+    }
+  }
+];
+
+let lang = "en";
+
+function t(key) { return I18N[lang][key] || I18N.en[key] || key; }
+
+function copyText(val, btn) {
+  navigator.clipboard.writeText(val).then(() => {
+    const old = btn.textContent;
+    btn.textContent = t("copied");
+    setTimeout(() => btn.textContent = old, 1200);
+  }).catch(() => {});
+}
+
+function renderProviders() {
+  const list = document.getElementById("providerList");
+  list.innerHTML = PROVIDERS.map(p => {
+    const meta = p[lang].name;
+    const alt = p.altPort ? `<span class="chip gray">${t("altPort")}: ${p.altPort}</span>` : "";
+    const rows = [
+      [t("host"), p.host],
+      [t("port"), p.port],
+      [t("security"), p.security],
+      [t("username"), p.username],
+      [t("password"), p.password]
+    ].map(([label, val]) => `
+      <tr>
+        <th>${label}</th>
+        <td><code>${val}</code><button class="copy-btn" onclick="copyText('${val.replace(/'/g, "\\'")}', this)">${t("copy")}</button></td>
+      </tr>`).join("");
+    const steps = p.steps[lang].map(s => `<li>${s}</li>`).join("");
+    const noteType = p.note.type === "warn" ? "warn" : "info";
+    return `
+      <div class="provider-card" id="card-${p.id}">
+        <button class="provider-head" onclick="toggleCard('${p.id}')">
+          <div>
+            <div class="provider-name">${p[lang].name}</div>
+            <div class="chip gray" style="margin-top:6px;">${p[lang].tag}</div>
+          </div>
+          <div class="provider-meta">
+            <span class="chip">${p.host}</span>
+            <span class="chip gray">Port ${p.port}</span>
+            ${alt}
+            <span class="chevron">▼</span>
+          </div>
+        </button>
+        <div class="provider-body">
+          <table class="settings-table">${rows}</table>
+          <h3 style="font-size:14px;margin-top:16px;">${t("stepsTitle")}</h3>
+          <ol class="steps">${steps}</ol>
+          <div class="note ${noteType}">${p.note[lang]}</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderTrouble() {
+  const list = document.getElementById("troubleList");
+  list.innerHTML = I18N[lang].troubles.map(item => `
+    <div class="trouble-item">
+      <b><span class="err-code">${item.code}</span>${item.title}</b>
+      <p>${item.body}</p>
+    </div>`).join("");
+}
+
+function applyStaticI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    el.innerHTML = t(key);
+  });
+}
+
+function render() {
+  applyStaticI18n();
+  renderProviders();
+  renderTrouble();
+}
+
+function setLang(next) {
+  lang = next;
+  document.getElementById("btn-en").classList.toggle("active", lang === "en");
+  document.getElementById("btn-sv").classList.toggle("active", lang === "sv");
+  document.documentElement.lang = lang;
+  render();
+}
+
+function toggleCard(id) {
+  document.getElementById("card-" + id).classList.toggle("open");
+}
+
+render();
+</script>
+</body>
+</html>
