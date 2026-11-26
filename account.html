@@ -174,7 +174,7 @@
               Show
             </button>
           </div>
-          <p id="existingPassHint" class="text-[11px] text-slate-400 mt-1">Stored securely in your Notion workspace profile.</p>
+          <p id="existingPassHint" class="text-[11px] text-slate-400 mt-1">Stored securely in your Database workspace profile.<a href="smtp-guide.html" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; margin-left: 6px;">View SMTP Setup Tutorial</a></p>
         </div>
            
         <div class="sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
@@ -359,7 +359,7 @@
         if (!json.success) throw new Error(json.error || "Save failed");
 
         localStorage.setItem(`nordic_billing_${uid}`, JSON.stringify(json.billingProfile));
-        statusEl.innerHTML = `<span class="text-emerald-600 font-semibold">✓ Billing profile saved to Notion.</span>`;
+        statusEl.innerHTML = `<span class="text-emerald-600 font-semibold">✓ Billing profile saved to Database.</span>`;
       } catch (err) {
         statusEl.innerHTML = `<span class="text-rose-600 font-semibold">⚠ ${err.message}</span>`;
       } finally {
