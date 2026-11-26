@@ -242,17 +242,27 @@
           <input type="text" id="transactionName" placeholder="e.g. AWS EMEA / ICA Supermarket" required />
         </div>
         <div class="form-group">
+          <label>Tax / Org ID (Org.nr / VAT)</label>
+          <input type="text" id="taxId" placeholder="e.g. 556xxx-xxxx / SE556xxx" />
+        </div>
+        <div class="form-group">
           <label>Invoice Date</label>
           <input type="date" id="invoiceDate" onchange="syncLedgerFromDate()" />
         </div>
         <div class="form-group">
           <label>Expense Category *</label>
           <select id="expenseCategory" onchange="onCategoryChange()">
-            <option value="Software/SaaS">Software/SaaS (BAS 5420)</option>
-            <option value="Travel & Meals">Travel & Meals (BAS 5800 / 6071)</option>
-            <option value="Subcontracting">Subcontracting (BAS 4000)</option>
-            <option value="Hardware & Equipment">Hardware & Equipment (BAS 5410)</option>
-            <option value="Office & Admin">Office & Admin (BAS 6110)</option>
+            <option value="Training & Courses">Training &amp; Courses</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Bank & Payment Fees">Bank &amp; Payment Fees</option>
+            <option value="Legal & Accounting">Legal &amp; Accounting</option>
+            <option value="Marketing & Ads">Marketing &amp; Ads</option>
+            <option value="Office & Admin">Office &amp; Admin</option>
+            <option value="Subcontracting">Subcontracting</option>
+            <option value="Travel & Meals">Travel &amp; Meals</option>
+            <option value="Office Rent/Coworking">Office Rent/Coworking</option>
+            <option value="Hardware & Equipment">Hardware &amp; Equipment</option>
+            <option value="Software/SaaS">Software/SaaS</option>
           </select>
         </div>
         <div class="form-group">
@@ -297,7 +307,7 @@
       <div class="upload-box">
         <div style="font-size:24px;">🧾</div>
         <div style="font-weight:600; margin-top:4px;">Receipt Archive & AI Extraction</div>
-        <div style="font-size:12px; color:var(--muted);">Images are compressed and archived automatically. AI extracts merchant, invoice date, FX conversion, and Swedish MOMS rates.</div>
+        <div style="font-size:12px; color:var(--muted);">Images are compressed and archived automatically. AI extracts merchant, tax ID, invoice date, FX conversion, and Swedish MOMS rates.</div>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFile(this)" />
         <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleImageFile(this)" />
         <div class="upload-btns">
@@ -328,6 +338,7 @@
         <thead>
           <tr>
             <th>Merchant / Transaction</th>
+            <th>Tax ID</th>
             <th>Date</th>
             <th>Receipt</th>
             <th>Category & Type</th>
@@ -342,7 +353,7 @@
           </tr>
         </thead>
         <tbody id="expenseTableBody">
-          <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">Loading expense records...</td></tr>
+          <tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px;">Loading expense records...</td></tr>
         </tbody>
       </table>
     </div>
@@ -364,7 +375,6 @@
   </div>
 
   <script>
-    // ==================== 支出与税务状态初始化 ====================
     const WORKER_URL = "https://workerc.qq596337481.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
@@ -427,6 +437,7 @@
       document.getElementById("expenseFormTitle").innerText = "Record Expense or Capital Asset";
       document.getElementById("saveBtn").innerText = "Save & Archive Receipt";
       document.getElementById("transactionName").value = "";
+      document.getElementById("taxId").value = "";
       document.getElementById("invoiceDate").value = new Date().toISOString().slice(0, 10);
       document.getElementById("expenseCategory").value = "Software/SaaS";
       document.getElementById("grossPaid").value = "";
@@ -449,8 +460,9 @@
       document.getElementById("expenseFormTitle").innerText = "Edit Expense Record";
       document.getElementById("saveBtn").innerText = "Update Expense";
       document.getElementById("transactionName").value = item.transactionName || "";
+      document.getElementById("taxId").value = item.taxId || "";
       document.getElementById("invoiceDate").value = item.invoiceDate || new Date().toISOString().slice(0, 10);
-      document.getElementById("expenseCategory").value = item.expenseCategory || "Software/SaaS";
+      document.getElementById("expenseCategory").value = item.expenseCategory || "Office & Admin";
       document.getElementById("grossPaid").value = Number(item.grossPaid || 0).toFixed(2);
       document.getElementById("inputVatRate").value = String(item.inputVatRate ?? 0.25);
       document.getElementById("assetType").value = item.assetType || "Current Expense";
@@ -482,10 +494,13 @@
 
     function onCategoryChange() {
       const cat = document.getElementById("expenseCategory").value;
+      const vatEl = document.getElementById("inputVatRate");
       if (cat === "Travel & Meals") {
-        document.getElementById("inputVatRate").value = "0.12";
+        vatEl.value = "0.12";
+      } else if (cat === "Insurance" || cat === "Bank & Payment Fees") {
+        vatEl.value = "0";
       } else {
-        document.getElementById("inputVatRate").value = "0.25";
+        vatEl.value = "0.25";
       }
       recalcPreview();
     }
@@ -514,7 +529,6 @@
       document.getElementById("prevDeduct").innerText = formatExpenseMoney(net * ratio);
     }
 
-    // ==================== 票据压缩与 AI OCR 识别 ====================
     function compressReceiptImage(dataUrl, maxSide = 960, initialQuality = 0.65) {
       return new Promise((resolve) => {
         if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
@@ -579,7 +593,7 @@
       const statusEl = document.getElementById("ocrStatus");
       statusEl.style.display = "block";
       statusEl.className = "ocr-banner ocr-loading";
-      statusEl.innerText = "✨ Extracting merchant, date, currency conversion, and Swedish MOMS rate...";
+      statusEl.innerText = "✨ Extracting merchant, tax ID, date, FX conversion, and Swedish MOMS rate...";
       notifyParentHeight();
       try {
         const res = await fetch(`${WORKER_URL}/api/ocr`, {
@@ -600,6 +614,9 @@
           }
           document.getElementById("transactionName").value = labelName;
         }
+        if (info.taxId) {
+          document.getElementById("taxId").value = String(info.taxId).trim();
+        }
         if (info.invoiceDate) {
           document.getElementById("invoiceDate").value = info.invoiceDate;
           syncLedgerFromDate();
@@ -607,14 +624,26 @@
         if (info.grossPaid > 0) {
           document.getElementById("grossPaid").value = Number(info.grossPaid).toFixed(2);
         }
-        if (info.inputVatRate !== undefined) {
-          document.getElementById("inputVatRate").value = String(info.inputVatRate);
-        }
         if (info.expenseCategory) {
-          document.getElementById("expenseCategory").value = info.expenseCategory;
+          const catSelect = document.getElementById("expenseCategory");
+          const matchedOpt = Array.from(catSelect.options).find(o => o.value === info.expenseCategory);
+          if (matchedOpt) {
+            catSelect.value = info.expenseCategory;
+          }
+        }
+        if (info.inputVatRate !== undefined && info.inputVatRate !== null && info.inputVatRate !== "") {
+          const allowedVat = ["0.25", "0.12", "0.06", "0"];
+          const vStr = String(info.inputVatRate);
+          if (allowedVat.includes(vStr)) {
+            document.getElementById("inputVatRate").value = vStr;
+          } else {
+            onCategoryChange();
+          }
+        } else {
+          onCategoryChange();
         }
         if (info.assetType) {
-          document.getElementById("assetType").value = info.assetType;
+          document.getElementById("assetType").value = info.assetType === "Capital Asset" ? "Capital Asset" : "Current Expense";
         }
         recalcPreview();
         const fxRate = (info.converted && info.originalAmount > 0 && info.grossPaid > 0)
@@ -624,8 +653,9 @@
           ? ` | Converted ${Number(info.originalAmount).toFixed(2)} ${info.currency} → €${Number(info.grossPaid).toFixed(2)}${fxRate}`
           : ` | €${Number(info.grossPaid || 0).toFixed(2)}`;
         const dateNote = info.invoiceDate ? ` | ${info.invoiceDate}` : "";
+        const taxNote = info.taxId ? ` | Tax ID: ${info.taxId}` : "";
         statusEl.className = "ocr-banner ocr-success";
-        statusEl.innerText = `✅ Extracted: ${info.transactionName || "Merchant"}${fxNote}${dateNote} | MOMS ${Math.round((info.inputVatRate || 0) * 100)}%. Review before saving.`;
+        statusEl.innerText = `✅ Extracted: ${info.transactionName || "Merchant"}${taxNote}${fxNote}${dateNote} | MOMS ${Math.round((info.inputVatRate || 0) * 100)}%. Review before saving.`;
       } catch (err) {
         statusEl.className = "ocr-banner ocr-error";
         statusEl.innerText = `⚠️ AI extraction incomplete (${err.message}). Please enter details manually.`;
@@ -661,11 +691,10 @@
       localStorage.setItem(`nordic_exp_ratios_${CURRENT_UID}`, JSON.stringify(map));
     }
 
-    // ==================== 支出列表、抵扣口径规范与 CSV 导出 ====================
     async function loadExpenses() {
       if (!CURRENT_UID) {
         document.getElementById("expenseTableBody").innerHTML =
-          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">Missing workspace UID. Please sign in again.</td></tr>`;
+          `<tr><td colspan="13" style="text-align:center; color:var(--danger); padding:24px;">Missing workspace UID. Please sign in again.</td></tr>`;
         return;
       }
       try {
@@ -676,7 +705,7 @@
         renderTable();
       } catch (err) {
         document.getElementById("expenseTableBody").innerHTML =
-          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">Failed to load expenses: ${escapeHtml(err.message)}</td></tr>`;
+          `<tr><td colspan="13" style="text-align:center; color:var(--danger); padding:24px;">Failed to load expenses: ${escapeHtml(err.message)}</td></tr>`;
         notifyParentHeight();
       }
     }
@@ -724,7 +753,7 @@
 
       const tbody = document.getElementById("expenseTableBody");
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:var(--muted); padding:24px;">No expenses recorded for this period. Click "+ Record Expense" to add a receipt.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--muted); padding:24px;">No expenses recorded for this period. Click "+ Record Expense" to add a receipt.</td></tr>`;
         notifyParentHeight();
         return;
       }
@@ -744,6 +773,7 @@
             <strong>${escapeHtml(item.transactionName)}</strong>
             ${fxSub}
           </td>
+          <td style="white-space:nowrap; font-size:12px; color:var(--muted);">${escapeHtml(item.taxId || "-")}</td>
           <td style="white-space:nowrap;">${escapeHtml(item.invoiceDate || "-")}</td>
           <td><button class="btn btn-sm" onclick="viewReceipt('${escapeHtml(item.id)}')">📄 View</button></td>
           <td>
@@ -774,11 +804,12 @@
         alert("No expense records available to export for the selected ledger.");
         return;
       }
-      const headers = ["Merchant / Transaction", "Invoice Date", "Category", "Asset Type", "Gross EUR", "VAT %", "Net EUR", "Deductibility", "Reclaimable VAT EUR", "Deductible Amount EUR", "Tax Ledger"];
+      const headers = ["Merchant / Transaction", "Tax ID", "Invoice Date", "Category", "Asset Type", "Gross EUR", "VAT %", "Net EUR", "Deductibility", "Reclaimable VAT EUR", "Deductible Amount EUR", "Tax Ledger"];
       const rows = list.map(item => {
         const norm = normalizeDeductibleDisplay(item);
         return [
           `"${String(item.transactionName || "").replace(/"/g, '""')}"`,
+          `"${String(item.taxId || "").replace(/"/g, '""')}"`,
           item.invoiceDate || "",
           `"${String(item.expenseCategory || "").replace(/"/g, '""')}"`,
           `"${String(item.assetType || "").replace(/"/g, '""')}"`,
@@ -822,6 +853,7 @@
           id: editId || undefined,
           uid: CURRENT_UID,
           transactionName,
+          taxId: document.getElementById("taxId").value.trim(),
           invoiceDate: document.getElementById("invoiceDate").value || "",
           expenseCategory: document.getElementById("expenseCategory").value,
           grossPaid,
@@ -847,6 +879,7 @@
           saveCustomRatio(savedId, deductRatio);
         }
         document.getElementById("transactionName").value = "";
+        document.getElementById("taxId").value = "";
         document.getElementById("grossPaid").value = "";
         clearReceipt();
         recalcPreview();
