@@ -146,6 +146,7 @@ const WORKER_B_URL = "https://us-xiaoyan.qq596337481.workers.dev";
 let uid = "";
 let activeCurrency = "SEK";
 let eurToSekRate = 11.35;
+let currentModalNetEur = 0;
 let invoiceListCache = [];
 let clientListCache = [];
 let clientCacheTime = 0;
@@ -227,11 +228,13 @@ function inferTaxRule(client){
 }
 
 function updateLiveInvoicePreview(){
-  const net = parseFloat(invNetInput.value) || 0;
+  const netEur = Number(currentModalNetEur || 0);
   const rateText = document.getElementById("invVatRate").value.replace("%", "");
   const rate = parseFloat(rateText) || 0;
-  const gross = net * (1 + rate / 100);
-  document.getElementById("invGrossPreview").value = net > 0 ? formatMoney(gross) : "-";
+  const grossEur = netEur * (1 + rate / 100);
+  document.getElementById("lblInvNet").innerText = `Net Amount (${activeCurrency} · Synced from Project)`;
+  invNetInput.value = netEur > 0 ? convertAmountFromEur(netEur).toFixed(2) : "";
+  document.getElementById("invGrossPreview").value = netEur > 0 ? formatMoney(grossEur) : "-";
 }
 
 // 生成瑞典网银常用带模10校验位 OCR 参考号
@@ -254,13 +257,18 @@ function generateSwedishOcr(invoiceNo){
   return base + String(checkDigit);
 }
 
+function renderView(){
+  renderInvoiceTable();
+  updateLiveInvoicePreview();
+}
+
 window.addEventListener("message", (event) => {
   const data = event.data || {};
-  if(data.type === "CURRENCY_CHANGE"){
+  if(data.type === "NORDIC_CURRENCY_CHANGE" || data.type === "CURRENCY_CHANGE" || data.currency){
     if(data.currency) activeCurrency = data.currency;
-    if(data.eurToSekRate && Number(data.eurToSekRate) > 0) eurToSekRate = Number(data.eurToSekRate);
-    renderInvoiceTable();
-    updateLiveInvoicePreview();
+    const incomingRate = Number(data.rate || data.eurToSekRate || 0);
+    if(incomingRate > 0) eurToSekRate = incomingRate;
+    renderView();
   }
 });
 
@@ -278,6 +286,7 @@ document.addEventListener("DOMContentLoaded", async function(){
   invClientSel.onchange = async function(){
     const clientId = this.value;
     invProjectSel.innerHTML = `<option value="">-- Select Project --</option>`;
+    currentModalNetEur = 0;
     invNetInput.value = "";
     const clientObj = clientListCache.find(c => c.id === clientId);
     const rule = inferTaxRule(clientObj);
@@ -301,8 +310,8 @@ document.addEventListener("DOMContentLoaded", async function(){
   btnSaveInv.onclick = saveInvoice;
 
   uid = getUrlParam("uid") || localStorage.getItem("nordic_uid") || "";
-  activeCurrency = getUrlParam("currency") || localStorage.getItem("nordic_currency") || "SEK";
-  const fxParam = parseFloat(getUrlParam("fx") || localStorage.getItem("nordic_eur_to_sek") || "11.35");
+  activeCurrency = getUrlParam("currency") || localStorage.getItem("nordic_display_currency") || localStorage.getItem("nordic_currency") || "SEK";
+  const fxParam = parseFloat(getUrlParam("fx") || localStorage.getItem("nordic_eur_sek_rate") || localStorage.getItem("nordic_eur_to_sek") || "11.35");
   if (fxParam > 0) eurToSekRate = fxParam;
   if(!uid){
     alert("Missing workspace UID. Please open from the dashboard.");
@@ -311,7 +320,6 @@ document.addEventListener("DOMContentLoaded", async function(){
 
   try{
     await loadInvoiceList();
-    // 支持从项目管理带预填参数直接打开新建发票弹窗
     const prefillClient = getUrlParam("prefillClient");
     const prefillProject = getUrlParam("prefillProject");
     if(prefillClient){
@@ -324,7 +332,7 @@ document.addEventListener("DOMContentLoaded", async function(){
 
 async function loadClientOptions(selectedClientId = ""){
   const now = Date.now();
-  if(clientListCache.length === 0 || (now - clientCacheTime > 45000)){
+  if(clientListCache.length === 0 || (now - clientCacheTime > 15000)){
     invClientSel.innerHTML = `<option value="">-- Loading clients... --</option>`;
     const res = await fetch(WORKER_B_URL, {
       method: "POST",
@@ -378,7 +386,7 @@ async function loadProjectByClient(clientId, selectedProjectId = ""){
 
 async function fillProjectInfo(projectId){
   if(!projectId){
-    invNetInput.value = "";
+    currentModalNetEur = 0;
     updateLiveInvoicePreview();
     return;
   }
@@ -389,9 +397,9 @@ async function fillProjectInfo(projectId){
   });
   const ret = await res.json();
   if(ret.success){
-    invNetInput.value = convertAmountFromEur(ret.netAmount || 0).toFixed(2);
+    currentModalNetEur = Number(ret.netAmount || 0);
   }else{
-    invNetInput.value = "";
+    currentModalNetEur = 0;
   }
   updateLiveInvoicePreview();
 }
@@ -429,9 +437,10 @@ function renderInvoiceTable(){
       <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${escapeHtml(inv.paymentStatus)}</span></td>
       <td class="p-3 text-gray-500 text-xs">${escapeHtml(inv.dueDate || "")}</td>
       <td class="p-3 text-center whitespace-nowrap">
-        <button class="previewBtn text-slate-700 hover:underline text-xs font-medium mr-2.5" data-id="${escapeHtml(inv.id)}">Preview</button>
+        <button class="previewBtn text-slate-700 hover:underline text-xs font-medium mr-2" data-id="${escapeHtml(inv.id)}">Preview</button>
         ${quickActionBtn}
-        <button class="editBtn text-blue-600 hover:underline text-xs font-medium" data-id="${escapeHtml(inv.id)}">Edit</button>
+        <button class="editBtn text-blue-600 hover:underline text-xs font-medium mr-2" data-id="${escapeHtml(inv.id)}">Edit</button>
+        <button class="deleteBtn text-red-600 hover:underline text-xs font-medium" data-id="${escapeHtml(inv.id)}">Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -461,7 +470,39 @@ function renderInvoiceTable(){
     };
   });
 
+  document.querySelectorAll(".deleteBtn").forEach(btn => {
+    btn.onclick = async () => {
+      const pid = btn.dataset.id;
+      const invData = invoiceListCache.find(x => x.id === pid);
+      if(!invData) return;
+      await deleteInvoice(invData);
+    };
+  });
+
   notifyParentHeight();
+}
+
+async function deleteInvoice(inv){
+  if(!confirm(`Archive and remove invoice "${inv.invoiceId}"?`)) return;
+  try {
+    const res = await fetch(WORKER_B_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "deleteInvoice",
+        uid,
+        pageId: inv.id
+      })
+    });
+    const ret = await res.json();
+    if(ret.success){
+      await loadInvoiceList();
+    } else {
+      alert(ret.error || "Unable to delete invoice");
+    }
+  } catch (err) {
+    alert("Delete error: " + err.message);
+  }
 }
 
 async function quickUpdateInvoiceStatus(inv, nextStatus){
@@ -502,7 +543,7 @@ function openFakturaPreview(inv){
   document.getElementById("printableFaktura").innerHTML = `
     <div class="flex justify-between items-start border-b border-slate-200 pb-5">
       <div>
-        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">INVOICE / FAKTURA</div>
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">INVOICE / FAKTURA (${escapeHtml(inv.paymentStatus || "Draft")})</div>
         <h2 class="text-xl font-bold text-slate-900 mt-1">${escapeHtml(seller.legalName || "Nordic Consulting AB")}</h2>
         <div class="text-xs text-slate-500 mt-1">${escapeHtml(seller.address || "Stockholm, Sweden")}</div>
       </div>
@@ -517,6 +558,7 @@ function openFakturaPreview(inv){
       <div>
         <div class="text-slate-400 font-medium mb-1">Billed To</div>
         <div class="font-bold text-slate-900 text-sm">${escapeHtml(inv.clientName || "-")}</div>
+        ${inv.clientCountry ? `<div class="text-slate-500 mt-0.5">${escapeHtml(inv.clientCountry)}</div>` : ""}
       </div>
       <div>
         <div class="text-slate-400 font-medium mb-1">Engagement / Line Item</div>
@@ -603,10 +645,10 @@ async function openAddModal(prefillClientId = "", prefillProjectId = ""){
   document.getElementById("editPageId").value = "";
   const defaultNo = `INV-${new Date().getFullYear()}-${String(invoiceListCache.length + 1).padStart(3, "0")}`;
   document.getElementById("invId").value = defaultNo;
+  currentModalNetEur = 0;
   invNetInput.value = "";
   document.getElementById("invVatRate").value = "";
   document.getElementById("invGrossPreview").value = "-";
-  // 默认设置 30 天账期
   const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
   document.getElementById("invDue").value = due;
   document.getElementById("invStatus").value = "Draft";
@@ -624,7 +666,7 @@ async function openEditModal(inv, pageId){
   modalTitle.innerText = "Edit Invoice";
   document.getElementById("editPageId").value = pageId;
   document.getElementById("invId").value = inv.invoiceId;
-  invNetInput.value = Number(inv.netAmount || 0).toFixed(2);
+  currentModalNetEur = Number(inv.netAmount || 0);
   document.getElementById("invVatRate").value = `${Number(inv.vatRate || 0).toFixed(2)}%`;
   document.getElementById("invDue").value = inv.dueDate;
   document.getElementById("invStatus").value = inv.paymentStatus;

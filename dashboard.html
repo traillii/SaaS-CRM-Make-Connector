@@ -172,10 +172,11 @@
                     </button>
                 </div>
 
-                <!-- Client Form Panel -->
+                <!-- Client Form Panel (Add & Edit) -->
                 <div id="clientFormCard" class="hidden mb-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                    <h3 class="text-base font-bold text-slate-900 mb-4">Add New Client</h3>
-                    <form onsubmit="createClient(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <h3 id="clientFormTitle" class="text-base font-bold text-slate-900 mb-4">Add New Client</h3>
+                    <form onsubmit="saveClientForm(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <input type="hidden" id="editClientPageId" value="">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Client / Company Name *</label>
                             <input type="text" id="clientName" required placeholder="e.g., Acme Nordic AB" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
@@ -244,9 +245,11 @@
                     </button>
                 </div>
 
+                <!-- Project Form Panel (Add & Edit) -->
                 <div id="projectFormCard" class="hidden mb-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                    <h3 class="text-base font-bold text-slate-900 mb-4">Create New Project</h3>
-                    <form onsubmit="createProject(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <h3 id="projectFormTitle" class="text-base font-bold text-slate-900 mb-4">Create New Project</h3>
+                    <form onsubmit="saveProjectForm(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <input type="hidden" id="editProjectPageId" value="">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Project Name *</label>
                             <input type="text" id="projectName" required placeholder="e.g., Q4 Web Platform" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl">
@@ -289,10 +292,11 @@
                                 <th class="py-3 px-4 text-right">Rate</th>
                                 <th class="py-3 px-4 text-right">Hours</th>
                                 <th class="py-3 px-4 text-right">Pre-Tax Value</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="projectTableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="6" class="py-8 text-center text-slate-400">Loading projects...</td></tr>
+                            <tr><td colspan="7" class="py-8 text-center text-slate-400">Loading projects...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -446,7 +450,18 @@
             broadcastCurrencyToIframes(currency, rate);
         }
 
-
+        // Listen for iframe height & billing check requests
+        window.addEventListener("message", (event) => {
+            const data = event.data || {};
+            if (data.type === "IFRAME_HEIGHT" && data.frameId && data.height) {
+                const frame = document.getElementById(data.frameId);
+                if (frame) {
+                    frame.style.height = `${Math.max(720, Number(data.height) + 30)}px`;
+                }
+            } else if (data.type === "CHECK_BILLING_PROFILE") {
+                document.getElementById("billingWarningModal").classList.remove("hidden");
+            }
+        });
 
         // ==================== Navigation & Tabs ====================
         const tabs = {
@@ -473,17 +488,27 @@
         tabs.project.btn.onclick = () => switchTab("project");
 
         tabs.invoice.btn.onclick = () => {
+            openInvoicesTab();
+        };
+
+        function openInvoicesTab(prefillClientId = "", prefillProjectId = "") {
             const billing = getBillingProfile();
             if (!billing || !billing.iban) {
                 document.getElementById("billingWarningModal").classList.remove("hidden");
             }
             const { currency, rate } = getCurrencySettings();
             switchTab("invoice");
-            if (!invoiceIframeLoaded) {
-                document.getElementById("invoiceIframe").src = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(currency)}&fx=${encodeURIComponent(rate)}`;
+            const frame = document.getElementById("invoiceIframe");
+            if (!invoiceIframeLoaded || prefillClientId) {
+                let src = `invoices.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(currency)}&fx=${encodeURIComponent(rate)}`;
+                if (prefillClientId) src += `&prefillClient=${encodeURIComponent(prefillClientId)}`;
+                if (prefillProjectId) src += `&prefillProject=${encodeURIComponent(prefillProjectId)}`;
+                frame.src = src;
                 invoiceIframeLoaded = true;
+            } else {
+                broadcastCurrencyToIframes(currency, rate);
             }
-        };
+        }
 
         tabs.expense.btn.onclick = () => {
             const { currency, rate } = getCurrencySettings();
@@ -491,6 +516,8 @@
             if (!expenseIframeLoaded) {
                 document.getElementById("expenseIframe").src = `expenses.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(currency)}&fx=${encodeURIComponent(rate)}`;
                 expenseIframeLoaded = true;
+            } else {
+                broadcastCurrencyToIframes(currency, rate);
             }
         };
 
@@ -500,12 +527,16 @@
             if (!taxLedgerIframeLoaded) {
                 document.getElementById("taxLedgerIframe").src = `taxledger.html?uid=${encodeURIComponent(uid)}&currency=${encodeURIComponent(currency)}&fx=${encodeURIComponent(rate)}`;
                 taxLedgerIframeLoaded = true;
+            } else {
+                broadcastCurrencyToIframes(currency, rate);
             }
         };
 
         // ==================== Billing Setup Check ====================
         function getBillingProfile() {
-            if (userProfile && userProfile.billingProfile) return userProfile.billingProfile;
+            if (userProfile && userProfile.billingProfile && (userProfile.billingProfile.legalName || userProfile.billingProfile.iban)) {
+                return userProfile.billingProfile;
+            }
             try {
                 return JSON.parse(localStorage.getItem(`nordic_billing_${uid}`) || "null");
             } catch (e) {
@@ -539,7 +570,8 @@
 
                 userProfile = json;
                 if (json.billingProfile && (json.billingProfile.legalName || json.billingProfile.iban)) {
-                    localStorage.setItem(`nordic_billing_${uid}`, JSON.stringify(json.billingProfile));
+                    const localExisting = getBillingProfile() || {};
+                    localStorage.setItem(`nordic_billing_${uid}`, JSON.stringify({ ...localExisting, ...json.billingProfile }));
                 }
 
                 document.getElementById("userEmail").innerText = json.email || uid;
@@ -563,7 +595,6 @@
                 });
                 const json = await res.json();
                 const rawClients = json.list || json.clients || [];
-                // 统一字段映射以兼容 Notion 后端结构
                 clientList = rawClients.map(c => ({
                     id: c.pageId || c.id || "",
                     name: c.clientName || c.name || "",
@@ -584,9 +615,11 @@
         function renderClients() {
             const tbody = document.getElementById("clientTableBody");
             const select = document.getElementById("projectClientSelect");
+            const prevSelectedClient = select.value;
 
             select.innerHTML = `<option value="">-- Select Client --</option>` +
                 clientList.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join("");
+            if (prevSelectedClient) select.value = prevSelectedClient;
 
             if (clientList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No clients yet. Click "+ Add Client" to get started.</td></tr>`;
@@ -611,9 +644,15 @@
                         <td class="py-3.5 px-4">${ruleBadge}</td>
                         <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${escapeHtml(vat || "-")}</td>
                         <td class="py-3.5 px-4 text-slate-600">${escapeHtml(c.email || "-")}</td>
-                        <td class="py-3.5 px-4 text-right">
-                            <button onclick="tabs.invoice.btn.click()" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
-                                Create Invoice →
+                        <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
+                            <button onclick="openInvoicesTab('${escapeHtml(c.id)}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                Invoice →
+                            </button>
+                            <button onclick="openEditClientModal('${escapeHtml(c.id)}')" class="text-xs font-semibold text-slate-600 hover:text-slate-900">
+                                Edit
+                            </button>
+                            <button onclick="deleteClient('${escapeHtml(c.id)}')" class="text-xs font-semibold text-rose-600 hover:text-rose-800">
+                                Delete
                             </button>
                         </td>
                     </tr>
@@ -650,7 +689,7 @@
         function renderProjects() {
             const tbody = document.getElementById("projectTableBody");
             if (projectList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">No projects recorded yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No projects recorded yet.</td></tr>`;
                 return;
             }
 
@@ -669,6 +708,15 @@
                         <td class="py-3.5 px-4 text-right text-slate-600">${formatMoneyFromEur(p.rateAmount)}</td>
                         <td class="py-3.5 px-4 text-right text-slate-600">${p.totalHours}</td>
                         <td class="py-3.5 px-4 text-right font-semibold text-emerald-700">${formatMoneyFromEur(p.projectValue)}</td>
+                        <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
+                            ${p.clientPageId ? `<button onclick="openInvoicesTab('${escapeHtml(p.clientPageId)}', '${escapeHtml(p.id)}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Invoice →</button>` : ""}
+                            <button onclick="openEditProjectModal('${escapeHtml(p.id)}')" class="text-xs font-semibold text-slate-600 hover:text-slate-900">
+                                Edit
+                            </button>
+                            <button onclick="deleteProject('${escapeHtml(p.id)}')" class="text-xs font-semibold text-rose-600 hover:text-rose-800">
+                                Delete
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join("");
@@ -680,41 +728,74 @@
             document.getElementById("pipelineTotalValue").innerText = formatMoneyFromEur(totalPipelineEur);
         }
 
-        // ==================== Form Actions ====================
+        // ==================== Client Add / Edit / Delete ====================
         function openClientModal() {
             const max = Number(userProfile?.maxClients || 10);
             if (clientList.length >= max) {
                 alert(`Client quota reached (${max} clients). Please upgrade your subscription plan in Account & Billing.`);
                 return;
             }
+            document.getElementById("editClientPageId").value = "";
+            document.getElementById("clientFormTitle").innerText = "Add New Client";
+            document.getElementById("saveClientBtn").innerText = "Save Client";
+            document.getElementById("clientName").value = "";
+            document.getElementById("clientEmail").value = "";
+            document.getElementById("clientPhone").value = "";
+            document.getElementById("clientCountry").value = "Sweden";
+            document.getElementById("clientVat").value = "";
+            document.getElementById("clientNotes").value = "";
             document.getElementById("clientFormCard").classList.remove("hidden");
         }
+
+        function openEditClientModal(pageId) {
+            const client = clientList.find(c => c.id === pageId);
+            if (!client) return;
+            document.getElementById("editClientPageId").value = client.id;
+            document.getElementById("clientFormTitle").innerText = "Edit Client Profile";
+            document.getElementById("saveClientBtn").innerText = "Update Client";
+            document.getElementById("clientName").value = client.name || "";
+            document.getElementById("clientEmail").value = client.email || "";
+            document.getElementById("clientPhone").value = client.phone || "";
+            document.getElementById("clientCountry").value = client.country || "Sweden";
+            document.getElementById("clientVat").value = client.vatNumber || "";
+            document.getElementById("clientNotes").value = client.notes || "";
+            const card = document.getElementById("clientFormCard");
+            card.classList.remove("hidden");
+            card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
         function closeClientModal() {
+            document.getElementById("editClientPageId").value = "";
             document.getElementById("clientFormCard").classList.add("hidden");
         }
 
-        async function createClient(e) {
+        async function saveClientForm(e) {
             e.preventDefault();
             const btn = document.getElementById("saveClientBtn");
+            const editPageId = document.getElementById("editClientPageId").value.trim();
+            const isEdit = Boolean(editPageId);
+
             btn.disabled = true;
-            btn.innerText = "Saving...";
+            btn.innerText = isEdit ? "Updating..." : "Saving...";
 
             try {
-                // 对齐 Worker B 的 addClient action 与 payload 字段
+                const payload = {
+                    clientName: document.getElementById("clientName").value.trim(),
+                    contactEmail: document.getElementById("clientEmail").value.trim(),
+                    phone: document.getElementById("clientPhone").value.trim(),
+                    countryRegion: document.getElementById("clientCountry").value,
+                    vatNo: document.getElementById("clientVat").value.trim(),
+                    notes: document.getElementById("clientNotes").value.trim()
+                };
+                if (isEdit) payload.pageId = editPageId;
+
                 const res = await fetch(WORKER_B_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         uid,
-                        action: "addClient",
-                        payload: {
-                            clientName: document.getElementById("clientName").value.trim(),
-                            contactEmail: document.getElementById("clientEmail").value.trim(),
-                            phone: document.getElementById("clientPhone").value.trim(),
-                            countryRegion: document.getElementById("clientCountry").value,
-                            vatNo: document.getElementById("clientVat").value.trim(),
-                            notes: document.getElementById("clientNotes").value.trim()
-                        }
+                        action: isEdit ? "editClient" : "addClient",
+                        payload
                     })
                 });
                 const json = await res.json();
@@ -727,40 +808,95 @@
                 alert(err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Save Client";
+                btn.innerText = isEdit ? "Update Client" : "Save Client";
             }
         }
 
-        function openProjectModal() {
-            document.getElementById("projectFormCard").classList.remove("hidden");
-        }
-        function closeProjectModal() {
-            document.getElementById("projectFormCard").classList.add("hidden");
-        }
-
-        async function createProject(e) {
-            e.preventDefault();
-            const btn = document.getElementById("saveProjectBtn");
-            btn.disabled = true;
-            btn.innerText = "Saving...";
+        async function deleteClient(pageId) {
+            const client = clientList.find(c => c.id === pageId);
+            const label = client ? client.name : "this client";
+            if (!confirm(`Archive and remove "${label}"?`)) return;
 
             try {
-                // 对齐 Worker B 的 addProject action 与字段
                 const res = await fetch(WORKER_B_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         uid,
-                        action: "addProject",
-                        projectName: document.getElementById("projectName").value.trim(),
-                        clientPageId: document.getElementById("projectClientSelect").value,
-                        billingType: document.getElementById("projectBillingType").value,
-                        rateAmount: parseFloat(document.getElementById("projectRateEur").value) || 0,
-                        totalHours: parseFloat(document.getElementById("projectHours").value) || 0
+                        action: "deleteClient",
+                        payload: { pageId }
                     })
                 });
                 const json = await res.json();
-                if (!json.success) throw new Error(json.error || "Failed to create project");
+                if (!json.success) throw new Error(json.error || "Failed to delete client");
+                await loadClients();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // ==================== Project Add / Edit / Delete ====================
+        function openProjectModal() {
+            document.getElementById("editProjectPageId").value = "";
+            document.getElementById("projectFormTitle").innerText = "Create New Project";
+            document.getElementById("saveProjectBtn").innerText = "Create Project";
+            document.getElementById("projectName").value = "";
+            document.getElementById("projectClientSelect").value = "";
+            document.getElementById("projectBillingType").value = "Hourly Rate";
+            document.getElementById("projectRateEur").value = "";
+            document.getElementById("projectHours").value = "1";
+            document.getElementById("projectFormCard").classList.remove("hidden");
+        }
+
+        function openEditProjectModal(projectId) {
+            const proj = projectList.find(p => p.id === projectId);
+            if (!proj) return;
+            document.getElementById("editProjectPageId").value = proj.id;
+            document.getElementById("projectFormTitle").innerText = "Edit Project";
+            document.getElementById("saveProjectBtn").innerText = "Update Project";
+            document.getElementById("projectName").value = proj.name || "";
+            document.getElementById("projectClientSelect").value = proj.clientPageId || "";
+            document.getElementById("projectBillingType").value = proj.billingType || "Hourly Rate";
+            document.getElementById("projectRateEur").value = proj.rateAmount || 0;
+            document.getElementById("projectHours").value = proj.totalHours ?? 0;
+            const card = document.getElementById("projectFormCard");
+            card.classList.remove("hidden");
+            card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function closeProjectModal() {
+            document.getElementById("editProjectPageId").value = "";
+            document.getElementById("projectFormCard").classList.add("hidden");
+        }
+
+        async function saveProjectForm(e) {
+            e.preventDefault();
+            const btn = document.getElementById("saveProjectBtn");
+            const editProjectId = document.getElementById("editProjectPageId").value.trim();
+            const isEdit = Boolean(editProjectId);
+
+            btn.disabled = true;
+            btn.innerText = isEdit ? "Updating..." : "Saving...";
+
+            try {
+                const reqBody = {
+                    uid,
+                    action: isEdit ? "editProject" : "addProject",
+                    projectName: document.getElementById("projectName").value.trim(),
+                    clientPageId: document.getElementById("projectClientSelect").value,
+                    billingType: document.getElementById("projectBillingType").value,
+                    rateAmount: parseFloat(document.getElementById("projectRateEur").value) || 0,
+                    totalHours: parseFloat(document.getElementById("projectHours").value) || 0
+                };
+                if (isEdit) reqBody.projectId = editProjectId;
+
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reqBody)
+                });
+                const json = await res.json();
+                if (!json.success) throw new Error(json.error || "Failed to save project");
 
                 e.target.reset();
                 closeProjectModal();
@@ -769,7 +905,30 @@
                 alert(err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Create Project";
+                btn.innerText = isEdit ? "Update Project" : "Create Project";
+            }
+        }
+
+        async function deleteProject(projectId) {
+            const proj = projectList.find(p => p.id === projectId);
+            const label = proj ? proj.name : "this project";
+            if (!confirm(`Archive and remove project "${label}"?`)) return;
+
+            try {
+                const res = await fetch(WORKER_B_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        uid,
+                        action: "deleteProject",
+                        projectId
+                    })
+                });
+                const json = await res.json();
+                if (!json.success) throw new Error(json.error || "Failed to delete project");
+                await loadProjects();
+            } catch (err) {
+                alert(err.message);
             }
         }
 

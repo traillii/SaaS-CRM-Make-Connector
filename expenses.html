@@ -228,13 +228,14 @@
           <option value="2025">2025 Tax Ledger</option>
         </select>
         <button class="btn" onclick="exportExpensesCsv()">⬇ Export CSV</button>
-        <button class="btn btn-primary" onclick="toggleForm()">+ Record Expense</button>
+        <button class="btn btn-primary" onclick="openNewExpenseForm()">+ Record Expense</button>
       </div>
     </div>
 
-    <!-- 新增支出 / 固定资产表单 -->
+    <!-- 新增 / 编辑支出 / 固定资产表单 -->
     <div class="form-panel" id="expenseFormPanel">
-      <h3>Record Expense or Capital Asset</h3>
+      <h3 id="expenseFormTitle">Record Expense or Capital Asset</h3>
+      <input type="hidden" id="editExpenseId" value="" />
       <div class="form-grid">
         <div class="form-group">
           <label>Merchant / Transaction *</label>
@@ -316,7 +317,7 @@
       </div>
 
       <div class="form-footer">
-        <button type="button" class="btn" onclick="toggleForm()">Cancel</button>
+        <button type="button" class="btn" onclick="closeExpenseForm()">Cancel</button>
         <button type="button" class="btn btn-primary" id="saveBtn" onclick="submitExpense()">Save & Archive Receipt</button>
       </div>
     </div>
@@ -367,12 +368,11 @@
     const WORKER_URL = "https://workerc.qq596337481.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const CURRENT_UID = urlParams.get("uid") || localStorage.getItem("nordic_uid") || "";
-    let activeCurrency = urlParams.get("currency") || localStorage.getItem("nordic_currency") || "EUR";
-    let eurToSekRate = parseFloat(urlParams.get("fx") || localStorage.getItem("nordic_eur_to_sek") || "11.35");
+    let activeCurrency = urlParams.get("currency") || localStorage.getItem("nordic_display_currency") || localStorage.getItem("nordic_currency") || "SEK";
+    let eurToSekRate = parseFloat(urlParams.get("fx") || localStorage.getItem("nordic_eur_sek_rate") || localStorage.getItem("nordic_eur_to_sek") || "11.35");
     if (!eurToSekRate || eurToSekRate <= 0) eurToSekRate = 11.35;
     let allExpenses = [];
 
-    // 支出接口返回金额以 EUR 为基准；切换 SEK 时乘以汇率换算为 kr
     function formatExpenseMoney(amountInEur) {
       const num = Number(amountInEur || 0);
       if (activeCurrency === "SEK") {
@@ -381,15 +381,21 @@
       return "€" + num.toFixed(2);
     }
 
+    function renderView() {
+      recalcPreview();
+      renderTable();
+    }
+
     window.addEventListener("message", (event) => {
       const data = event.data || {};
-      if (data.type === "CURRENCY_CHANGE") {
+      if (data.type === "NORDIC_CURRENCY_CHANGE" || data.type === "CURRENCY_CHANGE" || data.currency) {
         if (data.currency) activeCurrency = data.currency;
-        if (data.eurToSekRate && Number(data.eurToSekRate) > 0) eurToSekRate = Number(data.eurToSekRate);
-        recalcPreview();
-        renderTable();
+        const incomingRate = Number(data.rate || data.eurToSekRate || 0);
+        if (incomingRate > 0) eurToSekRate = incomingRate;
+        renderView();
       }
     });
+
     let currentReceiptBase64 = "";
     let currentReceiptName = "";
     let lastOcrMeta = null;
@@ -416,8 +422,54 @@
       }
     }
 
-    function toggleForm() {
-      document.getElementById("expenseFormPanel").classList.toggle("active");
+    function openNewExpenseForm() {
+      document.getElementById("editExpenseId").value = "";
+      document.getElementById("expenseFormTitle").innerText = "Record Expense or Capital Asset";
+      document.getElementById("saveBtn").innerText = "Save & Archive Receipt";
+      document.getElementById("transactionName").value = "";
+      document.getElementById("invoiceDate").value = new Date().toISOString().slice(0, 10);
+      document.getElementById("expenseCategory").value = "Software/SaaS";
+      document.getElementById("grossPaid").value = "";
+      document.getElementById("inputVatRate").value = "0.25";
+      document.getElementById("assetType").value = "Current Expense";
+      document.getElementById("taxDeductibility").value = "Fully Deductible";
+      document.getElementById("deductRatio").value = "50";
+      document.getElementById("taxLedger").value = new Date().toISOString().slice(0, 4);
+      onDeductibilityChange();
+      clearReceipt();
+      recalcPreview();
+      document.getElementById("expenseFormPanel").classList.add("active");
+      notifyParentHeight();
+    }
+
+    function openEditExpenseForm(id) {
+      const item = allExpenses.find(x => x.id === id);
+      if (!item) return;
+      document.getElementById("editExpenseId").value = item.id;
+      document.getElementById("expenseFormTitle").innerText = "Edit Expense Record";
+      document.getElementById("saveBtn").innerText = "Update Expense";
+      document.getElementById("transactionName").value = item.transactionName || "";
+      document.getElementById("invoiceDate").value = item.invoiceDate || new Date().toISOString().slice(0, 10);
+      document.getElementById("expenseCategory").value = item.expenseCategory || "Software/SaaS";
+      document.getElementById("grossPaid").value = Number(item.grossPaid || 0).toFixed(2);
+      document.getElementById("inputVatRate").value = String(item.inputVatRate ?? 0.25);
+      document.getElementById("assetType").value = item.assetType || "Current Expense";
+      document.getElementById("taxDeductibility").value = item.taxDeductibility || "Fully Deductible";
+      const ratioPct = getCustomRatioMap()[item.id] ?? (item.deductRatio !== undefined ? item.deductRatio : 50);
+      document.getElementById("deductRatio").value = ratioPct;
+      document.getElementById("taxLedger").value = item.taxLedger || "2026";
+      onDeductibilityChange();
+      clearReceipt();
+      recalcPreview();
+      const panel = document.getElementById("expenseFormPanel");
+      panel.classList.add("active");
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      notifyParentHeight();
+    }
+
+    function closeExpenseForm() {
+      document.getElementById("editExpenseId").value = "";
+      document.getElementById("expenseFormPanel").classList.remove("active");
       notifyParentHeight();
     }
 
@@ -567,11 +619,30 @@
       notifyParentHeight();
     }
 
+    function getCustomRatioMap() {
+      try {
+        return JSON.parse(localStorage.getItem(`nordic_exp_ratios_${CURRENT_UID}`) || "{}");
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveCustomRatio(expenseId, ratioPct) {
+      if (!expenseId) return;
+      const map = getCustomRatioMap();
+      map[expenseId] = ratioPct;
+      localStorage.setItem(`nordic_exp_ratios_${CURRENT_UID}`, JSON.stringify(map));
+    }
+
     // ==================== 支出列表、抵扣口径规范与 CSV 导出 ====================
     async function loadExpenses() {
+      if (!CURRENT_UID) {
+        document.getElementById("expenseTableBody").innerHTML =
+          `<tr><td colspan="12" style="text-align:center; color:var(--danger); padding:24px;">Missing workspace UID. Please sign in again.</td></tr>`;
+        return;
+      }
       try {
-        const query = CURRENT_UID ? `?uid=${encodeURIComponent(CURRENT_UID)}` : "";
-        const res = await fetch(`${WORKER_URL}/api/expenses${query}`);
+        const res = await fetch(`${WORKER_URL}/api/expenses?uid=${encodeURIComponent(CURRENT_UID)}`);
         const json = await res.json();
         if (!json.success) throw new Error(json.error);
         allExpenses = json.data || [];
@@ -583,11 +654,24 @@
       }
     }
 
-    // 若标记为 Non-deductible，可抵扣进项税与可扣除金额强制归零
     function normalizeDeductibleDisplay(item) {
-      const isNonDeductible = (item.taxDeductibility || "").toLowerCase() === "non-deductible";
-      if (isNonDeductible) {
+      const status = (item.taxDeductibility || "").toLowerCase();
+      if (status === "non-deductible") {
         return { vat: 0, deduct: 0 };
+      }
+      if (status === "partially deductible") {
+        const customPct = getCustomRatioMap()[item.id];
+        if (customPct !== undefined) {
+          const ratio = Number(customPct) / 100;
+          const gross = Number(item.grossPaid || 0);
+          const vatRate = Number(item.inputVatRate || 0);
+          const net = Number(item.netExpense ?? (gross / (1 + vatRate)));
+          const totalVat = Math.max(0, gross - net);
+          return {
+            vat: Number((totalVat * ratio).toFixed(2)),
+            deduct: Number((net * ratio).toFixed(2))
+          };
+        }
       }
       return {
         vat: Number(item.reclaimableInputVat || 0),
@@ -623,6 +707,9 @@
         const fxSub = (item.originalAmount && item.originalCurrency && item.grossPaid > 0)
           ? `<div class="fx-sub">Orig: ${Number(item.originalAmount).toFixed(2)} ${escapeHtml(item.originalCurrency)} (@ ${(Number(item.grossPaid) / Number(item.originalAmount)).toFixed(4)})</div>`
           : "";
+        const isPartial = (item.taxDeductibility || "").toLowerCase() === "partially deductible";
+        const customPct = getCustomRatioMap()[item.id];
+        const deductLabel = isPartial ? `${item.taxDeductibility} (${customPct !== undefined ? customPct : 50}%)` : item.taxDeductibility;
 
         return `
         <tr>
@@ -639,11 +726,14 @@
           <td>${formatExpenseMoney(item.grossPaid || 0)}</td>
           <td>${Math.round((item.inputVatRate || 0) * 100)}%</td>
           <td>${formatExpenseMoney(item.netExpense || 0)}</td>
-          <td>${escapeHtml(item.taxDeductibility)}</td>
+          <td>${escapeHtml(deductLabel)}</td>
           <td style="color:var(--success); font-weight:600;">${formatExpenseMoney(norm.vat)}</td>
           <td style="color:var(--primary); font-weight:600;">${formatExpenseMoney(norm.deduct)}</td>
           <td>${escapeHtml(item.taxLedger || "2026")}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="deleteExpense('${escapeHtml(item.id)}')">Delete</button></td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-sm" onclick="openEditExpenseForm('${escapeHtml(item.id)}')">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteExpense('${escapeHtml(item.id)}')">Delete</button>
+          </td>
         </tr>`;
       }).join("");
 
@@ -685,6 +775,7 @@
     }
 
     async function submitExpense() {
+      const editId = document.getElementById("editExpenseId").value.trim();
       const transactionName = document.getElementById("transactionName").value.trim();
       const grossPaid = parseFloat(document.getElementById("grossPaid").value);
       if (!transactionName || isNaN(grossPaid) || grossPaid <= 0) {
@@ -693,7 +784,7 @@
       }
       const saveBtn = document.getElementById("saveBtn");
       saveBtn.disabled = true;
-      saveBtn.innerText = "Archiving...";
+      saveBtn.innerText = editId ? "Updating..." : "Archiving...";
       try {
         const taxDeductibility = document.getElementById("taxDeductibility").value;
         const deductRatio = taxDeductibility === "Non-deductible"
@@ -701,6 +792,7 @@
           : (taxDeductibility === "Partially Deductible" ? (parseFloat(document.getElementById("deductRatio").value) || 0) : 100);
 
         const payload = {
+          id: editId || undefined,
           uid: CURRENT_UID,
           transactionName,
           invoiceDate: document.getElementById("invoiceDate").value || "",
@@ -717,23 +809,27 @@
           originalCurrency: lastOcrMeta && lastOcrMeta.converted ? lastOcrMeta.currency : undefined,
         };
         const res = await fetch(`${WORKER_URL}/api/expenses`, {
-          method: "POST",
+          method: editId ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const json = await res.json();
         if (!json.success) throw new Error(json.error);
+        const savedId = json.data?.id || editId;
+        if (taxDeductibility === "Partially Deductible" && savedId) {
+          saveCustomRatio(savedId, deductRatio);
+        }
         document.getElementById("transactionName").value = "";
         document.getElementById("grossPaid").value = "";
         clearReceipt();
         recalcPreview();
-        toggleForm();
+        closeExpenseForm();
         await loadExpenses();
       } catch (err) {
         alert("Failed to save expense: " + err.message);
       } finally {
         saveBtn.disabled = false;
-        saveBtn.innerText = "Save & Archive Receipt";
+        saveBtn.innerText = editId ? "Update Expense" : "Save & Archive Receipt";
       }
     }
 
@@ -748,7 +844,7 @@
       img.style.display = "none";
       dlLink.style.display = "none";
       try {
-        const res = await fetch(`${WORKER_URL}/api/receipt?pageId=${encodeURIComponent(pageId)}`);
+        const res = await fetch(`${WORKER_URL}/api/receipt?pageId=${encodeURIComponent(pageId)}&uid=${encodeURIComponent(CURRENT_UID)}`);
         const json = await res.json();
         if (!json.success) throw new Error(json.error);
         if (!json.receiptData) {
@@ -772,7 +868,7 @@
     async function deleteExpense(id) {
       if (!confirm("Archive and remove this expense record?")) return;
       try {
-        const res = await fetch(`${WORKER_URL}/api/expenses?id=${encodeURIComponent(id)}`, {
+        const res = await fetch(`${WORKER_URL}/api/expenses?id=${encodeURIComponent(id)}&uid=${encodeURIComponent(CURRENT_UID)}`, {
           method: "DELETE",
         });
         const json = await res.json();
